@@ -21,6 +21,8 @@ import LoadingOverlay from '../component/LoadingOverlay';
 import api from '../utils/Api';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
+import { StackScreen } from '../navigation/types';
+
 interface OTPVerificationScreenProps {
   navigation: any;
   route: {
@@ -34,7 +36,7 @@ interface OTPVerificationScreenProps {
 const { width, height } = Dimensions.get('window');
 const OTP_LENGTH = 6;
 
-const OTPVerificationScreen: React.FC<OTPVerificationScreenProps> = ({ navigation, route }) => {
+const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, route }) => {
   const { signIn } = useAuth();
   const { identifier, type } = route.params;
 
@@ -68,20 +70,47 @@ const OTPVerificationScreen: React.FC<OTPVerificationScreenProps> = ({ navigatio
   }, [timer, canResend]);
 
   const handleOtpChange = (value: string, index: number) => {
+    // Chỉ cho phép nhập số
+    if (!/^\d*$/.test(value)) return;
+
+    // Nếu paste nhiều số
+    if (value.length > 1) {
+      const digits = value.split('').slice(0, OTP_LENGTH - index);
+      const newOtp = [...otp];
+      
+      digits.forEach((digit, i) => {
+        const targetIndex = index + i;
+        if (targetIndex < OTP_LENGTH) {
+          newOtp[targetIndex] = digit;
+        }
+      });
+
+      setOtp(newOtp);
+
+      // Focus vào ô tiếp theo sau chuỗi số vừa paste
+      const nextIndex = Math.min(index + digits.length, OTP_LENGTH - 1);
+      inputRefs.current[nextIndex]?.focus();
+
+      // Nếu đã đủ số thì verify
+      if (newOtp.every(digit => digit)) {
+        setTimeout(() => handleVerifyOTP(), 300);
+      }
+      return;
+    }
+
+    // Xử lý nhập từng số
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
 
-    // Auto-focus next input
+    // Tự động focus ô tiếp theo khi nhập số
     if (value && index < OTP_LENGTH - 1) {
       inputRefs.current[index + 1]?.focus();
     }
 
-    // Auto-verify when complete
-    if (value && index === OTP_LENGTH - 1 && newOtp.every(digit => digit)) {
-      setTimeout(() => {
-        handleVerifyOTP();
-      }, 300);
+    // Tự động verify khi đủ số
+    if (value && newOtp.every(digit => digit)) {
+      setTimeout(() => handleVerifyOTP(), 300);
     }
   };
 
@@ -94,51 +123,35 @@ const OTPVerificationScreen: React.FC<OTPVerificationScreenProps> = ({ navigatio
     }
   };
 
-  const handleVerifyOTP = async () => {
+  const handleVerifyOTP = () => {
     const otpString = otp.join('');
-    if (otpString.length !== OTP_LENGTH) {
-      Alert.alert('Thông báo', 'Vui lòng nhập đầy đủ mã OTP');
-      return;
-    }
+    // if (otpString.length !== OTP_LENGTH) {
+    //   Alert.alert('Thông báo', 'Vui lòng nhập đầy đủ mã OTP');
+    //   return;
+    // }
 
+    // Giả lập loading 1 giây
     setLoading(true);
-    try {
-      navigation.navigate('MainTabs', { screen: 'Home' });
-    } catch (error: any) {
-      console.log('OTP verification error:', error);
-      Alert.alert(
-        'Xác thực thất bại',
-        error.message || 'Mã OTP không hợp lệ. Vui lòng thử lại.',
-        [{ text: 'OK' }]
-      );
-    } finally {
+    setTimeout(() => {
       setLoading(false);
-    }
+      // Luôn chuyển đến flow eKYC cho demo
+      navigation.replace('EkycIntro');
+    }, 1000);
   };
 
-  const handleResendOTP = async () => {
+  const handleResendOTP = () => {
     if (!canResend) return;
 
+    // Giả lập loading 1 giây
     setLoading(true);
-    try {
-      await api.post('/auth/request-otp', {
-        identifier,
-        type,
-      });
+    setTimeout(() => {
+      setLoading(false);
       setTimer(60);
       setCanResend(false);
       setOtp(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
       Alert.alert('Thành công', 'Mã OTP đã được gửi lại');
-    } catch (error: any) {
-      Alert.alert(
-        'Lỗi',
-        error.message || 'Không thể gửi lại mã OTP. Vui lòng thử lại.',
-        [{ text: 'OK' }]
-      );
-    } finally {
-      setLoading(false);
-    }
+    }, 1000);
   };
 
   const formatIdentifier = (id: string) => {
@@ -155,14 +168,11 @@ const OTPVerificationScreen: React.FC<OTPVerificationScreenProps> = ({ navigatio
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Background */}
       <View style={styles.backgroundContainer}>
         <LinearGradient
           colors={[theme.colors.primary + '15', theme.colors.white]}
           style={StyleSheet.absoluteFill}
         />
-        
-        {/* Decorative Elements */}
         <View style={styles.decorativeCircle1} />
         <View style={styles.decorativeCircle2} />
       </View>
@@ -176,72 +186,48 @@ const OTPVerificationScreen: React.FC<OTPVerificationScreenProps> = ({ navigatio
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {/* Header Section */}
-          <Animated.View 
-            style={styles.headerContainer}
+          {/* Header */}
+          <Animated.View
+            style={styles.header}
             entering={FadeInDown.duration(600).springify()}
           >
-            <Animated.View 
-              style={styles.iconContainer}
-              entering={FadeInDown.duration(800).delay(200).springify()}
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.backButton}
             >
-              <LinearGradient
-                colors={[theme.colors.primary, theme.colors.primary + '80']}
-                style={styles.iconGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}>
-                <Icon name="shield-check" size={32} color={theme.colors.white} />
-              </LinearGradient>
-            </Animated.View>
-            
-            <Animated.Text 
-              style={styles.title}
-              entering={FadeInDown.duration(800).delay(400).springify()}
-            >
-              Xác thực mã OTP
-            </Animated.Text>
-            
-            <Animated.Text 
-              style={styles.subtitle}
-              entering={FadeInDown.duration(800).delay(600).springify()}
-            >
-              Chúng tôi đã gửi mã xác thực đến
-            </Animated.Text>
-            
-            <Animated.Text 
-              style={styles.identifier}
-              entering={FadeInDown.duration(800).delay(800).springify()}
-            >
-              {formatIdentifier(identifier)}
-            </Animated.Text>
-          </Animated.View>
+              <Icon name="arrow-left" size={24} color={theme.colors.text} />
+            </TouchableOpacity>
 
-          {/* Form Section */}
-          <Animated.View 
-            style={styles.formContainer}
-            entering={SlideInDown.duration(800).delay(1000).springify()}
-          >
-            <View style={styles.formHeader}>
-              <Text style={styles.formTitle}>Nhập mã OTP</Text>
-              <Text style={styles.formSubtitle}>
-                Vui lòng nhập mã 6 số đã được gửi đến {type === 'phone' ? 'số điện thoại' : 'email'} của bạn
+            <View style={styles.headerContent}>
+              <Text style={styles.headerTitle}>Verify OTP</Text>
+              <Text style={styles.headerSubtitle}>
+                Enter the verification code sent to {formatIdentifier(identifier)}
               </Text>
             </View>
+          </Animated.View>
 
-            <View style={styles.form}>
-              {/* OTP Input Section */}
-              <View style={styles.otpContainer}>
-                {otp.map((digit, index) => {
-                  const isActive = index === getActiveInputIndex();
-                  const isFilled = Boolean(digit);
-                  
-                  return (
-                    <View 
-                      key={index} 
-                      style={[
-                        styles.otpInputWrapper,
-                        isActive && styles.otpInputWrapperActive
-                      ]}>
+          {/* Form Container */}
+          <Animated.View
+            style={styles.formContainer}
+            entering={FadeInDown.duration(800).delay(200).springify()}
+          >
+            {/* OTP Input Section */}
+            <View style={styles.otpContainer}>
+              {otp.map((digit, index) => {
+                const isActive = index === getActiveInputIndex();
+                const isFilled = Boolean(digit);
+                
+                return (
+                  <View 
+                    key={index} 
+                    style={[
+                      styles.otpInputWrapper,
+                      isActive && styles.otpInputWrapperActive
+                    ]}>
+                    <Animated.View
+                      entering={FadeInDown.duration(400).delay(index * 100)}
+                      style={styles.otpInputContainer}
+                    >
                       <TextInput
                         ref={el => { inputRefs.current[index] = el }}
                         style={[
@@ -253,76 +239,71 @@ const OTPVerificationScreen: React.FC<OTPVerificationScreenProps> = ({ navigatio
                         onChangeText={(value) => handleOtpChange(value, index)}
                         onKeyPress={(e) => handleKeyPress(e, index)}
                         keyboardType="number-pad"
-                        maxLength={1}
+                        maxLength={6}
                         selectTextOnFocus
                         autoFocus={index === 0}
                       />
                       {isFilled && (
-                        <View style={styles.filledIndicator}>
-                          <Icon name="check" size={16} color={theme.colors.white} />
-                        </View>
+                        <Animated.View
+                          entering={FadeInDown.duration(200)}
+                          style={styles.otpInputCheck}
+                        >
+                          <Icon name="check" size={12} color={theme.colors.primary} />
+                        </Animated.View>
                       )}
-                    </View>
-                  );
-                })}
-              </View>
-
-              {/* Progress Bar */}
-              <View style={styles.progressContainer}>
-                <View style={styles.progressBar}>
-                  <View 
-                    style={[
-                      styles.progressFill,
-                      { width: `${(otp.filter(d => d).length / OTP_LENGTH) * 100}%` }
-                    ]} 
-                  />
-                </View>
-                <Text style={styles.progressText}>
-                  {otp.filter(d => d).length}/{OTP_LENGTH}
-                </Text>
-              </View>
-
-              <ButtonCustom
-                title="Xác thực"
-                onPress={handleVerifyOTP}
-                style={otp.join('').length === OTP_LENGTH ? styles.verifyButtonActive : styles.verifyButton}
-                disabled={otp.join('').length !== OTP_LENGTH}
-                icon="shield-check"
-              />
-
-              {/* Resend Section */}
-              <View style={styles.resendContainer}>
-                {!canResend ? (
-                  <View style={styles.timerContainer}>
-                    <Icon name="clock-outline" size={18} color={theme.colors.primary} />
-                    <Text style={styles.timerText}>
-                      Gửi lại mã sau <Text style={styles.timer}>{timer}s</Text>
-                    </Text>
+                    </Animated.View>
                   </View>
-                ) : (
-                  <TouchableOpacity 
-                    onPress={handleResendOTP}
-                    style={styles.resendButton}
-                    activeOpacity={0.7}>
-                    <Icon name="refresh" size={20} color={theme.colors.primary} />
-                    <Text style={styles.resendButtonText}>Gửi lại mã</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
+                );
+              })}
             </View>
-          </Animated.View>
 
-          {/* Footer */}
-          <Animated.View 
-            style={styles.footerContainer}
-            entering={FadeInUp.duration(600).delay(1400).springify()}
-          >
+            {/* Progress Bar */}
+            <View style={styles.progressContainer}>
+              <View style={styles.progressBar}>
+                <LinearGradient
+                  colors={theme.colors.gradientYellow}
+                  style={[
+                    styles.progressFill,
+                    { width: `${(otp.filter(d => d).length / OTP_LENGTH) * 100}%` }
+                  ]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                />
+              </View>
+              <Text style={styles.progressText}>
+                {otp.filter(d => d).length}/{OTP_LENGTH}
+              </Text>
+            </View>
 
+            <ButtonCustom
+              title="Verify"
+              onPress={handleVerifyOTP}
+              style={styles.verifyButton}
+              disabled={otp.join('').length !== OTP_LENGTH}
+              gradient
+              fullWidth
+            />
+
+            {/* Resend Section */}
+            <View style={styles.resendContainer}>
+              {!canResend ? (
+                <Text style={styles.timerText}>
+                  Resend code in <Text style={styles.timer}>{timer}s</Text>
+                </Text>
+              ) : (
+                <TouchableOpacity 
+                  onPress={handleResendOTP}
+                  style={styles.resendButton}
+                  activeOpacity={0.7}>
+                  <Text style={styles.resendButtonText}>Resend Code</Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <LoadingOverlay visible={loading} message="Đang xác thực..." />
+      <LoadingOverlay visible={loading} message="Verifying..." />
     </SafeAreaView>
   );
 };
@@ -362,146 +343,135 @@ const styles = StyleSheet.create({
   },
 
   // Header Styles
-  headerContainer: {
-    alignItems: 'center',
-    paddingTop: height * 0.08,
-    paddingBottom: theme.spacing.xl,
-  },
-  iconContainer: {
-    marginBottom: theme.spacing.lg,
-  },
-  iconGradient: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...Platform.select({
-      ios: {
-        shadowColor: theme.colors.primary,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.3,
-        shadowRadius: 16,
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
-  },
-  title: {
-    fontFamily: theme.typography.fontFamily.bold,
-    fontSize: 36,
-    color: theme.colors.primary,
-    marginBottom: theme.spacing.sm,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontFamily: theme.typography.fontFamily.regular,
-    fontSize: theme.typography.fontSize.md,
-    color: theme.colors.textLight,
-    textAlign: 'center',
-    lineHeight: 24,
-    paddingHorizontal: theme.spacing.lg,
-    marginBottom: theme.spacing.sm,
-  },
-  identifier: {
-    fontFamily: theme.typography.fontFamily.bold,
-    fontSize: theme.typography.fontSize.lg,
-    color: theme.colors.primary,
-    textAlign: 'center',
-  },
-
-  // Form Styles
-  formContainer: {
-    backgroundColor: theme.colors.white,
-    borderRadius: 32,
-    padding: theme.spacing.xl,
-    marginBottom: theme.spacing.xl,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.15,
-        shadowRadius: 24,
-      },
-      android: {
-        elevation: 12,
-      },
-    }),
-  },
-  formHeader: {
-    alignItems: 'center',
-    marginBottom: theme.spacing.xl,
-  },
-  formTitle: {
-    fontFamily: theme.typography.fontFamily.bold,
-    fontSize: theme.typography.fontSize.xl,
-    color: theme.colors.text,
-    marginBottom: theme.spacing.xs,
-  },
-  formSubtitle: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.textLight,
-    textAlign: 'center',
-  },
-  form: {
-    width: '100%',
-  },
-
-  // OTP Input Styles
-  otpContainer: {
+  header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: theme.spacing.lg,
-    paddingHorizontal: theme.spacing.sm,
+    alignItems: 'flex-start',
+    paddingTop: theme.spacing.xl,
+    paddingBottom: theme.spacing.lg,
+    gap: theme.spacing.lg,
   },
-  otpInputWrapper: {
-    position: 'relative',
-  },
-  otpInputWrapperActive: {
-    transform: [{ scale: 1.05 }],
-  },
-  otpInput: {
-    width: (width - 120) / 6,
-    height: 56,
-    borderWidth: 2,
-    borderColor: theme.colors.border,
-    borderRadius: 16,
-    textAlign: 'center',
-    fontSize: 20,
-    fontFamily: theme.typography.fontFamily.bold,
-    color: theme.colors.text,
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: theme.colors.white,
-  },
-  otpInputFilled: {
-    borderColor: theme.colors.primary,
-    backgroundColor: theme.colors.primary + '08',
-    color: theme.colors.primary,
-  },
-  otpInputActive: {
-    borderColor: theme.colors.primary,
-    borderWidth: 3,
-    backgroundColor: theme.colors.primary + '05',
-  },
-  filledIndicator: {
-    position: 'absolute',
-    top: -8,
-    right: -8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: theme.colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     ...Platform.select({
       ios: {
         shadowColor: theme.colors.primary,
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
+        shadowOpacity: 0.1,
         shadowRadius: 8,
       },
       android: {
         elevation: 4,
+      },
+    }),
+  },
+  headerContent: {
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: theme.typography.fontSize['2xl'],
+    color: theme.colors.text,
+    fontFamily: theme.typography.fontFamily.bold,
+    marginBottom: theme.spacing.xs,
+  },
+  headerSubtitle: {
+    fontSize: theme.typography.fontSize.md,
+    color: theme.colors.textLight,
+    fontFamily: theme.typography.fontFamily.regular,
+  },
+
+  // Form Styles
+  formContainer: {
+    backgroundColor: theme.colors.white,
+    borderRadius: theme.borderRadius.xl,
+    padding: theme.spacing.xl,
+    marginBottom: theme.spacing.xl,
+    ...Platform.select({
+      ios: {
+        shadowColor: theme.colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+
+  // OTP Input Styles
+  otpContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: theme.spacing.xl,
+  },
+  otpInputWrapper: {
+    position: 'relative',
+    alignItems: 'center',
+  },
+  otpInputWrapperActive: {
+    transform: [{ scale: 1.05 }],
+  },
+  otpInputContainer: {
+    position: 'relative',
+    alignItems: 'center',
+  },
+  otpInput: {
+    width: (width - 120) / 6,
+    height: 56,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.lg,
+    textAlign: 'center',
+    fontSize: theme.typography.fontSize.xl,
+    fontFamily: theme.typography.fontFamily.bold,
+    color: theme.colors.text,
+    backgroundColor: theme.colors.background,
+  },
+  otpInputFilled: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary + '10',
+    color: theme.colors.primary,
+    ...Platform.select({
+      ios: {
+        shadowColor: theme.colors.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  otpInputActive: {
+    borderColor: theme.colors.primary,
+    borderWidth: 2,
+    backgroundColor: theme.colors.white,
+  },
+  otpInputCheck: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: theme.colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: theme.colors.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
       },
     }),
   },
@@ -522,7 +492,6 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: theme.colors.primary,
     borderRadius: 2,
   },
   progressText: {
@@ -533,87 +502,30 @@ const styles = StyleSheet.create({
 
   // Button Styles
   verifyButton: {
-    marginBottom: theme.spacing.lg,
     height: 56,
-    opacity: 0.5,
-  },
-  verifyButtonActive: {
-    marginBottom: theme.spacing.lg,
-    height: 56,
-    opacity: 1,
+    marginBottom: theme.spacing.xl,
   },
 
   // Resend Section Styles
   resendContainer: {
     alignItems: 'center',
   },
-  timerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.primary + '08',
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
-    borderRadius: 20,
-    gap: theme.spacing.sm,
-  },
   timerText: {
     fontFamily: theme.typography.fontFamily.regular,
     fontSize: theme.typography.fontSize.md,
-    color: theme.colors.text,
+    color: theme.colors.textLight,
   },
   timer: {
     fontFamily: theme.typography.fontFamily.bold,
     color: theme.colors.primary,
   },
   resendButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.primary + '10',
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
-    borderRadius: 20,
-    gap: theme.spacing.sm,
+    paddingVertical: theme.spacing.sm,
   },
   resendButtonText: {
     fontFamily: theme.typography.fontFamily.bold,
     fontSize: theme.typography.fontSize.md,
     color: theme.colors.primary,
-  },
-
-  // Footer Styles
-  footerContainer: {
-    alignItems: 'center',
-    paddingBottom: theme.spacing.xl,
-    gap: theme.spacing.lg,
-  },
-  helpContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: theme.spacing.sm,
-  },
-  helpText: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.textLight,
-    fontFamily: theme.typography.fontFamily.medium,
-  },
-  securityBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: theme.colors.success + '10',
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: theme.colors.success + '20',
-  },
-  securityText: {
-    fontSize: theme.typography.fontSize.xs,
-    color: theme.colors.text,
-    fontFamily: theme.typography.fontFamily.medium,
-    textAlign: 'center',
-    flex: 1,
   },
 });
 

@@ -7,14 +7,16 @@ import {
   ViewStyle,
   TextStyle,
   View,
+  Platform,
 } from 'react-native';
+import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../theme/colors';
 
 interface ButtonCustomProps {
   onPress: () => void;
   title: string;
-  variant?: 'primary' | 'secondary' | 'outline';
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
   size?: 'small' | 'medium' | 'large';
   disabled?: boolean;
   loading?: boolean;
@@ -22,6 +24,8 @@ interface ButtonCustomProps {
   textStyle?: TextStyle;
   icon?: string;
   iconPosition?: 'left' | 'right';
+  fullWidth?: boolean;
+  gradient?: boolean;
 }
 
 const ButtonCustom: React.FC<ButtonCustomProps> = ({
@@ -35,6 +39,8 @@ const ButtonCustom: React.FC<ButtonCustomProps> = ({
   textStyle,
   icon,
   iconPosition = 'left',
+  fullWidth = false,
+  gradient = false,
 }) => {
   const getButtonStyle = () => {
     const styles: ViewStyle[] = [{
@@ -42,6 +48,8 @@ const ButtonCustom: React.FC<ButtonCustomProps> = ({
       justifyContent: 'center',
       alignItems: 'center',
       flexDirection: 'row',
+      width: fullWidth ? '100%' : 'auto',
+      ...theme.shadows.yellow,
     }];
 
     // Add variant styles
@@ -49,19 +57,32 @@ const ButtonCustom: React.FC<ButtonCustomProps> = ({
       case 'secondary':
         styles.push({
           backgroundColor: theme.colors.secondary,
+          ...theme.shadows.md,
         });
         break;
       case 'outline':
         styles.push({
           backgroundColor: 'transparent',
-          borderWidth: 2,
+          borderWidth: 1,
           borderColor: theme.colors.primary,
         });
         break;
-      default:
+      case 'ghost':
         styles.push({
-          backgroundColor: theme.colors.primary,
+          backgroundColor: 'transparent',
+          borderWidth: 0,
         });
+        break;
+      default:
+        if (gradient) {
+          styles.push({
+            backgroundColor: 'transparent',
+          });
+        } else {
+          styles.push({
+            backgroundColor: theme.colors.primary,
+          });
+        }
     }
 
     // Add size styles
@@ -135,20 +156,17 @@ const ButtonCustom: React.FC<ButtonCustomProps> = ({
     return styles;
   };
 
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      disabled={disabled || loading}
-      style={getButtonStyle()}>
+  const ButtonContent = () => (
+    <>
       {loading ? (
-        <ActivityIndicator color={variant === 'outline' ? theme.colors.primary : theme.colors.white} />
+        <ActivityIndicator color={variant === 'outline' || variant === 'ghost' ? theme.colors.primary : theme.colors.white} />
       ) : (
         <View style={styles.contentContainer}>
           {icon && iconPosition === 'left' && (
             <Icon
               name={icon}
               size={20}
-              color={variant === 'outline' ? theme.colors.primary : theme.colors.white}
+              color={variant === 'outline' || variant === 'ghost' ? theme.colors.primary : theme.colors.white}
               style={styles.leftIcon}
             />
           )}
@@ -157,12 +175,38 @@ const ButtonCustom: React.FC<ButtonCustomProps> = ({
             <Icon
               name={icon}
               size={20}
-              color={variant === 'outline' ? theme.colors.primary : theme.colors.white}
+              color={variant === 'outline' || variant === 'ghost' ? theme.colors.primary : theme.colors.white}
               style={styles.rightIcon}
             />
           )}
         </View>
       )}
+    </>
+  );
+
+  if (gradient && variant === 'primary' && !disabled) {
+    return (
+      <TouchableOpacity
+        onPress={onPress}
+        disabled={disabled || loading}
+        style={[getButtonStyle(), { overflow: 'hidden' }]}>
+        <LinearGradient
+          colors={theme.colors.gradientYellow}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={[styles.gradientContainer, getButtonStyle()]}>
+          <ButtonContent />
+        </LinearGradient>
+      </TouchableOpacity>
+    );
+  }
+
+  return (
+    <TouchableOpacity
+      onPress={onPress}
+      disabled={disabled || loading}
+      style={getButtonStyle()}>
+      <ButtonContent />
     </TouchableOpacity>
   );
 };
@@ -179,51 +223,14 @@ const styles = StyleSheet.create({
   rightIcon: {
     marginLeft: theme.spacing.xs,
   },
-  button: {
-    borderRadius: theme.borderRadius.md,
+  gradientContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    flexDirection: 'row',
-  },
-  primaryButton: {
-    backgroundColor: theme.colors.primary,
-  },
-  secondaryButton: {
-    backgroundColor: theme.colors.secondary,
-  },
-  outlineButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: theme.colors.primary,
-  },
-  smallButton: {
-    paddingVertical: theme.spacing.xs,
-    paddingHorizontal: theme.spacing.sm,
-  },
-  mediumButton: {
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.md,
-  },
-  largeButton: {
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.lg,
-  },
-  disabledButton: {
-    backgroundColor: theme.colors.disabled,
-    borderColor: theme.colors.disabled,
-  },
-  text: {
-    fontFamily: theme.typography.fontFamily.medium,
-    fontSize: theme.typography.fontSize.md,
-  },
-  primaryText: {
-    color: theme.colors.white,
-  },
-  outlineText: {
-    color: theme.colors.primary,
-  },
-  disabledText: {
-    color: theme.colors.white,
   },
 });
 

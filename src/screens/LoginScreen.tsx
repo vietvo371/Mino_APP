@@ -35,9 +35,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ identifier?: string, password?: string }>({});
   const [isPhoneNumber, setIsPhoneNumber] = useState(false);
-  const [password, setPassword] = useState('');
   const validateForm = () => {
-    const newErrors: { identifier?: string, password?: string } = {};
+    const newErrors: { identifier?: string } = {};
 
     if (!identifier) {
       newErrors.identifier = 'Email or phone number is required';
@@ -51,10 +50,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       }
     }
 
-    if (!password) {
-      newErrors.password = 'Password is required';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -64,44 +59,21 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     setIsPhoneNumber(isPhone);
   };
 
-  const handleLogin = async () => {
+  const handleLogin = () => {
     if (!validateForm()) {
       return;
     }
 
+    // Giả lập loading 1 giây
     setLoading(true);
-    try {
-      // Request OTP
-      // const response = await api.post('/auth/request-otp', {
-      //   identifier: identifier,
-      //   type: isPhoneNumber ? 'phone' : 'email'
-      // });
-      // Navigate to OTP verification screen
-      // navigation.navigate('OTPVerification', {
-      //   identifier: identifier,
-      //   type: isPhoneNumber ? 'phone' : 'email'
-      // });
-      await signIn({ identifier: identifier, password: password , type: isPhoneNumber ? 'phone' : 'email'});
-      navigation.replace('MainTabs');
-
-      // console.log('Login response:', response);
-    } catch (error: any) {
-      console.log('Login error:', error);
-// Xử lý lỗi validation từ API
-    if (error.errors) {
-      setErrors({
-        identifier: error.errors.identifier?.[0],
-        password: error.errors.password?.[0]
-      });
-    } else {
-      // Xử lý các lỗi khác (network, timeout...)
-      setErrors({
-        identifier: error.message
-      });
-    }
-    } finally {
+    setTimeout(() => {
       setLoading(false);
-    }
+      // Chuyển đến màn hình OTP
+      navigation.navigate('OTPVerification', {
+        identifier: identifier,
+        type: isPhoneNumber ? 'phone' : 'email'
+      });
+    }, 1000);
   };
 
   const handleSocialLogin = (provider: string) => {
@@ -147,14 +119,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               style={styles.title}
               entering={FadeInDown.duration(800).delay(400).springify()}
             >
-              AgriMRV
+              MINO
             </Animated.Text>
 
             <Animated.Text
               style={styles.subtitle}
               entering={FadeInDown.duration(800).delay(600).springify()}
             >
-              Sign in to continue your sustainable farming journey
+              Sign in to continue your journey
             </Animated.Text>
           </Animated.View>
 
@@ -166,7 +138,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             <View style={styles.formHeader}>
               <Text style={styles.formTitle}>Sign In</Text>
               <Text style={styles.formSubtitle}>
-                Enter your credentials to access your account
+                Enter your credentials to access your MINO account
               </Text>
             </View>
 
@@ -222,24 +194,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                 leftIcon={isPhoneNumber ? "phone-outline" : "email-outline"}
                 containerStyle={styles.input}
               />
-               <InputCustom
-                label={"Password"}
-                placeholder={"Enter your password"}
-                value={password}
-                onChangeText={(value) => {
-                  setPassword(value);
-                }}
-                keyboardType={"default"}
-                autoCapitalize="none"
-                error={errors.password}
-                secureTextEntry={true}
-                required
-                leftIcon={"lock-outline"}
-                containerStyle={styles.input}
-              />
 
               <ButtonCustom
-                title="Login"
+                title="Send OTP"
                 onPress={handleLogin}
                 style={styles.loginButton}
                 icon="login"

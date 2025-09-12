@@ -17,7 +17,7 @@ import { theme } from '../theme/colors';
 import { componentStyles } from '../theme/components';
 import { StackScreen } from '../navigation/types';
 
-const HomeScreen: StackScreen<'Home'> = () => {
+const WalletScreen: StackScreen<'Wallet'> = () => {
   const navigation = useNavigation();
   const [refreshing, setRefreshing] = React.useState(false);
 
@@ -27,6 +27,7 @@ const HomeScreen: StackScreen<'Home'> = () => {
       setRefreshing(false);
     }, 2000);
   }, []);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.backgroundContainer}>
@@ -46,19 +47,12 @@ const HomeScreen: StackScreen<'Home'> = () => {
       >
         {/* Header */}
         <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Welcome back</Text>
-            <Text style={styles.username}>John Doe</Text>
-          </View>
+          <Text style={styles.headerTitle}>My Wallet</Text>
           <TouchableOpacity
-            onPress={() => navigation.navigate('Profile')}
-            style={styles.avatarContainer}
+            onPress={() => {}}
+            style={styles.headerButton}
           >
-            <Image
-              source={require('../assets/images/avatar.jpeg')}
-              style={styles.avatar}
-            />
-            <View style={styles.avatarBadge} />
+            <Icon name="qrcode-scan" size={24} color={theme.colors.textDark} />
           </TouchableOpacity>
         </View>
 
@@ -132,6 +126,54 @@ const HomeScreen: StackScreen<'Home'> = () => {
           </TouchableOpacity>
         </View>
 
+        {/* Wallet List */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>My Wallets</Text>
+            <TouchableOpacity>
+              <Text style={styles.sectionAction}>Add New</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.walletList}>
+            {/* USDT Wallet */}
+            <View style={styles.walletItem}>
+              <View style={styles.walletIcon}>
+                <Image
+                  source={require('../assets/images/logo.png')}
+                  style={styles.walletIconImage}
+                />
+              </View>
+              <View style={styles.walletInfo}>
+                <Text style={styles.walletName}>USDT Wallet</Text>
+                <Text style={styles.walletAddress}>TRX • 0x1234...5678</Text>
+              </View>
+              <View style={styles.walletBalance}>
+                <Text style={styles.walletAmount}>10,000.00</Text>
+                <Text style={styles.walletFiat}>≈ $10,000.00</Text>
+              </View>
+            </View>
+
+            {/* VND Wallet */}
+            <View style={styles.walletItem}>
+              <View style={styles.walletIcon}>
+                <Image
+                  source={require('../assets/images/logo.png')}
+                  style={styles.walletIconImage}
+                />
+              </View>
+              <View style={styles.walletInfo}>
+                <Text style={styles.walletName}>VND Wallet</Text>
+                <Text style={styles.walletAddress}>Bank • **** 5678</Text>
+              </View>
+              <View style={styles.walletBalance}>
+                <Text style={styles.walletAmount}>56,789,000</Text>
+                <Text style={styles.walletFiat}>≈ $2,345.67</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
         {/* Recent Transactions */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -172,41 +214,6 @@ const HomeScreen: StackScreen<'Home'> = () => {
             ))}
           </View>
         </View>
-
-        {/* Market Trends */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Market Trends</Text>
-            <TouchableOpacity>
-              <Text style={styles.sectionAction}>See More</Text>
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.marketList}
-          >
-            {[1, 2, 3, 4].map((_, index) => (
-              <View key={index} style={styles.marketItem}>
-                <View style={styles.marketHeader}>
-                  <View style={styles.marketSymbol}>
-                    <Image
-                      source={require('../assets/images/logo.png')}
-                      style={styles.marketIcon}
-                    />
-                    <Text style={styles.marketName}>USDT/VND</Text>
-                  </View>
-                  <View style={[styles.marketBadge, { backgroundColor: theme.colors.success + '15' }]}>
-                    <Text style={[styles.marketChange, { color: theme.colors.success }]}>+2.5%</Text>
-                  </View>
-                </View>
-                <Text style={styles.marketPrice}>24,150</Text>
-                <Text style={styles.marketPriceUSD}>≈ $1.00</Text>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -235,36 +242,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: theme.spacing.lg,
   },
-  greeting: {
-    fontSize: theme.typography.fontSize.md,
-    color: theme.colors.textDarkLight,
-    fontFamily: theme.typography.fontFamily.regular,
-  },
-  username: {
-    fontSize: theme.typography.fontSize.xl,
+  headerTitle: {
+    fontSize: theme.typography.fontSize['2xl'],
     color: theme.colors.textDark,
     fontFamily: theme.typography.fontFamily.bold,
   },
-  avatarContainer: {
-    position: 'relative',
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: theme.colors.primary,
-  },
-  avatarBadge: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: theme.colors.success,
-    borderWidth: 2,
-    borderColor: theme.colors.secondary,
+  headerButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.secondary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.borderDark,
   },
 
   // Balance Card Styles
@@ -363,6 +354,64 @@ const styles = StyleSheet.create({
     fontFamily: theme.typography.fontFamily.medium,
   },
 
+  // Wallet List Styles
+  walletList: {
+    backgroundColor: theme.colors.secondary,
+    borderRadius: theme.borderRadius.xl,
+    padding: theme.spacing.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.borderDark,
+  },
+  walletItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.borderDark,
+  },
+  walletIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: theme.colors.backgroundDark,
+    marginRight: theme.spacing.lg,
+  },
+  walletIconImage: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
+  walletInfo: {
+    flex: 1,
+  },
+  walletName: {
+    fontSize: theme.typography.fontSize.md,
+    color: theme.colors.textDark,
+    fontFamily: theme.typography.fontFamily.medium,
+    marginBottom: theme.spacing.xs,
+  },
+  walletAddress: {
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.textDarkLight,
+    fontFamily: theme.typography.fontFamily.regular,
+  },
+  walletBalance: {
+    alignItems: 'flex-end',
+  },
+  walletAmount: {
+    fontSize: theme.typography.fontSize.md,
+    color: theme.colors.textDark,
+    fontFamily: theme.typography.fontFamily.bold,
+    marginBottom: theme.spacing.xs,
+  },
+  walletFiat: {
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.textDarkLight,
+    fontFamily: theme.typography.fontFamily.regular,
+  },
+
   // Transaction List Styles
   transactionList: {
     backgroundColor: theme.colors.secondary,
@@ -414,61 +463,6 @@ const styles = StyleSheet.create({
     color: theme.colors.textDarkLight,
     fontFamily: theme.typography.fontFamily.regular,
   },
-
-  // Market Trends Styles
-  marketList: {
-    paddingRight: theme.spacing.lg,
-  },
-  marketItem: {
-    backgroundColor: theme.colors.secondary,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.lg,
-    marginRight: theme.spacing.md,
-    borderWidth: 1,
-    borderColor: theme.colors.borderDark,
-    width: 180,
-  },
-  marketHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  marketSymbol: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  marketIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    marginRight: theme.spacing.sm,
-  },
-  marketName: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.textDark,
-    fontFamily: theme.typography.fontFamily.medium,
-  },
-  marketBadge: {
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.xs,
-    borderRadius: theme.borderRadius.sm,
-  },
-  marketChange: {
-    fontSize: theme.typography.fontSize.xs,
-    fontFamily: theme.typography.fontFamily.medium,
-  },
-  marketPrice: {
-    fontSize: theme.typography.fontSize.lg,
-    color: theme.colors.textDark,
-    fontFamily: theme.typography.fontFamily.bold,
-    marginBottom: theme.spacing.xs,
-  },
-  marketPriceUSD: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.textDarkLight,
-    fontFamily: theme.typography.fontFamily.regular,
-  },
 });
 
-export default HomeScreen;
+export default WalletScreen;

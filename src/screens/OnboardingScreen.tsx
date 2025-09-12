@@ -14,53 +14,28 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const onboardingData = [
   {
     id: 1,
-    title: 'Điểm tín dụng minh bạch',
-    description: 'Theo dõi và cải thiện tín dụng từ mỗi mùa vụ.',
-    image: require('../assets/images/started/hinh6.jpg'),
+    title: 'Welcome to MINO',
+    description: 'Your trusted digital wallet for secure and seamless transactions.',
+    image: require('../assets/images/started/welcome.jpg'),
   },
   {
     id: 2,
-    title: 'Blockchain đảm bảo niềm tin',
-    description: 'Hồ sơ tín dụng được lưu trên blockchain, không thể chỉnh sửa.',
-    image: require('../assets/images/started/hinh7.jpg'),
+    title: 'Fast eKYC',
+    description: 'Quick and secure identity verification for your peace of mind.',
+    image: require('../assets/images/started/ekyc.jpg'),
   },
   {
     id: 3,
-    title: 'AI xác thực canh tác',
-    description: 'Phân tích ảnh ruộng và dữ liệu mùa vụ bằng AI đáng tin cậy.',
-    image: require('../assets/images/started/hinh8.jpg'),
+    title: 'USDT & VND',
+    description: 'Easily deposit and withdraw USDT and VND with competitive rates.',
+    image: require('../assets/images/started/deposit.jpg'),
   },
   {
     id: 4,
-    title: 'Điểm số dễ hiểu',
-    description: 'Chấm điểm tín dụng minh bạch (0–100), giải thích rõ từng yếu tố.',
-    image: require('../assets/images/started/hinh1.jpg'),
+    title: 'Security First',
+    description: 'Advanced encryption and multi-layer security to protect your assets.',
+    image: require('../assets/images/started/security.jpg'),
   },
-  {
-    id: 5,
-    title: 'Mở rộng cơ hội vay vốn',
-    description: 'Nông dân không cần thế chấp vẫn có thể tiếp cận vốn.',
-    image: require('../assets/images/started/hinh2.jpg'),
-  },
-  {
-    id: 6,
-    title: 'Tài chính toàn diện',
-    description: 'Giảm tín dụng đen, mang lại sự thịnh vượng cho cộng đồng nông thôn.',
-    image: require('../assets/images/started/hinh3.jpg'),
-  },
-  {
-    id: 7,
-    title: 'Hồ sơ tín dụng số',
-    description: 'Chia sẻ dễ dàng với ngân hàng và hợp tác xã để xin vay.',
-    image: require('../assets/images/started/hinh4.jpg'),
-  },
-  {
-    id: 8,
-    title: 'AgriCred – Trust in Every Harvest',
-    description: 'Mỗi mùa vụ trở thành bằng chứng số minh bạch, giúp vay vốn công bằng.',
-    image: require('../assets/images/started/hinh5.jpg'),
-  },
-
 ];
 
 interface OnboardingScreenProps {
@@ -72,6 +47,8 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
 
   const handleComplete = async () => {
     try {
+      // Lưu trạng thái đã xem onboarding
+      await AsyncStorage.setItem('isFirstLaunch', 'false');
       navigation.replace('Login');
     } catch (error) {
       console.error('Error saving onboarding state:', error);
@@ -110,7 +87,6 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
               items={onboardingData}
               renderItem={({ item }) => <EventCard event={item} />}
               onIndexChange={(index) => {
-                // Ensure the index stays within bounds
                 const safeIndex = Math.max(0, Math.min(index, onboardingData.length - 1));
                 setActiveIndex(safeIndex);
               }}
@@ -120,25 +96,30 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
           {/* Bottom part - Text and button */}
           <View style={styles.bottomContainer}>
             <Animated.Text
-              style={styles.welcomeText}
-              entering={FadeInUp.springify().mass(1).damping(30).delay(500)}
-            >
-              Welcome to
-            </Animated.Text>
-
-            <Animated.Text
               style={styles.title}
               entering={FadeIn.duration(500).delay(500)}
             >
-              AgriMRV
+              {currentItem.title}
             </Animated.Text>
 
             <Animated.Text
               style={styles.description}
               entering={FadeInUp.springify().mass(1).damping(30).delay(500)}
             >
-              Join us on the journey to sustainable development with Vietnamese farmers
+              {currentItem.description}
             </Animated.Text>
+
+            <View style={styles.paginationContainer}>
+              {onboardingData.map((_, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.paginationDot,
+                    index === safeActiveIndex && styles.paginationDotActive,
+                  ]}
+                />
+              ))}
+            </View>
 
             <AnimatedPressable
               onPress={handleComplete}
@@ -146,7 +127,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
               entering={FadeInUp.springify().mass(1).damping(30).delay(500)}
             >
               <Animated.Text style={styles.buttonText}>
-                Start MRV journey
+                Get Started
               </Animated.Text>
             </AnimatedPressable>
           </View>
@@ -163,7 +144,7 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(66, 138, 104, 0.7)',
+    backgroundColor: 'rgba(246, 241, 146, 0.5)',
   },
   blurContainer: {
     flex: 1,
@@ -171,46 +152,71 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
   },
+  logoContainer: {
+    alignItems: 'center',
+    marginTop: 40,
+  },
+  logo: {
+    width: 120,
+    height: 120,
+  },
   marqueeContainer: {
     height: '50%',
     marginTop: 80,
   },
   bottomContainer: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
     gap: 16,
-    padding: 16,
-  },
-  welcomeText: {
+    padding: 24,
+    paddingBottom: 40,
     fontSize: 24,
     fontWeight: 'bold',
-    color: 'rgba(255,255,255,0.6)',
-    textAlign: 'center',
+
   },
   title: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    fontSize: 32,
+    fontFamily: theme.typography.fontFamily.bold,
+    color: theme.colors.white,
     textAlign: 'center',
   },
   description: {
-    fontSize: 18,
-    color: 'rgba(255,255,255,0.6)',
+    fontSize: 16,
+    fontFamily: theme.typography.fontFamily.regular,
+    color: theme.colors.textDarkLight,
     textAlign: 'center',
     marginBottom: 20,
   },
+  paginationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 32,
+  },
+  paginationDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: theme.colors.textDarkLight,
+  },
+  paginationDotActive: {
+    width: 24,
+    backgroundColor: theme.colors.primary,
+  },
   button: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: theme.colors.primary,
     paddingVertical: 16,
     paddingHorizontal: 40,
-    borderRadius: 30,
+    borderRadius: theme.borderRadius.lg,
     alignItems: 'center',
-    alignSelf: 'center',
+    alignSelf: 'stretch',
+    ...theme.shadows.yellow,
   },
   buttonText: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: theme.colors.primary,
+    fontFamily: theme.typography.fontFamily.bold,
+    color: theme.colors.secondary,
   },
 });
 export default OnboardingScreen; 

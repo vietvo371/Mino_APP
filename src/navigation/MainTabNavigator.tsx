@@ -16,6 +16,10 @@ import HomeScreen from '../screens/HomeScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import HistoryScreen from '../screens/HistoryScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
+import EkycIntroScreen from '../screens/EkycIntroScreen';
+import EkycIDCardScreen from '../screens/EkycIDCardScreen';
+import EkycSelfieScreen from '../screens/EkycSelfieScreen';
+import EkycInformationScreen from '../screens/EkycInformationScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<RootStackParamList>();
@@ -98,7 +102,15 @@ const MainNavigator = () => {
       }}>
       {/* Initial Loading Screen */}
       <Stack.Screen name="Loading" component={LoadingScreen} />
-
+      {/* eKYC Stack */}
+      <Stack.Group>
+        <Stack.Screen name="EkycIntro" component={EkycIntroScreen} />
+        <Stack.Screen name="EkycIDCard" component={EkycIDCardScreen} />
+        <Stack.Screen name="EkycSelfie" component={EkycSelfieScreen} />
+        <Stack.Screen name="EkycInformation" component={EkycInformationScreen} />
+        {/* <Stack.Screen name="EkycReview" component={EkycReviewScreen} />    */}
+        {/* <Stack.Screen name="EkycSuccess" component={EkycSuccessScreen} /> */}
+      </Stack.Group>
       {/* Auth Stack */}
       <Stack.Group>
         <Stack.Screen name="Login" component={LoginScreen} />

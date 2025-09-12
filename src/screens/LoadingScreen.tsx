@@ -19,21 +19,17 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ navigation }) => {
   useEffect(() => {
     const checkFirstLaunch = async () => {
       try {
+        // Đợi loading animation 1.5s
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
         const isFirstLaunch = await AsyncStorage.getItem('isFirstLaunch');
-        
-        setTimeout(async () => {
-          if (!loading) {
-            if (isAuthenticated) {
-              navigation.replace('MainTabs');
-            } else {
-              if (isFirstLaunch === null) {
-                navigation.replace('Onboarding');
-              } else {
-                navigation.replace('Login');
-              }
-            }
-          }
-        }, 1500);
+        if (isFirstLaunch === null) {
+          // Lần đầu mở app -> Onboarding
+          navigation.replace('Onboarding');
+        } else {
+          // Không phải lần đầu -> Login
+          navigation.replace('Login');
+        }
       } catch (error) {
         console.error('Error checking first launch:', error);
         navigation.replace('Login');

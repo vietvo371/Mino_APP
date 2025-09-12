@@ -22,6 +22,10 @@ interface InputCustomProps extends TextInputProps {
   leftIcon?: string;
   rightIcon?: string;
   onRightIconPress?: () => void;
+  variant?: 'default' | 'filled';
+  darkMode?: boolean;
+  helper?: string;
+  success?: boolean;
 }
 
 const InputCustom: React.FC<InputCustomProps> = ({
@@ -34,33 +38,47 @@ const InputCustom: React.FC<InputCustomProps> = ({
   leftIcon,
   rightIcon,
   onRightIconPress,
+  variant = 'default',
+  darkMode = false,
+  helper,
+  success = false,
   ...props
 }) => {
   return (
     <View style={[styles.container, containerStyle]}>
       {label && (
-        <Text style={[styles.label, labelStyle]}>
+        <Text style={[
+          styles.label,
+          darkMode && styles.labelDark,
+          labelStyle
+        ]}>
           {label}
           {required && <Text style={styles.required}> *</Text>}
         </Text>
       )}
-      <View style={[styles.inputContainer, error ? styles.inputError : {}]}>
+      <View style={[
+        styles.inputContainer,
+        darkMode && styles.inputContainerDark,
+        variant === 'filled' && (darkMode ? styles.inputContainerFilledDark : styles.inputContainerFilled),
+        error ? styles.inputError : success && styles.inputContainerSuccess,
+      ]}>
         {leftIcon && (
           <Icon
             name={leftIcon}
             size={20}
-            color={theme.colors.textLight}
+            color={darkMode ? theme.colors.textDarkLight : theme.colors.textLight}
             style={styles.leftIcon}
           />
         )}
         <TextInput
           style={[
             styles.input,
+            darkMode && styles.inputDark,
             leftIcon && styles.inputWithLeftIcon,
             rightIcon && styles.inputWithRightIcon,
             inputStyle,
           ]}
-          placeholderTextColor={theme.colors.textLight}
+          placeholderTextColor={darkMode ? theme.colors.textDarkLight : theme.colors.textLight}
           {...props}
         />
         {rightIcon && (
@@ -70,12 +88,21 @@ const InputCustom: React.FC<InputCustomProps> = ({
             <Icon
               name={rightIcon}
               size={20}
-              color={theme.colors.textLight}
+              color={darkMode ? theme.colors.textDarkLight : theme.colors.textLight}
             />
           </TouchableOpacity>
         )}
       </View>
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      {error ? (
+        <Text style={styles.errorText}>{error}</Text>
+      ) : helper && (
+        <Text style={[
+          styles.helperText,
+          darkMode && styles.helperTextDark
+        ]}>
+          {helper}
+        </Text>
+      )}
     </View>
   );
 };
@@ -90,6 +117,9 @@ const styles = StyleSheet.create({
     color: theme.colors.text,
     marginBottom: theme.spacing.xs,
   },
+  labelDark: {
+    color: theme.colors.textDark,
+  },
   required: {
     color: theme.colors.error,
   },
@@ -100,6 +130,22 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.border,
     borderRadius: theme.borderRadius.md,
     backgroundColor: theme.colors.white,
+    ...theme.shadows.sm,
+  },
+  inputContainerDark: {
+    borderColor: theme.colors.borderDark,
+    backgroundColor: theme.colors.secondary,
+  },
+  inputContainerFilled: {
+    backgroundColor: theme.colors.backgroundDark,
+    borderWidth: 0,
+  },
+  inputContainerFilledDark: {
+    backgroundColor: theme.colors.secondary,
+    borderWidth: 0,
+  },
+  inputContainerSuccess: {
+    borderColor: theme.colors.success,
   },
   input: {
     flex: 1,
@@ -108,6 +154,9 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSize.md,
     fontFamily: theme.typography.fontFamily.regular,
     color: theme.colors.text,
+  },
+  inputDark: {
+    color: theme.colors.textDark,
   },
   inputWithLeftIcon: {
     paddingLeft: theme.spacing.xs,
@@ -129,6 +178,15 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSize.sm,
     color: theme.colors.error,
     marginTop: theme.spacing.xs,
+  },
+  helperText: {
+    fontFamily: theme.typography.fontFamily.regular,
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.textLight,
+    marginTop: theme.spacing.xs,
+  },
+  helperTextDark: {
+    color: theme.colors.textDarkLight,
   },
 });
 

@@ -29,19 +29,19 @@ const App = () => {
     },
     fonts: {
       regular: {
-        fontFamily: theme.typography.fontFamily.regular,
+        fontFamily : theme.typography.fontFamily.regular ?? 'SF Pro Display',
         fontWeight: '400',
       },
       medium: {
-        fontFamily: theme.typography.fontFamily.medium,
+        fontFamily: theme.typography.fontFamily.medium ?? 'SF Pro Display Medium',
         fontWeight: '500',
       },
       bold: {
-        fontFamily: theme.typography.fontFamily.bold,
+        fontFamily: theme.typography.fontFamily.bold ?? 'SF Pro Display Bold',
         fontWeight: '700',
       },
       heavy: {
-        fontFamily: theme.typography.fontFamily.bold,
+        fontFamily: theme.typography.fontFamily.bold ?? 'SF Pro Display Bold',
         fontWeight: '900',
       },
     },
