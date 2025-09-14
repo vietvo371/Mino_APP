@@ -1,213 +1,264 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
-  Image,
-  RefreshControl,
   Platform,
+  Alert,
+  ScrollView,
+  Dimensions,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
-import { theme } from '../theme/colors';
-import { componentStyles } from '../theme/components';
 import { StackScreen } from '../navigation/types';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from 'react-native-responsive-screen';
+
+const { width } = Dimensions.get('window');
+
+// Giả lập giá Binance
+const MOCK_BINANCE_RATE = 24500;
+
+const MAX_VND_AMOUNT = 999999999999; // 1 tỷ VND
+const MAX_USDT_AMOUNT = 999999.99; // 1 triệu USDT
+
+const formatMoney = (amount: string | number) => {
+  const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+  if (isNaN(num)) return '0';
+
+  // Giới hạn số chữ số thập phân
+  const formatted = num.toLocaleString('vi-VN', {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 0
+  });
+
+  // Nếu số quá dài, hiển thị dạng rút gọn
+  if (num >= 1000000000) {
+    return (num / 1000000000).toFixed(2) + ' B';
+  } else if (num >= 1000000) {
+    return (num / 1000000).toFixed(2) + ' M';
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(2) + ' K';
+  }
+
+  return formatted;
+};
+
+const formatNumber = (num: string | number) => {
+  const value = typeof num === 'string' ? parseFloat(num) : num;
+  if (isNaN(value)) return '0.00';
+  return value.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
 
 const HomeScreen: StackScreen<'Home'> = () => {
   const navigation = useNavigation();
-  const [refreshing, setRefreshing] = React.useState(false);
+  const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy');
+  const [amount, setAmount] = useState('');
+  const [binanceRate] = useState(26389);
 
-  const onRefresh = React.useCallback(() => {
-    setRefreshing(true);
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 2000);
-  }, []);
+  const handleNumberPress = (num: string) => {
+    if (num === '.' && amount.includes('.')) return;
+
+    const newAmount = amount + num;
+    // Kiểm tra định dạng số và giới hạn
+    if (/^\d*\.?\d{0,2}$/.test(newAmount)) {
+      const numValue = parseFloat(newAmount);
+      if (!isNaN(numValue)) {
+        // Kiểm tra giới hạn theo loại giao dịch
+        const maxAmount = activeTab === 'buy' ? MAX_VND_AMOUNT : MAX_USDT_AMOUNT;
+        if (numValue > maxAmount) {
+          Alert.alert(
+            'Thông báo',
+            activeTab === 'buy'
+              ? 'Số tiền VND tối đa là 999,999,999,999'
+              : 'Số USDT tối đa là 999,999.99'
+          );
+          return;
+        }
+
+        // Giới hạn số chữ số thập phân
+        if (activeTab === 'buy') {
+          // VND không có số thập phân
+          if (!newAmount.includes('.')) {
+            setAmount(newAmount);
+          }
+        } else {
+          // USDT tối đa 2 số thập phân
+          setAmount(newAmount);
+        }
+      }
+    }
+  };
+
+  const handleDelete = () => {
+    setAmount(amount.slice(0, -1));
+  };
+
+  const handleShortcutPress = (shortcut: string) => {
+    let value = shortcut;
+    // Chỉ xử lý K, M cho VND
+    if (activeTab === 'buy') {
+      if (shortcut.endsWith('K')) {
+        value = (parseFloat(shortcut.replace('K', '')) * 1000).toString();
+      } else if (shortcut.endsWith('M')) {
+        value = (parseFloat(shortcut.replace('M', '')) * 1000000).toString();
+      }
+    }
+
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+      // Kiểm tra giới hạn theo loại giao dịch
+      const maxAmount = activeTab === 'buy' ? MAX_VND_AMOUNT : MAX_USDT_AMOUNT;
+      if (numValue > maxAmount) {
+        Alert.alert(
+          'Thông báo',
+          activeTab === 'buy'
+            ? 'Số tiền VND tối đa là 999,999,999,999'
+            : 'Số USDT tối đa là 999,999.99'
+        );
+        return;
+      }
+
+      // Format số theo loại tiền
+      if (activeTab === 'buy') {
+        // VND làm tròn số nguyên
+        setAmount(Math.round(numValue).toString());
+      } else {
+        // USDT giữ nguyên số để có thể tiếp tục nhập
+        setAmount(value);
+      }
+    }
+  };
+
+  const handleAction = () => {
+    if (!amount || parseFloat(amount) === 0) return;
+
+    // Navigate to payment screen with transaction info
+    navigation.navigate('Payment', {
+      paymentInfo: {
+        type: activeTab,
+        amount: amount,
+        rate: binanceRate,
+      }
+    });
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.backgroundContainer}>
-        <LinearGradient
-          colors={[theme.colors.backgroundDark, theme.colors.secondary]}
-          style={StyleSheet.absoluteFill}
-        />
+      {/* Buy/Sell Tabs */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'buy' && styles.activeTab]}
+          onPress={() => {
+            setActiveTab('buy');
+            setAmount('');
+          }}
+        >
+          <Text style={[styles.tabText, activeTab === 'buy' && styles.activeTabText]}>
+            VND → USDT
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'sell' && styles.activeTab]}
+          onPress={() => {
+            setActiveTab('sell');
+            setAmount('');
+          }}
+        >
+          <Text style={[styles.tabText, activeTab === 'sell' && styles.activeTabText]}>
+            USDT → VND
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.filterButton}>
+          <Icon name="filter-variant" size={20} color="#666" />
+        </TouchableOpacity>
       </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Welcome back</Text>
-            <Text style={styles.username}>John Doe</Text>
-          </View>
-          <TouchableOpacity
-            onPress={() => navigation.navigate('Profile')}
-            style={styles.avatarContainer}
-          >
-            <Image
-              source={require('../assets/images/avatar.jpeg')}
-              style={styles.avatar}
-            />
-            <View style={styles.avatarBadge} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Balance Card */}
-        <View style={styles.balanceCard}>
-          <LinearGradient
-            colors={theme.colors.gradientYellow}
-            style={styles.balanceGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-          >
-            <View style={styles.balanceHeader}>
-              <Text style={styles.balanceLabel}>Total Balance</Text>
-              <Icon name="eye-outline" size={24} color={theme.colors.secondary} />
+      <View style={styles.mainContent}>
+        <ScrollView 
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
+          {/* Amount Display */}
+          <View style={styles.topSection}>
+            <View style={styles.amountContainer}>
+              <Text style={styles.amountZero}>{amount || '0'}</Text>
+              <Text style={styles.amountLabel}>{activeTab === 'buy' ? 'VND' : 'USDT'}</Text>
             </View>
-            <Text style={styles.balanceAmount}>$12,345.67</Text>
-            <View style={styles.balanceFooter}>
-              <View style={styles.balanceItem}>
-                <Text style={styles.balanceItemLabel}>USDT</Text>
-                <Text style={styles.balanceItemValue}>10,000.00</Text>
-              </View>
-              <View style={styles.balanceDivider} />
-              <View style={styles.balanceItem}>
-                <Text style={styles.balanceItemLabel}>VND</Text>
-                <Text style={styles.balanceItemValue}>56,789,000</Text>
-              </View>
-            </View>
-          </LinearGradient>
-        </View>
 
-        {/* Quick Actions */}
-        <View style={styles.quickActions}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => navigation.navigate('Deposit')}
-          >
-            <View style={[styles.actionIcon, { backgroundColor: theme.colors.success + '15' }]}>
-              <Icon name="arrow-down" size={24} color={theme.colors.success} />
+            {/* Exchange Rate */}
+            <View style={styles.exchangeContainer}>
+              <Text style={styles.exchangeAmount}>
+                ≈ {amount ? (
+                  activeTab === 'buy' 
+                    ? `${(parseFloat(amount) / binanceRate).toFixed(2)} USDT`
+                    : `${(parseFloat(amount) * binanceRate).toLocaleString('vi-VN')} VND`
+                ) : (
+                  activeTab === 'buy' ? '0 USDT' : '0 VND'
+                )}
+              </Text>
+              <Text style={styles.exchangeRate}>1 USDT = {binanceRate.toLocaleString('vi-VN')} VND</Text>
             </View>
-            <Text style={styles.actionText}>Deposit</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => navigation.navigate('Withdraw')}
-          >
-            <View style={[styles.actionIcon, { backgroundColor: theme.colors.error + '15' }]}>
-              <Icon name="arrow-up" size={24} color={theme.colors.error} />
-            </View>
-            <Text style={styles.actionText}>Withdraw</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => navigation.navigate('Transaction')}
-          >
-            <View style={[styles.actionIcon, { backgroundColor: theme.colors.info + '15' }]}>
-              <Icon name="swap-horizontal" size={24} color={theme.colors.info} />
-            </View>
-            <Text style={styles.actionText}>Transfer</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.actionButton}
-            onPress={() => navigation.navigate('History')}
-          >
-            <View style={[styles.actionIcon, { backgroundColor: theme.colors.warning + '15' }]}>
-              <Icon name="history" size={24} color={theme.colors.warning} />
-            </View>
-            <Text style={styles.actionText}>History</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Recent Transactions */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recent Transactions</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('History')}>
-              <Text style={styles.sectionAction}>View All</Text>
-            </TouchableOpacity>
           </View>
 
-          <View style={styles.transactionList}>
-            {[1, 2, 3].map((_, index) => (
-              <View key={index} style={styles.transactionItem}>
-                <View style={styles.transactionIcon}>
-                  <Icon
-                    name={index % 2 === 0 ? 'arrow-down' : 'arrow-up'}
-                    size={24}
-                    color={index % 2 === 0 ? theme.colors.success : theme.colors.error}
-                  />
-                </View>
-                <View style={styles.transactionInfo}>
-                  <Text style={styles.transactionTitle}>
-                    {index % 2 === 0 ? 'Received USDT' : 'Sent USDT'}
-                  </Text>
-                  <Text style={styles.transactionDate}>Today, 14:30</Text>
-                </View>
-                <View style={styles.transactionAmount}>
-                  <Text
-                    style={[
-                      styles.transactionValue,
-                      { color: index % 2 === 0 ? theme.colors.success : theme.colors.error }
-                    ]}
-                  >
-                    {index % 2 === 0 ? '+' : '-'}1,234.56 USDT
-                  </Text>
-                  <Text style={styles.transactionFiat}>≈ $1,234.56</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-        </View>
+          <View style={styles.bottomSection}>
+            {/* Quick Amount Buttons */}
+            <View style={styles.quickAmountContainer}>
+              {['300K', '2M', '8M', '20M'].map((amount, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.quickAmountButton}
+                  onPress={() => handleShortcutPress(amount)}
+                >
+                  <Text style={styles.quickAmountText}>đ{amount}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
 
-        {/* Market Trends */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Market Trends</Text>
-            <TouchableOpacity>
-              <Text style={styles.sectionAction}>See More</Text>
-            </TouchableOpacity>
+            {/* Number Pad */}
+            <View style={styles.numberPad}>
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9, ',', 0].map((num, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.numberButton}
+                  onPress={() => handleNumberPress(num.toString())}
+                >
+                  <Text style={styles.numberText}>{num}</Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity
+                style={[styles.numberButton, styles.deleteButton]}
+                onPress={handleDelete}
+              >
+                <Icon name="backspace-outline" size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
           </View>
+        </ScrollView>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.marketList}
-          >
-            {[1, 2, 3, 4].map((_, index) => (
-              <View key={index} style={styles.marketItem}>
-                <View style={styles.marketHeader}>
-                  <View style={styles.marketSymbol}>
-                    <Image
-                      source={require('../assets/images/logo.png')}
-                      style={styles.marketIcon}
-                    />
-                    <Text style={styles.marketName}>USDT/VND</Text>
-                  </View>
-                  <View style={[styles.marketBadge, { backgroundColor: theme.colors.success + '15' }]}>
-                    <Text style={[styles.marketChange, { color: theme.colors.success }]}>+2.5%</Text>
-                  </View>
-                </View>
-                <Text style={styles.marketPrice}>24,150</Text>
-                <Text style={styles.marketPriceUSD}>≈ $1.00</Text>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-      </ScrollView>
+        {/* Confirm Button - Outside ScrollView to stay fixed at bottom */}
+        <TouchableOpacity 
+          style={[
+            styles.confirmButton,
+            (!amount || parseFloat(amount) === 0) && styles.confirmButtonDisabled
+          ]}
+          onPress={handleAction}
+          disabled={!amount || parseFloat(amount) === 0}
+        >
+          <Text style={styles.confirmButtonText}>
+            {activeTab === 'buy' ? 'Mua USDT' : 'Bán USDT'}
+          </Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };
@@ -215,259 +266,145 @@ const HomeScreen: StackScreen<'Home'> = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.backgroundDark,
+    backgroundColor: '#FFFFFF',
   },
-  backgroundContainer: {
-    ...StyleSheet.absoluteFillObject,
+  tabContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F2F2F7',
+    margin: 16,
+    borderRadius: 24,
+    padding: 4,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderRadius: 20,
+  },
+  activeTab: {
+    backgroundColor: '#000000',
+  },
+  tabText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  activeTabText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  filterButton: {
+    padding: 8,
+    marginLeft: 8,
+  },
+  mainContent: {
+    flex: 1,
+    paddingHorizontal: 16,
   },
   scrollView: {
     flex: 1,
   },
-  scrollContent: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingBottom: theme.spacing.xxl,
+  topSection: {
+    minHeight: hp("30%"),
+    marginBottom: hp("3%"),
   },
-
-  // Header Styles
-  header: {
+  bottomSection: {
+    paddingBottom: hp("2%"),
+  },
+  amountContainer: {
+    alignItems: 'flex-start',
+    marginTop: hp("4%"),
+    marginBottom: hp("2%"),
+    paddingLeft: 20,
+  },
+  amountZero: {
+    fontSize: wp("20%"),
+    fontWeight: '300',
+    color: '#000000',
+  },
+  amountLabel: {
+    fontSize: wp("8%"),
+    color: '#666',
+    marginTop: -8,
+  },
+  exchangeContainer: {
+    alignItems: 'flex-start',
+    marginTop: hp("2%"),
+    paddingLeft: 20,
+  },
+  exchangeAmount: {
+    fontSize: wp("5%"),
+    color: '#666',
+    marginBottom: 4,
+  },
+  exchangeRate: {
+    fontSize: wp("4%"),
+    color: '#666',
+  },
+  quickAmountContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: theme.spacing.lg,
+    marginBottom: hp("2%"),
   },
-  greeting: {
-    fontSize: theme.typography.fontSize.md,
-    color: theme.colors.textDarkLight,
-    fontFamily: theme.typography.fontFamily.regular,
-  },
-  username: {
-    fontSize: theme.typography.fontSize.xl,
-    color: theme.colors.textDark,
-    fontFamily: theme.typography.fontFamily.bold,
-  },
-  avatarContainer: {
-    position: 'relative',
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: theme.colors.primary,
-  },
-  avatarBadge: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: theme.colors.success,
-    borderWidth: 2,
-    borderColor: theme.colors.secondary,
-  },
-
-  // Balance Card Styles
-  balanceCard: {
-    marginBottom: theme.spacing.xl,
-    borderRadius: theme.borderRadius.xl,
-    overflow: 'hidden',
-    ...theme.shadows.yellow,
-  },
-  balanceGradient: {
-    padding: theme.spacing.xl,
-  },
-  balanceHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  balanceLabel: {
-    fontSize: theme.typography.fontSize.md,
-    color: theme.colors.secondary,
-    fontFamily: theme.typography.fontFamily.medium,
-  },
-  balanceAmount: {
-    fontSize: theme.typography.fontSize['4xl'],
-    color: theme.colors.secondary,
-    fontFamily: theme.typography.fontFamily.bold,
-    marginBottom: theme.spacing.lg,
-  },
-  balanceFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  balanceItem: {
+  quickAmountButton: {
     flex: 1,
-  },
-  balanceItemLabel: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.secondary + '80',
-    fontFamily: theme.typography.fontFamily.medium,
-    marginBottom: theme.spacing.xs,
-  },
-  balanceItemValue: {
-    fontSize: theme.typography.fontSize.lg,
-    color: theme.colors.secondary,
-    fontFamily: theme.typography.fontFamily.bold,
-  },
-  balanceDivider: {
-    width: 1,
-    height: '100%',
-    backgroundColor: theme.colors.secondary + '20',
-    marginHorizontal: theme.spacing.lg,
-  },
-
-  // Quick Actions Styles
-  quickActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: theme.spacing.xl,
-  },
-  actionButton: {
-    alignItems: 'center',
-  },
-  actionIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-  actionText: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.textDark,
-    fontFamily: theme.typography.fontFamily.medium,
-  },
-
-  // Section Styles
-  section: {
-    marginBottom: theme.spacing.xl,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: theme.spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: theme.typography.fontSize.lg,
-    color: theme.colors.textDark,
-    fontFamily: theme.typography.fontFamily.bold,
-  },
-  sectionAction: {
-    fontSize: theme.typography.fontSize.md,
-    color: theme.colors.primary,
-    fontFamily: theme.typography.fontFamily.medium,
-  },
-
-  // Transaction List Styles
-  transactionList: {
-    backgroundColor: theme.colors.secondary,
-    borderRadius: theme.borderRadius.xl,
-    padding: theme.spacing.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.borderDark,
-  },
-  transactionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: theme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.borderDark,
-  },
-  transactionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: theme.colors.backgroundDark,
-    marginRight: theme.spacing.lg,
-  },
-  transactionInfo: {
-    flex: 1,
-  },
-  transactionTitle: {
-    fontSize: theme.typography.fontSize.md,
-    color: theme.colors.textDark,
-    fontFamily: theme.typography.fontFamily.medium,
-    marginBottom: theme.spacing.xs,
-  },
-  transactionDate: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.textDarkLight,
-    fontFamily: theme.typography.fontFamily.regular,
-  },
-  transactionAmount: {
-    alignItems: 'flex-end',
-  },
-  transactionValue: {
-    fontSize: theme.typography.fontSize.md,
-    fontFamily: theme.typography.fontFamily.bold,
-    marginBottom: theme.spacing.xs,
-  },
-  transactionFiat: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.textDarkLight,
-    fontFamily: theme.typography.fontFamily.regular,
-  },
-
-  // Market Trends Styles
-  marketList: {
-    paddingRight: theme.spacing.lg,
-  },
-  marketItem: {
-    backgroundColor: theme.colors.secondary,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.lg,
-    marginRight: theme.spacing.md,
-    borderWidth: 1,
-    borderColor: theme.colors.borderDark,
-    width: 180,
-  },
-  marketHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  marketSymbol: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  marketIcon: {
-    width: 24,
-    height: 24,
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    marginHorizontal: 4,
     borderRadius: 12,
-    marginRight: theme.spacing.sm,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
   },
-  marketName: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.textDark,
-    fontFamily: theme.typography.fontFamily.medium,
+  quickAmountText: {
+    fontSize: wp("3.5%"),
+    color: '#000',
   },
-  marketBadge: {
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.xs,
-    borderRadius: theme.borderRadius.sm,
+  numberPad: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: hp("2%"),
+    paddingHorizontal: 20,
   },
-  marketChange: {
-    fontSize: theme.typography.fontSize.xs,
-    fontFamily: theme.typography.fontFamily.medium,
+  numberButton: {
+    width: '30%',
+    aspectRatio: 1.5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
   },
-  marketPrice: {
-    fontSize: theme.typography.fontSize.lg,
-    color: theme.colors.textDark,
-    fontFamily: theme.typography.fontFamily.bold,
-    marginBottom: theme.spacing.xs,
+  numberText: {
+    fontSize: wp("6%"),
+    color: '#000',
   },
-  marketPriceUSD: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.textDarkLight,
-    fontFamily: theme.typography.fontFamily.regular,
+  deleteButton: {
+    backgroundColor: '#F2F2F7',
+    borderWidth: 0,
+  },
+  confirmButton: {
+    backgroundColor: '#000000',
+    paddingVertical: 10,
+    borderRadius: 12,
+    marginHorizontal: 20,
+    position: 'absolute',
+    bottom: -15,
+    left: 0,
+    right: 0,
+  },
+  confirmButtonDisabled: {
+    backgroundColor: '#CCCCCC',
+  },
+  confirmButtonText: {
+    color: '#FFFFFF',
+    fontSize: wp("4%"),
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
 

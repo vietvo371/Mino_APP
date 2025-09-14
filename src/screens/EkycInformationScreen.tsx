@@ -67,7 +67,7 @@ const EkycInformationScreen: StackScreen<'EkycInformation'> = ({ navigation }) =
     try {
       // TODO: Implement API call to submit personal information
       // await api.ekyc.verifyInformation(formData);
-      
+
       // Navigate to review screen
       navigation.navigate('EkycReview');
     } catch (error) {
@@ -135,17 +135,10 @@ const EkycInformationScreen: StackScreen<'EkycInformation'> = ({ navigation }) =
             onChangeText={(value) => setFormData({ ...formData, idNumber: value })}
             error={errors.idNumber}
             leftIcon="card-account-details"
-            keyboardType="number-pad"
+            keyboardType="numeric"
             required
           />
 
-          <DatePicker
-            label="Date of Birth"
-            value={formData.dateOfBirth}
-            onChange={(value) => setFormData({ ...formData, dateOfBirth: value })}
-            error={errors.dateOfBirth}
-            required
-          />
 
           <InputCustom
             label="Address"
@@ -154,7 +147,6 @@ const EkycInformationScreen: StackScreen<'EkycInformation'> = ({ navigation }) =
             onChangeText={(value) => setFormData({ ...formData, address: value })}
             error={errors.address}
             leftIcon="map-marker"
-            multiline
             required
           />
 
@@ -165,6 +157,14 @@ const EkycInformationScreen: StackScreen<'EkycInformation'> = ({ navigation }) =
             onChangeText={(value) => setFormData({ ...formData, nationality: value })}
             error={errors.nationality}
             leftIcon="flag"
+            required
+          />
+
+          <DatePicker
+            label="Date of Birth"
+            value={new Date(formData.dateOfBirth)}
+            onChange={(value) => setFormData({ ...formData, dateOfBirth: value.toISOString() })}
+            error={errors.dateOfBirth}
             required
           />
         </Animated.View>
@@ -186,7 +186,6 @@ const EkycInformationScreen: StackScreen<'EkycInformation'> = ({ navigation }) =
           onPress={handleSubmit}
           style={styles.continueButton}
           icon="arrow-right"
-          gradient
         />
       </ScrollView>
 
@@ -267,8 +266,8 @@ const styles = StyleSheet.create({
     fontFamily: theme.typography.fontFamily.regular,
   },
   formContainer: {
-    marginTop: theme.spacing.xl,
-    gap: theme.spacing.lg,
+    marginTop: theme.spacing.md,
+    gap: theme.spacing.md,
   },
   noteContainer: {
     flexDirection: 'row',

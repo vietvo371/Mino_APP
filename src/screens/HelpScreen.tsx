@@ -1,251 +1,160 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Linking,
   Platform,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { theme } from '../theme/colors';
-import { componentStyles } from '../theme/components';
-import { StackScreen } from '../navigation/types';
-import ButtonCustom from '../component/ButtonCustom';
 
-const FAQData = [
+const FAQ_ITEMS = [
   {
-    question: 'How do I deposit USDT?',
-    answer: 'To deposit USDT, go to Wallet > Deposit > USDT. You can either scan the QR code or copy the wallet address to receive USDT.',
+    id: '1',
+    category: 'Tài khoản',
+    questions: [
+      {
+        id: '1-1',
+        question: 'Làm thế nào để xác thực tài khoản?',
+        answer: 'Để xác thực tài khoản, bạn cần cung cấp CCCD/CMND và chụp ảnh selfie.',
+      },
+      {
+        id: '1-2',
+        question: 'Quên mật khẩu phải làm sao?',
+        answer: 'Bạn có thể sử dụng chức năng Quên mật khẩu và làm theo hướng dẫn.',
+      },
+    ],
   },
   {
-    question: 'How do I withdraw VND to my bank account?',
-    answer: 'To withdraw VND, go to Wallet > Withdraw > VND. Select your verified bank account, enter the amount, and confirm the withdrawal.',
-  },
-  {
-    question: 'How do I verify my account?',
-    answer: 'To verify your account, go to Profile > Security > KYC Verification. Follow the steps to upload your ID documents and complete facial verification.',
-  },
-  {
-    question: 'What are the transaction fees?',
-    answer: 'Transaction fees vary by type: USDT transfers: network fee, VND deposits: free, VND withdrawals: 0.1%. Check our fee schedule for details.',
-  },
-  {
-    question: 'How long do withdrawals take?',
-    answer: 'USDT withdrawals: 10-30 minutes depending on network congestion. VND withdrawals to local banks: instant to 24 hours.',
+    id: '2',
+    category: 'Giao dịch',
+    questions: [
+      {
+        id: '2-1',
+        question: 'Phí giao dịch là bao nhiêu?',
+        answer: 'Phí giao dịch được tính dựa trên loại giao dịch và số lượng.',
+      },
+      {
+        id: '2-2',
+        question: 'Thời gian xử lý giao dịch?',
+        answer: 'Thời gian xử lý thông thường từ 5-10 phút tùy loại giao dịch.',
+      },
+    ],
   },
 ];
 
-const HelpScreen: StackScreen<'Help'> = () => {
-  const navigation = useNavigation();
-  const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+const CONTACT_METHODS = [
+  {
+    id: 'email',
+    title: 'Email',
+    description: 'support@mino.com',
+    icon: 'email',
+  },
+  {
+    id: 'phone',
+    title: 'Hotline',
+    description: '1900 xxxx',
+    icon: 'phone',
+  },
+  {
+    id: 'chat',
+    title: 'Chat trực tuyến',
+    description: 'Hỗ trợ 24/7',
+    icon: 'message-text',
+  },
+];
 
-  const handleContactSupport = () => {
-    Alert.alert(
-      'Contact Support',
-      'Choose how you would like to contact us',
-      [
-        {
-          text: 'Live Chat',
-          onPress: () => {
-            // Implement live chat
-            Alert.alert('Opening live chat...');
-          },
-        },
-        {
-          text: 'Email',
-          onPress: () => {
-            Linking.openURL('mailto:support@mino.com');
-          },
-        },
-        {
-          text: 'Call',
-          onPress: () => {
-            Linking.openURL('tel:+1234567890');
-          },
-        },
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-      ]
-    );
-  };
+const HelpScreen = () => {
+  const navigation = useNavigation();
+  const [expandedCategory, setExpandedCategory] = React.useState<string | null>(null);
+  const [expandedQuestion, setExpandedQuestion] = React.useState<string | null>(null);
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.backgroundContainer}>
-        <LinearGradient
-          colors={[theme.colors.backgroundDark, theme.colors.secondary]}
-          style={StyleSheet.absoluteFill}
-        />
-      </View>
-
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
-          <Icon name="arrow-left" size={24} color={theme.colors.textDark} />
+          <Icon name="arrow-left" size={24} color="#1C1C1E" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Help & Support</Text>
-        <View style={{ width: 40 }} />
+        <Text style={styles.headerTitle}>Trợ giúp</Text>
+        <View style={styles.headerRight} />
       </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Quick Actions */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.quickActions}>
+      <ScrollView style={styles.content}>
+        {/* Search Bar */}
+        <TouchableOpacity style={styles.searchBar}>
+          <Icon name="magnify" size={20} color="#8E8E93" />
+          <Text style={styles.searchPlaceholder}>Tìm kiếm câu hỏi...</Text>
+        </TouchableOpacity>
+
+        {/* FAQ Sections */}
+        {FAQ_ITEMS.map(category => (
+          <View key={category.id} style={styles.section}>
             <TouchableOpacity
-              style={styles.quickActionButton}
-              onPress={handleContactSupport}
+              style={styles.categoryHeader}
+              onPress={() => setExpandedCategory(
+                expandedCategory === category.id ? null : category.id
+              )}
             >
-              <View style={styles.quickActionIcon}>
-                <Icon name="headset" size={24} color={theme.colors.primary} />
-              </View>
-              <Text style={styles.quickActionText}>Contact Support</Text>
+              <Text style={styles.categoryTitle}>{category.category}</Text>
+              <Icon
+                name={expandedCategory === category.id ? 'chevron-up' : 'chevron-down'}
+                size={24}
+                color="#8E8E93"
+              />
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.quickActionButton}
-              onPress={() => navigation.navigate('UserGuide')}
-            >
-              <View style={styles.quickActionIcon}>
-                <Icon name="book-open-variant" size={24} color={theme.colors.primary} />
+            {expandedCategory === category.id && (
+              <View style={styles.questionList}>
+                {category.questions.map(item => (
+                  <View key={item.id}>
+                    <TouchableOpacity
+                      style={styles.questionItem}
+                      onPress={() => setExpandedQuestion(
+                        expandedQuestion === item.id ? null : item.id
+                      )}
+                    >
+                      <Text style={styles.questionText}>{item.question}</Text>
+                      <Icon
+                        name={expandedQuestion === item.id ? 'minus' : 'plus'}
+                        size={20}
+                        color="#8E8E93"
+                      />
+                    </TouchableOpacity>
+                    {expandedQuestion === item.id && (
+                      <View style={styles.answerContainer}>
+                        <Text style={styles.answerText}>{item.answer}</Text>
+                      </View>
+                    )}
+                  </View>
+                ))}
               </View>
-              <Text style={styles.quickActionText}>User Guide</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.quickActionButton}
-              onPress={() => navigation.navigate('About')}
-            >
-              <View style={styles.quickActionIcon}>
-                <Icon name="information" size={24} color={theme.colors.primary} />
-              </View>
-              <Text style={styles.quickActionText}>About MINO</Text>
-            </TouchableOpacity>
+            )}
           </View>
-        </View>
+        ))}
 
-        {/* FAQ Section */}
+        {/* Contact Methods */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Frequently Asked Questions</Text>
-          <View style={styles.faqList}>
-            {FAQData.map((faq, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[
-                  styles.faqItem,
-                  index === expandedIndex && styles.faqItemExpanded,
-                ]}
-                onPress={() => setExpandedIndex(index === expandedIndex ? null : index)}
-              >
-                <View style={styles.faqHeader}>
-                  <Text style={styles.faqQuestion}>{faq.question}</Text>
-                  <Icon
-                    name={index === expandedIndex ? 'chevron-up' : 'chevron-down'}
-                    size={24}
-                    color={theme.colors.textDarkLight}
-                  />
+          <Text style={styles.sectionTitle}>Liên hệ hỗ trợ</Text>
+          <View style={styles.contactList}>
+            {CONTACT_METHODS.map(method => (
+              <TouchableOpacity key={method.id} style={styles.contactItem}>
+                <View style={[styles.contactIcon, { backgroundColor: '#4A90E215' }]}>
+                  <Icon name={method.icon} size={24} color="#4A90E2" />
                 </View>
-                {index === expandedIndex && (
-                  <Text style={styles.faqAnswer}>{faq.answer}</Text>
-                )}
+                <View style={styles.contactInfo}>
+                  <Text style={styles.contactTitle}>{method.title}</Text>
+                  <Text style={styles.contactDescription}>{method.description}</Text>
+                </View>
+                <Icon name="chevron-right" size={24} color="#8E8E93" />
               </TouchableOpacity>
             ))}
-          </View>
-        </View>
-
-        {/* Support Options */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Support Options</Text>
-          <View style={styles.menuList}>
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => Linking.openURL('mailto:support@mino.com')}
-            >
-              <View style={styles.menuIcon}>
-                <Icon name="email" size={24} color={theme.colors.textDark} />
-              </View>
-              <View style={styles.menuInfo}>
-                <Text style={styles.menuTitle}>Email Support</Text>
-                <Text style={styles.menuDescription}>support@mino.com</Text>
-              </View>
-              <Icon name="chevron-right" size={24} color={theme.colors.textDarkLight} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => Linking.openURL('tel:+1234567890')}
-            >
-              <View style={styles.menuIcon}>
-                <Icon name="phone" size={24} color={theme.colors.textDark} />
-              </View>
-              <View style={styles.menuInfo}>
-                <Text style={styles.menuTitle}>Phone Support</Text>
-                <Text style={styles.menuDescription}>+1 234 567 890</Text>
-              </View>
-              <Icon name="chevron-right" size={24} color={theme.colors.textDarkLight} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => navigation.navigate('Feedback')}
-            >
-              <View style={styles.menuIcon}>
-                <Icon name="message-text" size={24} color={theme.colors.textDark} />
-              </View>
-              <View style={styles.menuInfo}>
-                <Text style={styles.menuTitle}>Send Feedback</Text>
-                <Text style={styles.menuDescription}>Help us improve MINO</Text>
-              </View>
-              <Icon name="chevron-right" size={24} color={theme.colors.textDarkLight} />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Legal Links */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Legal</Text>
-          <View style={styles.menuList}>
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => navigation.navigate('Terms')}
-            >
-              <View style={styles.menuIcon}>
-                <Icon name="file-document" size={24} color={theme.colors.textDark} />
-              </View>
-              <View style={styles.menuInfo}>
-                <Text style={styles.menuTitle}>Terms of Service</Text>
-                <Text style={styles.menuDescription}>Read our terms</Text>
-              </View>
-              <Icon name="chevron-right" size={24} color={theme.colors.textDarkLight} />
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => navigation.navigate('Privacy')}
-            >
-              <View style={styles.menuIcon}>
-                <Icon name="shield-lock" size={24} color={theme.colors.textDark} />
-              </View>
-              <View style={styles.menuInfo}>
-                <Text style={styles.menuTitle}>Privacy Policy</Text>
-                <Text style={styles.menuDescription}>Read our privacy policy</Text>
-              </View>
-              <Icon name="chevron-right" size={24} color={theme.colors.textDarkLight} />
-            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
@@ -256,158 +165,162 @@ const HelpScreen: StackScreen<'Help'> = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.backgroundDark,
+    backgroundColor: '#FFFFFF',
   },
-  backgroundContainer: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingBottom: theme.spacing.xxl,
-  },
-
-  // Header Styles
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.lg,
-  },
-  headerTitle: {
-    fontSize: theme.typography.fontSize.xl,
-    color: theme.colors.textDark,
-    fontFamily: theme.typography.fontFamily.bold,
+    justifyContent: 'space-between',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F2F2F7',
   },
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.colors.secondary,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.borderDark,
   },
-
-  // Section Styles
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1C1C1E',
+  },
+  headerRight: {
+    width: 40,
+  },
+  content: {
+    flex: 1,
+    padding: 16,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F2F2F7',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 24,
+  },
+  searchPlaceholder: {
+    marginLeft: 8,
+    fontSize: 16,
+    color: '#8E8E93',
+  },
   section: {
-    marginBottom: theme.spacing.xl,
+    marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: theme.typography.fontSize.lg,
-    color: theme.colors.textDark,
-    fontFamily: theme.typography.fontFamily.bold,
-    marginBottom: theme.spacing.lg,
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1C1C1E',
+    marginBottom: 16,
   },
-
-  // Quick Actions Styles
-  quickActions: {
+  categoryHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: theme.spacing.lg,
-  },
-  quickActionButton: {
-    flex: 1,
     alignItems: 'center',
-    backgroundColor: theme.colors.secondary,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.lg,
-    marginHorizontal: theme.spacing.xs,
-    borderWidth: 1,
-    borderColor: theme.colors.borderDark,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 1,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
-  quickActionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: theme.colors.backgroundDark,
-    justifyContent: 'center',
+  categoryTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1C1C1E',
+  },
+  questionList: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    marginTop: 8,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  questionItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  quickActionText: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.textDark,
-    fontFamily: theme.typography.fontFamily.medium,
-    textAlign: 'center',
-  },
-
-  // FAQ Styles
-  faqList: {
-    backgroundColor: theme.colors.secondary,
-    borderRadius: theme.borderRadius.xl,
-    borderWidth: 1,
-    borderColor: theme.colors.borderDark,
-    overflow: 'hidden',
-  },
-  faqItem: {
+    padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.borderDark,
-    padding: theme.spacing.lg,
+    borderBottomColor: '#F2F2F7',
   },
-  faqItemExpanded: {
-    backgroundColor: theme.colors.backgroundDark,
-  },
-  faqHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  faqQuestion: {
+  questionText: {
     flex: 1,
-    fontSize: theme.typography.fontSize.md,
-    color: theme.colors.textDark,
-    fontFamily: theme.typography.fontFamily.medium,
+    fontSize: 14,
+    color: '#1C1C1E',
+    marginRight: 16,
   },
-  faqAnswer: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.textDarkLight,
-    fontFamily: theme.typography.fontFamily.regular,
-    marginTop: theme.spacing.md,
+  answerContainer: {
+    padding: 16,
+    backgroundColor: '#F2F2F7',
+  },
+  answerText: {
+    fontSize: 14,
+    color: '#8E8E93',
     lineHeight: 20,
   },
-
-  // Menu List Styles
-  menuList: {
-    backgroundColor: theme.colors.secondary,
-    borderRadius: theme.borderRadius.xl,
-    borderWidth: 1,
-    borderColor: theme.colors.borderDark,
-    overflow: 'hidden',
+  contactList: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
-  menuItem: {
+  contactItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: theme.spacing.lg,
+    padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.borderDark,
+    borderBottomColor: '#F2F2F7',
   },
-  menuIcon: {
+  contactIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: theme.colors.backgroundDark,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: theme.spacing.lg,
+    marginRight: 12,
   },
-  menuInfo: {
+  contactInfo: {
     flex: 1,
   },
-  menuTitle: {
-    fontSize: theme.typography.fontSize.md,
-    color: theme.colors.textDark,
-    fontFamily: theme.typography.fontFamily.medium,
-    marginBottom: theme.spacing.xs,
+  contactTitle: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#1C1C1E',
+    marginBottom: 2,
   },
-  menuDescription: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.textDarkLight,
-    fontFamily: theme.typography.fontFamily.regular,
+  contactDescription: {
+    fontSize: 14,
+    color: '#8E8E93',
   },
 });
 

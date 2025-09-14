@@ -92,6 +92,23 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         {/* Decorative Elements */}
         <View style={styles.decorativeCircle1} />
         <View style={styles.decorativeCircle2} />
+
+        {/* Header Icons */}
+        <View style={styles.headerIcons}>
+          <TouchableOpacity
+            style={styles.headerIconButton}
+            onPress={() => Alert.alert('Coming soon', 'Language selection will be available soon')}
+          >
+            <Icon name="translate" size={24} color={theme.colors.text} />
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.headerIconButton}
+            onPress={() => Alert.alert('Support', 'Contact us at support@mino.com')}
+          >
+            <Icon name="headset" size={24} color={theme.colors.text} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <KeyboardAvoidingView
@@ -273,6 +290,33 @@ const styles = StyleSheet.create({
   },
   backgroundContainer: {
     ...StyleSheet.absoluteFillObject,
+  },
+  headerIcons: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 70 : 30,
+    right: 20,
+    flexDirection: 'column',
+    gap: theme.spacing.md,
+    zIndex: 1,
+  },
+  headerIconButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: theme.colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
   decorativeCircle1: {
     position: 'absolute',

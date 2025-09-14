@@ -20,6 +20,20 @@ import EkycIntroScreen from '../screens/EkycIntroScreen';
 import EkycIDCardScreen from '../screens/EkycIDCardScreen';
 import EkycSelfieScreen from '../screens/EkycSelfieScreen';
 import EkycInformationScreen from '../screens/EkycInformationScreen';
+import EkycReviewScreen from '../screens/EkycReviewScreen';
+import EkycSuccessScreen from '../screens/EkycSuccessScreen';
+import WalletScreen from '../screens/WalletScreen';
+import SecurityScreen from '../screens/SecurityScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
+import HelpScreen from '../screens/HelpScreen';
+import BankAccountsScreen from '../screens/BankAccountsScreen';
+import TRC20AddressesScreen from '../screens/TRC20AddressesScreen';
+import AddBankAccountScreen from '../screens/AddBankAccountScreen';
+import AddTRC20AddressScreen from '../screens/AddTRC20AddressScreen';
+import EditBankAccountScreen from '../screens/EditBankAccountScreen';
+import EditTRC20AddressScreen from '../screens/EditTRC20AddressScreen';
+import TransactionScreen from '../screens/TransactionScreen';
+import PaymentScreen from '../screens/PaymentScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<RootStackParamList>();
@@ -29,7 +43,7 @@ const MainTabs = () => {
 
   const tabScreenOptions = {
     headerShown: false,
-    tabBarActiveTintColor: theme.colors.primary,
+    tabBarActiveTintColor: "black",
     tabBarInactiveTintColor: theme.colors.textLight,
     tabBarStyle: {
       backgroundColor: theme.colors.white,
@@ -45,7 +59,7 @@ const MainTabs = () => {
       shadowRadius: 12,
     },
     tabBarLabelStyle: {
-      fontFamily: theme.typography.fontFamily.medium,
+      fontFamily: theme.typography.fontFamily,
       fontSize: 12,
     },
   };
@@ -89,7 +103,7 @@ const MainTabs = () => {
 const MainNavigator = () => {
   return (
     <Stack.Navigator
-      initialRouteName="Loading"
+      initialRouteName="MainTabs"
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',
@@ -108,8 +122,8 @@ const MainNavigator = () => {
         <Stack.Screen name="EkycIDCard" component={EkycIDCardScreen} />
         <Stack.Screen name="EkycSelfie" component={EkycSelfieScreen} />
         <Stack.Screen name="EkycInformation" component={EkycInformationScreen} />
-        {/* <Stack.Screen name="EkycReview" component={EkycReviewScreen} />    */}
-        {/* <Stack.Screen name="EkycSuccess" component={EkycSuccessScreen} /> */}
+        <Stack.Screen name="EkycReview" component={EkycReviewScreen} />   
+        <Stack.Screen name="EkycSuccess" component={EkycSuccessScreen} />
       </Stack.Group>
       {/* Auth Stack */}
       <Stack.Group>
@@ -121,7 +135,19 @@ const MainNavigator = () => {
       {/* Main Stack */}
       <Stack.Group>
         <Stack.Screen name="MainTabs" component={MainTabs} />
+        <Stack.Screen name="Wallet" component={WalletScreen} />
+        <Stack.Screen name="Security" component={SecurityScreen} />
+        <Stack.Screen name="Notifications" component={NotificationsScreen} />
+        <Stack.Screen name="Help" component={HelpScreen} />
+        <Stack.Screen name="BankAccounts" component={BankAccountsScreen} />
+        <Stack.Screen name="TRC20Addresses" component={TRC20AddressesScreen} />
+        <Stack.Screen name="AddBankAccount" component={AddBankAccountScreen} />
+        <Stack.Screen name="AddTRC20Address" component={AddTRC20AddressScreen} />
+        <Stack.Screen name="EditBankAccount" component={EditBankAccountScreen} />
+        <Stack.Screen name="EditTRC20Address" component={EditTRC20AddressScreen} />
+        <Stack.Screen name="Payment" component={PaymentScreen} />
       </Stack.Group>
+
     </Stack.Navigator>
   );
 };

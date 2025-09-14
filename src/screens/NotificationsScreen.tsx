@@ -1,291 +1,139 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Switch,
   Platform,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { theme } from '../theme/colors';
-import { componentStyles } from '../theme/components';
-import { StackScreen } from '../navigation/types';
-import ButtonCustom from '../component/ButtonCustom';
 
-const NotificationsScreen: StackScreen<'Notifications'> = () => {
+const NOTIFICATIONS = [
+  {
+    id: '1',
+    type: 'transaction',
+    title: 'Giao dịch thành công',
+    message: 'Bạn đã nạp thành công 100 USDT vào ví',
+    time: '2 giờ trước',
+    read: false,
+  },
+  {
+    id: '2',
+    type: 'security',
+    title: 'Đăng nhập mới',
+    message: 'Phát hiện đăng nhập từ thiết bị mới',
+    time: '1 ngày trước',
+    read: true,
+  },
+  {
+    id: '3',
+    type: 'system',
+    title: 'Bảo trì hệ thống',
+    message: 'Hệ thống sẽ bảo trì từ 22:00 - 23:00',
+    time: '2 ngày trước',
+    read: true,
+  },
+];
+
+const NotificationsScreen = () => {
   const navigation = useNavigation();
-  const [pushEnabled, setPushEnabled] = useState(true);
-  const [emailEnabled, setEmailEnabled] = useState(true);
-  const [smsEnabled, setSmsEnabled] = useState(false);
 
-  const [notifications, setNotifications] = useState({
-    transactions: true,
-    security: true,
-    news: false,
-    promotions: false,
-    priceAlerts: true,
-    withdrawals: true,
-    deposits: true,
-    system: true,
-  });
-
-  const handleClearAll = () => {
-    Alert.alert(
-      'Clear All Notifications',
-      'Are you sure you want to clear all notifications?',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Clear All',
-          onPress: () => {
-            Alert.alert('Success', 'All notifications cleared');
-          },
-        },
-      ]
-    );
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'transaction':
+        return { name: 'swap-horizontal', color: '#4A90E2' };
+      case 'security':
+        return { name: 'shield-alert', color: '#FF3B30' };
+      case 'system':
+        return { name: 'cog', color: '#FF9500' };
+      default:
+        return { name: 'bell', color: '#8E8E93' };
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.backgroundContainer}>
-        <LinearGradient
-          colors={[theme.colors.backgroundDark, theme.colors.secondary]}
-          style={StyleSheet.absoluteFill}
-        />
-      </View>
-
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.backButton}
         >
-          <Icon name="arrow-left" size={24} color={theme.colors.textDark} />
+          <Icon name="arrow-left" size={24} color="#1C1C1E" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notifications</Text>
-        <TouchableOpacity
-          onPress={handleClearAll}
-          style={styles.headerButton}
-        >
-          <Icon name="notification-clear-all" size={24} color={theme.colors.textDark} />
+        <Text style={styles.headerTitle}>Thông báo</Text>
+        <TouchableOpacity style={styles.headerRight}>
+          <Icon name="dots-horizontal" size={24} color="#1C1C1E" />
         </TouchableOpacity>
       </View>
 
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Notification Channels */}
+      <ScrollView style={styles.content}>
+        {/* Today Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notification Channels</Text>
-          <View style={styles.menuList}>
-            <View style={styles.menuItem}>
-              <View style={styles.menuIcon}>
-                <Icon name="bell" size={24} color={theme.colors.textDark} />
-              </View>
-              <View style={styles.menuInfo}>
-                <Text style={styles.menuTitle}>Push Notifications</Text>
-                <Text style={styles.menuDescription}>Receive push notifications</Text>
-              </View>
-              <Switch
-                value={pushEnabled}
-                onValueChange={setPushEnabled}
-                trackColor={{ false: theme.colors.borderDark, true: theme.colors.primary }}
-                thumbColor={theme.colors.white}
-              />
-            </View>
-
-            <View style={styles.menuItem}>
-              <View style={styles.menuIcon}>
-                <Icon name="email" size={24} color={theme.colors.textDark} />
-              </View>
-              <View style={styles.menuInfo}>
-                <Text style={styles.menuTitle}>Email Notifications</Text>
-                <Text style={styles.menuDescription}>Receive email notifications</Text>
-              </View>
-              <Switch
-                value={emailEnabled}
-                onValueChange={setEmailEnabled}
-                trackColor={{ false: theme.colors.borderDark, true: theme.colors.primary }}
-                thumbColor={theme.colors.white}
-              />
-            </View>
-
-            <View style={styles.menuItem}>
-              <View style={styles.menuIcon}>
-                <Icon name="message" size={24} color={theme.colors.textDark} />
-              </View>
-              <View style={styles.menuInfo}>
-                <Text style={styles.menuTitle}>SMS Notifications</Text>
-                <Text style={styles.menuDescription}>Receive SMS notifications</Text>
-              </View>
-              <Switch
-                value={smsEnabled}
-                onValueChange={setSmsEnabled}
-                trackColor={{ false: theme.colors.borderDark, true: theme.colors.primary }}
-                thumbColor={theme.colors.white}
-              />
-            </View>
+          <Text style={styles.sectionTitle}>Hôm nay</Text>
+          <View style={styles.notificationList}>
+            {NOTIFICATIONS.filter(n => n.time.includes('giờ')).map(notification => (
+              <TouchableOpacity
+                key={notification.id}
+                style={[
+                  styles.notificationItem,
+                  !notification.read && styles.unreadItem,
+                ]}
+              >
+                <View style={[
+                  styles.notificationIcon,
+                  { backgroundColor: getNotificationIcon(notification.type).color + '15' }
+                ]}>
+                  <Icon
+                    name={getNotificationIcon(notification.type).name}
+                    size={24}
+                    color={getNotificationIcon(notification.type).color}
+                  />
+                </View>
+                <View style={styles.notificationContent}>
+                  <Text style={styles.notificationTitle}>{notification.title}</Text>
+                  <Text style={styles.notificationMessage}>{notification.message}</Text>
+                  <Text style={styles.notificationTime}>{notification.time}</Text>
+                </View>
+                {!notification.read && <View style={styles.unreadDot} />}
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
 
-        {/* Notification Types */}
+        {/* Earlier Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notification Types</Text>
-          <View style={styles.menuList}>
-            <View style={styles.menuItem}>
-              <View style={styles.menuIcon}>
-                <Icon name="swap-horizontal" size={24} color={theme.colors.textDark} />
-              </View>
-              <View style={styles.menuInfo}>
-                <Text style={styles.menuTitle}>Transactions</Text>
-                <Text style={styles.menuDescription}>Send and receive alerts</Text>
-              </View>
-              <Switch
-                value={notifications.transactions}
-                onValueChange={(value) => setNotifications({ ...notifications, transactions: value })}
-                trackColor={{ false: theme.colors.borderDark, true: theme.colors.primary }}
-                thumbColor={theme.colors.white}
-              />
-            </View>
-
-            <View style={styles.menuItem}>
-              <View style={styles.menuIcon}>
-                <Icon name="shield-check" size={24} color={theme.colors.textDark} />
-              </View>
-              <View style={styles.menuInfo}>
-                <Text style={styles.menuTitle}>Security</Text>
-                <Text style={styles.menuDescription}>Login and security alerts</Text>
-              </View>
-              <Switch
-                value={notifications.security}
-                onValueChange={(value) => setNotifications({ ...notifications, security: value })}
-                trackColor={{ false: theme.colors.borderDark, true: theme.colors.primary }}
-                thumbColor={theme.colors.white}
-              />
-            </View>
-
-            <View style={styles.menuItem}>
-              <View style={styles.menuIcon}>
-                <Icon name="newspaper" size={24} color={theme.colors.textDark} />
-              </View>
-              <View style={styles.menuInfo}>
-                <Text style={styles.menuTitle}>News & Updates</Text>
-                <Text style={styles.menuDescription}>Latest news and updates</Text>
-              </View>
-              <Switch
-                value={notifications.news}
-                onValueChange={(value) => setNotifications({ ...notifications, news: value })}
-                trackColor={{ false: theme.colors.borderDark, true: theme.colors.primary }}
-                thumbColor={theme.colors.white}
-              />
-            </View>
-
-            <View style={styles.menuItem}>
-              <View style={styles.menuIcon}>
-                <Icon name="tag" size={24} color={theme.colors.textDark} />
-              </View>
-              <View style={styles.menuInfo}>
-                <Text style={styles.menuTitle}>Promotions</Text>
-                <Text style={styles.menuDescription}>Offers and promotions</Text>
-              </View>
-              <Switch
-                value={notifications.promotions}
-                onValueChange={(value) => setNotifications({ ...notifications, promotions: value })}
-                trackColor={{ false: theme.colors.borderDark, true: theme.colors.primary }}
-                thumbColor={theme.colors.white}
-              />
-            </View>
-
-            <View style={styles.menuItem}>
-              <View style={styles.menuIcon}>
-                <Icon name="chart-line" size={24} color={theme.colors.textDark} />
-              </View>
-              <View style={styles.menuInfo}>
-                <Text style={styles.menuTitle}>Price Alerts</Text>
-                <Text style={styles.menuDescription}>Market price notifications</Text>
-              </View>
-              <Switch
-                value={notifications.priceAlerts}
-                onValueChange={(value) => setNotifications({ ...notifications, priceAlerts: value })}
-                trackColor={{ false: theme.colors.borderDark, true: theme.colors.primary }}
-                thumbColor={theme.colors.white}
-              />
-            </View>
-
-            <View style={styles.menuItem}>
-              <View style={styles.menuIcon}>
-                <Icon name="arrow-up" size={24} color={theme.colors.textDark} />
-              </View>
-              <View style={styles.menuInfo}>
-                <Text style={styles.menuTitle}>Withdrawals</Text>
-                <Text style={styles.menuDescription}>Withdrawal notifications</Text>
-              </View>
-              <Switch
-                value={notifications.withdrawals}
-                onValueChange={(value) => setNotifications({ ...notifications, withdrawals: value })}
-                trackColor={{ false: theme.colors.borderDark, true: theme.colors.primary }}
-                thumbColor={theme.colors.white}
-              />
-            </View>
-
-            <View style={styles.menuItem}>
-              <View style={styles.menuIcon}>
-                <Icon name="arrow-down" size={24} color={theme.colors.textDark} />
-              </View>
-              <View style={styles.menuInfo}>
-                <Text style={styles.menuTitle}>Deposits</Text>
-                <Text style={styles.menuDescription}>Deposit notifications</Text>
-              </View>
-              <Switch
-                value={notifications.deposits}
-                onValueChange={(value) => setNotifications({ ...notifications, deposits: value })}
-                trackColor={{ false: theme.colors.borderDark, true: theme.colors.primary }}
-                thumbColor={theme.colors.white}
-              />
-            </View>
-
-            <View style={styles.menuItem}>
-              <View style={styles.menuIcon}>
-                <Icon name="cog" size={24} color={theme.colors.textDark} />
-              </View>
-              <View style={styles.menuInfo}>
-                <Text style={styles.menuTitle}>System</Text>
-                <Text style={styles.menuDescription}>System notifications</Text>
-              </View>
-              <Switch
-                value={notifications.system}
-                onValueChange={(value) => setNotifications({ ...notifications, system: value })}
-                trackColor={{ false: theme.colors.borderDark, true: theme.colors.primary }}
-                thumbColor={theme.colors.white}
-              />
-            </View>
-          </View>
-        </View>
-
-        {/* Notification History */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notification History</Text>
-          <View style={styles.menuList}>
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuIcon}>
-                <Icon name="history" size={24} color={theme.colors.textDark} />
-              </View>
-              <View style={styles.menuInfo}>
-                <Text style={styles.menuTitle}>View History</Text>
-                <Text style={styles.menuDescription}>See all past notifications</Text>
-              </View>
-              <Icon name="chevron-right" size={24} color={theme.colors.textDarkLight} />
-            </TouchableOpacity>
+          <Text style={styles.sectionTitle}>Trước đó</Text>
+          <View style={styles.notificationList}>
+            {NOTIFICATIONS.filter(n => n.time.includes('ngày')).map(notification => (
+              <TouchableOpacity
+                key={notification.id}
+                style={[
+                  styles.notificationItem,
+                  !notification.read && styles.unreadItem,
+                ]}
+              >
+                <View style={[
+                  styles.notificationIcon,
+                  { backgroundColor: getNotificationIcon(notification.type).color + '15' }
+                ]}>
+                  <Icon
+                    name={getNotificationIcon(notification.type).name}
+                    size={24}
+                    color={getNotificationIcon(notification.type).color}
+                  />
+                </View>
+                <View style={styles.notificationContent}>
+                  <Text style={styles.notificationTitle}>{notification.title}</Text>
+                  <Text style={styles.notificationMessage}>{notification.message}</Text>
+                  <Text style={styles.notificationTime}>{notification.time}</Text>
+                </View>
+                {!notification.read && <View style={styles.unreadDot} />}
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
       </ScrollView>
@@ -296,101 +144,103 @@ const NotificationsScreen: StackScreen<'Notifications'> = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.backgroundDark,
+    backgroundColor: '#FFFFFF',
   },
-  backgroundContainer: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingBottom: theme.spacing.xxl,
-  },
-
-  // Header Styles
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.lg,
-  },
-  headerTitle: {
-    fontSize: theme.typography.fontSize.xl,
-    color: theme.colors.textDark,
-    fontFamily: theme.typography.fontFamily.bold,
+    justifyContent: 'space-between',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F2F2F7',
   },
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.colors.secondary,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.borderDark,
   },
-  headerButton: {
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1C1C1E',
+  },
+  headerRight: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.colors.secondary,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.borderDark,
   },
-
-  // Section Styles
+  content: {
+    flex: 1,
+    padding: 16,
+  },
   section: {
-    marginBottom: theme.spacing.xl,
+    marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: theme.typography.fontSize.lg,
-    color: theme.colors.textDark,
-    fontFamily: theme.typography.fontFamily.bold,
-    marginBottom: theme.spacing.lg,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1C1C1E',
+    marginBottom: 16,
   },
-
-  // Menu List Styles
-  menuList: {
-    backgroundColor: theme.colors.secondary,
-    borderRadius: theme.borderRadius.xl,
-    borderWidth: 1,
-    borderColor: theme.colors.borderDark,
-    overflow: 'hidden',
+  notificationList: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
-  menuItem: {
+  notificationItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: theme.spacing.lg,
+    padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: theme.colors.borderDark,
+    borderBottomColor: '#F2F2F7',
   },
-  menuIcon: {
+  unreadItem: {
+    backgroundColor: '#F2F2F7',
+  },
+  notificationIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: theme.colors.backgroundDark,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: theme.spacing.lg,
+    marginRight: 12,
   },
-  menuInfo: {
+  notificationContent: {
     flex: 1,
   },
-  menuTitle: {
-    fontSize: theme.typography.fontSize.md,
-    color: theme.colors.textDark,
-    fontFamily: theme.typography.fontFamily.medium,
-    marginBottom: theme.spacing.xs,
+  notificationTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1C1C1E',
+    marginBottom: 4,
   },
-  menuDescription: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.textDarkLight,
-    fontFamily: theme.typography.fontFamily.regular,
+  notificationMessage: {
+    fontSize: 14,
+    color: '#8E8E93',
+    marginBottom: 4,
+  },
+  notificationTime: {
+    fontSize: 12,
+    color: '#8E8E93',
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#4A90E2',
+    marginLeft: 8,
   },
 });
 

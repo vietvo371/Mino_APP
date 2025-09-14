@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import api from '../utils/Api';
 import { saveToken } from '../utils/TokenManager';
+import { EkycData, EkycVerifyRequest, EkycVerifyResponse } from '../types/ekyc';
 
 // Constants
 const STORAGE_KEYS = {
@@ -12,7 +13,7 @@ const STORAGE_KEYS = {
 // Types
 type UserRole = 'farmer' | 'bank' | 'cooperative' | 'verifier' | 'government' | 'buyer';
 
-interface RawUserData {
+interface RawUserData extends EkycData {
   id?: number;
   user_id?: number;
   role?: UserRole;
@@ -30,19 +31,9 @@ interface RawUserData {
   organization_name?: string;
   employee_id?: string;
   created_at: string;
-  // eKYC fields
-  ekyc_status?: 'pending' | 'verified' | 'rejected';
-  ekyc_verified_at?: string;
-  id_card_type?: 'cmnd' | 'cccd' | 'passport';
-  id_card_number?: string;
-  id_card_front_url?: string;
-  id_card_back_url?: string;
-  selfie_url?: string;
-  nationality?: string;
-  address?: string;
 }
 
-interface User {
+interface User extends EkycData {
   user_id: number;
   role: UserRole;
   name: string;
@@ -53,16 +44,6 @@ interface User {
   org_name?: string;
   employee_id?: string;
   created_at: string;
-  // eKYC fields
-  ekyc_status?: 'pending' | 'verified' | 'rejected';
-  ekyc_verified_at?: string;
-  id_card_type?: 'cmnd' | 'cccd' | 'passport';
-  id_card_number?: string;
-  id_card_front_url?: string;
-  id_card_back_url?: string;
-  selfie_url?: string;
-  nationality?: string;
-  address?: string;
 }
 
 interface SignUpData {
@@ -94,6 +75,7 @@ interface AuthContextData {
   signIn: (credentials: { identifier: string; type: string }) => Promise<void>;
   signUp: (userData: SignUpData) => Promise<void>;
   signOut: () => Promise<void>;
+  verifyEkyc: (data: EkycVerifyRequest) => Promise<EkycVerifyResponse>;
 }
 
 interface ApiResponse {
@@ -136,7 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }
 
-  const signIn = async (credentials: { identifier: string; password: string; type: string }) => {
+  const signIn = async (credentials: { identifier: string; type: string }) => {
     try {
       const response = await api.post<ApiResponse>('/auth/login', credentials);
       const payload = response.data?.data ?? response.data;
@@ -162,16 +144,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         org_name: rawUserData.org_name ?? rawUserData.organization_name,
         employee_id: rawUserData.employee_id,
         created_at: rawUserData.created_at,
-        // eKYC fields
+
+        // eKYC Status
         ekyc_status: rawUserData.ekyc_status,
         ekyc_verified_at: rawUserData.ekyc_verified_at,
+        ekyc_score: rawUserData.ekyc_score,
+        ekyc_session_id: rawUserData.ekyc_session_id,
+        ekyc_transaction_id: rawUserData.ekyc_transaction_id,
+        ekyc_verify_type: rawUserData.ekyc_verify_type,
+        ekyc_verify_method: rawUserData.ekyc_verify_method,
+        
+        // ID Card Info
         id_card_type: rawUserData.id_card_type,
         id_card_number: rawUserData.id_card_number,
+        id_card_name: rawUserData.id_card_name,
+        id_card_dob: rawUserData.id_card_dob,
+        id_card_gender: rawUserData.id_card_gender,
+        id_card_nationality: rawUserData.id_card_nationality,
+        id_card_ethnicity: rawUserData.id_card_ethnicity,
+        id_card_religion: rawUserData.id_card_religion,
+        id_card_place_of_origin: rawUserData.id_card_place_of_origin,
+        id_card_place_of_residence: rawUserData.id_card_place_of_residence,
+        id_card_personal_identification: rawUserData.id_card_personal_identification,
+        id_card_issuing_authority: rawUserData.id_card_issuing_authority,
+        id_card_issue_date: rawUserData.id_card_issue_date,
+        id_card_expiry_date: rawUserData.id_card_expiry_date,
+
+        // Document Images
         id_card_front_url: rawUserData.id_card_front_url,
         id_card_back_url: rawUserData.id_card_back_url,
         selfie_url: rawUserData.selfie_url,
-        nationality: rawUserData.nationality,
-        address: rawUserData.address,
+        selfie_with_id_url: rawUserData.selfie_with_id_url,
+        video_url: rawUserData.video_url,
+
+        // Verification Scores
+        face_matching_score: rawUserData.face_matching_score,
+        face_matching_result: rawUserData.face_matching_result,
+        liveness_score: rawUserData.liveness_score,
+        liveness_result: rawUserData.liveness_result,
+        mask_detection: rawUserData.mask_detection,
+        address_verification: rawUserData.address_verification,
+        
+        // Verification Results
+        ocr_result: rawUserData.ocr_result,
+        face_result: rawUserData.face_result,
+        liveness_result_details: rawUserData.liveness_result_details,
       };
 
       await Promise.all([
@@ -219,16 +236,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         org_name: rawUserData.org_name ?? rawUserData.organization_name,
         employee_id: rawUserData.employee_id,
         created_at: rawUserData.created_at,
-        // eKYC fields
+
+        // eKYC Status
         ekyc_status: rawUserData.ekyc_status,
         ekyc_verified_at: rawUserData.ekyc_verified_at,
+        ekyc_score: rawUserData.ekyc_score,
+        ekyc_session_id: rawUserData.ekyc_session_id,
+        ekyc_transaction_id: rawUserData.ekyc_transaction_id,
+        ekyc_verify_type: rawUserData.ekyc_verify_type,
+        ekyc_verify_method: rawUserData.ekyc_verify_method,
+        
+        // ID Card Info
         id_card_type: rawUserData.id_card_type,
         id_card_number: rawUserData.id_card_number,
+        id_card_name: rawUserData.id_card_name,
+        id_card_dob: rawUserData.id_card_dob,
+        id_card_gender: rawUserData.id_card_gender,
+        id_card_nationality: rawUserData.id_card_nationality,
+        id_card_ethnicity: rawUserData.id_card_ethnicity,
+        id_card_religion: rawUserData.id_card_religion,
+        id_card_place_of_origin: rawUserData.id_card_place_of_origin,
+        id_card_place_of_residence: rawUserData.id_card_place_of_residence,
+        id_card_personal_identification: rawUserData.id_card_personal_identification,
+        id_card_issuing_authority: rawUserData.id_card_issuing_authority,
+        id_card_issue_date: rawUserData.id_card_issue_date,
+        id_card_expiry_date: rawUserData.id_card_expiry_date,
+
+        // Document Images
         id_card_front_url: rawUserData.id_card_front_url,
         id_card_back_url: rawUserData.id_card_back_url,
         selfie_url: rawUserData.selfie_url,
-        nationality: rawUserData.nationality,
-        address: rawUserData.address,
+        selfie_with_id_url: rawUserData.selfie_with_id_url,
+        video_url: rawUserData.video_url,
+
+        // Verification Scores
+        face_matching_score: rawUserData.face_matching_score,
+        face_matching_result: rawUserData.face_matching_result,
+        liveness_score: rawUserData.liveness_score,
+        liveness_result: rawUserData.liveness_result,
+        mask_detection: rawUserData.mask_detection,
+        address_verification: rawUserData.address_verification,
+        
+        // Verification Results
+        ocr_result: rawUserData.ocr_result,
+        face_result: rawUserData.face_result,
+        liveness_result_details: rawUserData.liveness_result_details,
       };
 
       await Promise.all([
@@ -243,6 +295,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error: any) {
       const apiError: ApiError = {
         message: error.response?.data?.message || 'Đã xảy ra lỗi khi đăng ký',
+        errors: error.response?.data?.errors || {},
+        status: error.response?.status || 500
+      };
+      throw apiError;
+    }
+  };
+
+  const verifyEkyc = async (data: EkycVerifyRequest): Promise<EkycVerifyResponse> => {
+    try {
+      const response = await api.post<EkycVerifyResponse>('/ekyc/verify', data);
+      return response.data;
+    } catch (error: any) {
+      const apiError: ApiError = {
+        message: error.response?.data?.message || 'Đã xảy ra lỗi khi xác thực eKYC',
         errors: error.response?.data?.errors || {},
         status: error.response?.status || 500
       };
@@ -282,6 +348,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signIn,
         signUp,
         signOut,
+        verifyEkyc,
       }}
     >
       {children}

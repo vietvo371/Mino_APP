@@ -13,33 +13,38 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../theme/colors';
 import ButtonCustom from '../component/ButtonCustom';
-import ImagePicker from '../component/ImagePicker';
 import LoadingOverlay from '../component/LoadingOverlay';
 import { StackScreen } from '../navigation/types';
 
-const EkycSelfieScreen: StackScreen<'EkycSelfie'> = ({ navigation }) => {
-  const [selfieImage, setSelfieImage] = useState<string | null>(null);
+const EkycReviewScreen: StackScreen<'EkycReview'> = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
 
-  const handleUpload = async () => {
-    if (!selfieImage) {
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // TODO: Implement API call to upload selfie image
-      // await api.ekyc.uploadSelfie(selfieImage);
-      
-      // Navigate to next step
-      navigation.navigate('EkycInformation');
-    } catch (error) {
-      console.error('Error uploading selfie:', error);
-      // Handle error
-    } finally {
-      setLoading(false);
-    }
+  const mockUserData = {
+    fullName: 'John Doe',
+    idNumber: '123456789012',
+    dateOfBirth: '1990-01-01',
+    address: '123 Main Street, City',
+    nationality: 'Vietnam',
   };
+
+  const handleSubmit = () => {
+    setLoading(true);
+    // Giả lập loading 1 giây
+    setTimeout(() => {
+      setLoading(false);
+      navigation.replace('EkycSuccess');
+    }, 1000);
+  };
+
+  const renderInfoItem = (label: string, value: string) => (
+    <Animated.View
+      style={styles.infoItem}
+      entering={FadeInDown.duration(400).delay(200)}
+    >
+      <Text style={styles.infoLabel}>{label}</Text>
+      <Text style={styles.infoValue}>{value}</Text>
+    </Animated.View>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -69,76 +74,74 @@ const EkycSelfieScreen: StackScreen<'EkycSelfie'> = ({ navigation }) => {
           </TouchableOpacity>
 
           <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>Take a Selfie</Text>
+            <Text style={styles.headerTitle}>Review Information</Text>
             <Text style={styles.headerSubtitle}>
-              We need a clear photo of your face for verification
+              Please review your information before submitting
             </Text>
           </View>
         </Animated.View>
 
-        {/* Selfie Upload */}
+        {/* Review Section */}
         <Animated.View
-          style={styles.uploadCard}
+          style={styles.reviewContainer}
           entering={FadeInDown.duration(600).delay(200).springify()}
         >
-          <ImagePicker
-            imageUri={selfieImage || undefined}
-            onImageSelected={setSelfieImage}
-            // style={styles.imagePicker}
-            // useFrontCamera={true}
-            // placeholder={
-            //   <View style={styles.placeholderContent}>
-            //     <Icon name="face-recognition" size={48} color={theme.colors.primary} />
-            //     <Text style={styles.placeholderText}>Take Selfie</Text>
-            //   </View>
-            // }
-          />
-        </Animated.View>
+          {/* ID Card Images */}
+          <View style={styles.imagesSection}>
+            <Text style={styles.sectionTitle}>ID Card Images</Text>
+            <View style={styles.imagePreviewRow}>
+              <View style={styles.imagePreview}>
+                <Icon name="card-account-details" size={32} color={theme.colors.primary} />
+                <Text style={styles.imageLabel}>Front Side</Text>
+              </View>
+              <View style={styles.imagePreview}>
+                <Icon name="card-account-details" size={32} color={theme.colors.primary} />
+                <Text style={styles.imageLabel}>Back Side</Text>
+              </View>
+            </View>
+          </View>
 
-        {/* Guidelines */}
-        <Animated.View
-          style={styles.guidelines}
-          entering={FadeInDown.duration(600).delay(400).springify()}
-        >
-          <Text style={styles.guidelinesTitle}>Guidelines</Text>
-          <View style={styles.guidelinesList}>
-            <View style={styles.guidelineItem}>
-              <Icon name="check-circle-outline" size={20} color={theme.colors.success} />
-              <Text style={styles.guidelineText}>Face the camera directly</Text>
+          {/* Selfie Image */}
+          <View style={styles.imagesSection}>
+            <Text style={styles.sectionTitle}>Selfie Image</Text>
+            <View style={styles.imagePreview}>
+              <Icon name="account" size={32} color={theme.colors.primary} />
+              <Text style={styles.imageLabel}>Selfie</Text>
             </View>
-            <View style={styles.guidelineItem}>
-              <Icon name="check-circle-outline" size={20} color={theme.colors.success} />
-              <Text style={styles.guidelineText}>Remove glasses and face masks</Text>
-            </View>
-            <View style={styles.guidelineItem}>
-              <Icon name="check-circle-outline" size={20} color={theme.colors.success} />
-              <Text style={styles.guidelineText}>Keep a neutral expression</Text>
-            </View>
+          </View>
+
+          {/* Personal Information */}
+          <View style={styles.infoSection}>
+            <Text style={styles.sectionTitle}>Personal Information</Text>
+            {renderInfoItem('Full Name', mockUserData.fullName)}
+            {renderInfoItem('ID Number', mockUserData.idNumber)}
+            {renderInfoItem('Date of Birth', mockUserData.dateOfBirth)}
+            {renderInfoItem('Address', mockUserData.address)}
+            {renderInfoItem('Nationality', mockUserData.nationality)}
           </View>
         </Animated.View>
 
-        {/* Security Note */}
+        {/* Submit Button */}
+        <ButtonCustom
+          title="Submit"
+          onPress={handleSubmit}
+          style={styles.submitButton}
+          icon="check"
+        />
+
+        {/* Note */}
         <Animated.View
-          style={styles.securityNote}
-          entering={FadeInDown.duration(600).delay(600).springify()}
+          style={styles.noteContainer}
+          entering={FadeInDown.duration(600).delay(400).springify()}
         >
-          <Icon name="shield-check" size={20} color={theme.colors.success} />
-          <Text style={styles.securityText}>
-            Your selfie will be used only for identity verification and will be stored securely
+          <Icon name="information" size={20} color={theme.colors.primary} />
+          <Text style={styles.noteText}>
+            By submitting, you confirm that all provided information is accurate
           </Text>
         </Animated.View>
-
-        {/* Continue Button */}
-        <ButtonCustom
-          title="Continue"
-          onPress={handleUpload}
-          style={styles.continueButton}
-          disabled={!selfieImage}
-          icon="arrow-right"
-        />
       </ScrollView>
 
-      <LoadingOverlay visible={loading} message="Uploading selfie..." />
+      <LoadingOverlay visible={loading} message="Submitting..." />
     </SafeAreaView>
   );
 };
@@ -214,13 +217,11 @@ const styles = StyleSheet.create({
     color: theme.colors.textLight,
     fontFamily: theme.typography.fontFamily.regular,
   },
-  uploadCard: {
-    marginTop: theme.spacing.xl,
+  reviewContainer: {
     backgroundColor: theme.colors.white,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderRadius: theme.borderRadius.xl,
+    padding: theme.spacing.xl,
+    marginBottom: theme.spacing.xl,
     ...Platform.select({
       ios: {
         shadowColor: theme.colors.primary,
@@ -233,67 +234,73 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  imagePicker: {
-    width: '100%',
-    height: 300,
-    borderRadius: theme.borderRadius.md,
-    backgroundColor: theme.colors.background,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderStyle: 'dashed',
-  },
-  placeholderContent: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: theme.spacing.md,
-  },
-  placeholderText: {
-    fontSize: theme.typography.fontSize.lg,
-    color: theme.colors.primary,
-    fontFamily: theme.typography.fontFamily.medium,
-  },
-  guidelines: {
-    marginTop: theme.spacing.xl,
-  },
-  guidelinesTitle: {
+  sectionTitle: {
     fontSize: theme.typography.fontSize.lg,
     color: theme.colors.text,
     fontFamily: theme.typography.fontFamily.bold,
     marginBottom: theme.spacing.md,
   },
-  guidelinesList: {
-    gap: theme.spacing.md,
-  },
-  guidelineItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-  },
-  guidelineText: {
-    fontSize: theme.typography.fontSize.md,
-    color: theme.colors.text,
-    fontFamily: theme.typography.fontFamily.regular,
-  },
-  securityNote: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.sm,
-    backgroundColor: theme.colors.success + '10',
-    padding: theme.spacing.lg,
-    borderRadius: theme.borderRadius.lg,
-    marginTop: theme.spacing.xl,
+  imagesSection: {
     marginBottom: theme.spacing.xl,
   },
-  securityText: {
+  imagePreviewRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.lg,
+  },
+  imagePreview: {
+    flex: 1,
+    aspectRatio: 1.6,
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.lg,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    gap: theme.spacing.sm,
+  },
+  imageLabel: {
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.textLight,
+    fontFamily: theme.typography.fontFamily.medium,
+  },
+  infoSection: {
+    gap: theme.spacing.md,
+  },
+  infoItem: {
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
+  },
+  infoLabel: {
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.textLight,
+    fontFamily: theme.typography.fontFamily.medium,
+    marginBottom: theme.spacing.xs,
+  },
+  infoValue: {
+    fontSize: theme.typography.fontSize.md,
+    color: theme.colors.text,
+    fontFamily: theme.typography.fontFamily.bold,
+  },
+  submitButton: {
+    height: 56,
+    marginBottom: theme.spacing.xl,
+  },
+  noteContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.sm,
+    backgroundColor: theme.colors.primary + '10',
+    padding: theme.spacing.lg,
+    borderRadius: theme.borderRadius.lg,
+    marginBottom: theme.spacing.xl,
+  },
+  noteText: {
     flex: 1,
     fontSize: theme.typography.fontSize.sm,
     color: theme.colors.text,
     fontFamily: theme.typography.fontFamily.medium,
   },
-  continueButton: {
-    height: 56,
-  },
 });
 
-export default EkycSelfieScreen;
+export default EkycReviewScreen;

@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { StatusBar, useColorScheme } from 'react-native';
+import { StatusBar, useColorScheme,Platform } from 'react-native';
 import { NavigationContainer, Theme } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -29,19 +29,31 @@ const App = () => {
     },
     fonts: {
       regular: {
-        fontFamily : theme.typography.fontFamily.regular ?? 'SF Pro Display',
+        fontFamily: Platform.select({
+          ios: 'SF Pro Display',
+          android: 'Roboto',
+        }) as string,
         fontWeight: '400',
       },
       medium: {
-        fontFamily: theme.typography.fontFamily.medium ?? 'SF Pro Display Medium',
+        fontFamily: Platform.select({
+          ios: 'SF Pro Display',
+          android: 'Roboto',
+        }) as string,
         fontWeight: '500',
       },
       bold: {
-        fontFamily: theme.typography.fontFamily.bold ?? 'SF Pro Display Bold',
+        fontFamily: Platform.select({
+          ios: 'SF Pro Display',
+          android: 'Roboto',
+        }) as string,
         fontWeight: '700',
       },
       heavy: {
-        fontFamily: theme.typography.fontFamily.bold ?? 'SF Pro Display Bold',
+        fontFamily: Platform.select({
+          ios: 'SF Pro Display',
+          android: 'Roboto',
+        }) as string,
         fontWeight: '900',
       },
     },

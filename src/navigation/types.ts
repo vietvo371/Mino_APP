@@ -26,6 +26,34 @@ export type RootStackParamList = {
   Transaction: undefined;
   Deposit: undefined;
   Withdraw: undefined;
+  BankAccounts: undefined;
+  TRC20Addresses: undefined;
+  AddBankAccount: undefined;
+  AddTRC20Address: undefined; 
+  EditBankAccount: {
+    account: {
+      id: string;
+      bank: string;
+      accountNumber: string;
+      accountName: string;
+      isDefault?: boolean;
+    };
+  };
+  EditTRC20Address: {
+    address: {
+      id: string;
+      name: string;
+      address: string;
+      isDefault?: boolean;
+    };
+  };
+  Payment: {
+    paymentInfo: {
+      type: 'buy' | 'sell';
+      amount: string;
+      rate: number;
+    };
+  };
 
   // Settings Flow
   Settings: undefined;

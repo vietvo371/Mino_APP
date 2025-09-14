@@ -58,28 +58,10 @@ export const theme = {
     xxl: 32,
   },
   typography: {
-    fontFamily: {
-      regular: Platform.select({
-        ios: 'SF Pro Display',
-        android: 'SFProDisplay-Regular',
-      }),
-      medium: Platform.select({
-        ios: 'SF Pro Display Medium',
-        android: 'SFProDisplay-Medium',
-      }),
-      semibold: Platform.select({
-        ios: 'SF Pro Display Semibold',
-        android: 'SFProDisplay-Semibold',
-      }),
-      bold: Platform.select({
-        ios: 'SF Pro Display Bold',
-        android: 'SFProDisplay-Bold',
-      }),
-      mono: Platform.select({
-        ios: 'SF Mono',
-        android: 'SFMono-Regular',
-      }),
-    },
+    fontFamily: Platform.select({
+      ios: 'Inter',
+      android: 'Inter-Regular',
+    }),
     fontSize: {
       '2xs': 10,
       xs: 12,

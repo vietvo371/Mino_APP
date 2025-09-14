@@ -1,124 +1,185 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
-  TextInput,
   Text,
+  TextInput,
   StyleSheet,
+  TouchableOpacity,
   ViewStyle,
   TextStyle,
-  TextInputProps,
-  TouchableOpacity,
+  Platform,
+  Animated,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../theme/colors';
 
-interface InputCustomProps extends TextInputProps {
+interface InputCustomProps {
   label?: string;
-  error?: string;
+  placeholder?: string;
+  value: string;
+  onChangeText: (text: string) => void;
   containerStyle?: ViewStyle;
-  labelStyle?: TextStyle;
   inputStyle?: TextStyle;
+  error?: string;
   required?: boolean;
   leftIcon?: string;
   rightIcon?: string;
   onRightIconPress?: () => void;
-  variant?: 'default' | 'filled';
-  darkMode?: boolean;
-  helper?: string;
-  success?: boolean;
+  keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
+  secureTextEntry?: boolean;
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  editable?: boolean;
+  multiline?: boolean;
+  numberOfLines?: number;
+  labelStyle?: TextStyle;
+  subLabel?: string;
+  onPress?: () => void;
 }
 
 const InputCustom: React.FC<InputCustomProps> = ({
-  label,
-  error,
+  placeholder,
+  value,
+  onChangeText,
   containerStyle,
-  labelStyle,
   inputStyle,
-  required = false,
+  error,
+  required,
   leftIcon,
   rightIcon,
   onRightIconPress,
-  variant = 'default',
-  darkMode = false,
-  helper,
-  success = false,
-  ...props
+  keyboardType = 'default',
+  secureTextEntry = false,
+  autoCapitalize = 'none',
+  editable = true,
+  multiline = false,
+  numberOfLines = 1,
+  onPress,
 }) => {
+  const [isFocused, setIsFocused] = useState(false);
+  const animatedValue = useState(new Animated.Value(value ? 1 : 0))[0];
+
+  const handleFocus = () => {
+    setIsFocused(true);
+    Animated.timing(animatedValue, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const handleBlur = () => {
+    setIsFocused(false);
+    if (!value) {
+      Animated.timing(animatedValue, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: false,
+      }).start();
+    }
+  };
+
+  const labelStyle = {
+    position: 'absolute',
+    left: leftIcon ? 45 : theme.spacing.md,
+    top: animatedValue.interpolate({
+      inputRange: [0, 1],
+      outputRange: [14, -8],
+    }),
+    fontSize: animatedValue.interpolate({
+      inputRange: [0, 1],
+      outputRange: [16, 12],
+    }),
+    color: animatedValue.interpolate({
+      inputRange: [0, 1],
+      outputRange: [theme.colors.textLight, theme.colors.primary],
+    }),
+    backgroundColor: theme.colors.white,
+    paddingHorizontal: 4,
+    zIndex: 1,
+  };
+
+  const renderInput = () => (
+    <TextInput
+      style={[
+        styles.input,
+        inputStyle,
+        error && styles.inputError,
+        !editable && styles.inputDisabled,
+        multiline && { height: numberOfLines * 24 },
+      ]}
+      value={value}
+      onChangeText={onChangeText}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      keyboardType={keyboardType}
+      secureTextEntry={secureTextEntry}
+      autoCapitalize={autoCapitalize}
+      editable={editable}
+      multiline={multiline}
+      numberOfLines={numberOfLines}
+    />
+  );
+
   return (
     <View style={[styles.container, containerStyle]}>
-      {label && (
-        <Text style={[
-          styles.label,
-          darkMode && styles.labelDark,
-          labelStyle
-        ]}>
-          {label}
-          {required && <Text style={styles.required}> *</Text>}
-        </Text>
-      )}
       <View style={[
         styles.inputContainer,
-        darkMode && styles.inputContainerDark,
-        variant === 'filled' && (darkMode ? styles.inputContainerFilledDark : styles.inputContainerFilled),
-        error ? styles.inputError : success && styles.inputContainerSuccess,
+        isFocused && styles.inputContainerFocused,
+        error && styles.inputContainerError,
+        !editable && styles.inputContainerDisabled,
       ]}>
         {leftIcon && (
           <Icon
             name={leftIcon}
             size={20}
-            color={darkMode ? theme.colors.textDarkLight : theme.colors.textLight}
+            color={error ? theme.colors.error : theme.colors.textLight}
             style={styles.leftIcon}
           />
         )}
-        <TextInput
-          style={[
-            styles.input,
-            darkMode && styles.inputDark,
-            leftIcon && styles.inputWithLeftIcon,
-            rightIcon && styles.inputWithRightIcon,
-            inputStyle,
-          ]}
-          placeholderTextColor={darkMode ? theme.colors.textDarkLight : theme.colors.textLight}
-          {...props}
-        />
+
+        <View style={styles.inputWrapper}>
+          <Animated.Text style={labelStyle as any}>
+            {placeholder}
+            {required && <Text style={styles.required}> *</Text>}
+          </Animated.Text>
+
+          {onPress ? (
+            <TouchableOpacity
+              style={styles.pressableInput}
+              onPress={onPress}
+              activeOpacity={0.7}
+            >
+              {renderInput()}
+            </TouchableOpacity>
+          ) : (
+            renderInput()
+          )}
+        </View>
+
         {rightIcon && (
           <TouchableOpacity
             onPress={onRightIconPress}
-            style={styles.rightIconContainer}>
+            style={styles.rightIcon}
+            disabled={!onRightIconPress}
+          >
             <Icon
               name={rightIcon}
               size={20}
-              color={darkMode ? theme.colors.textDarkLight : theme.colors.textLight}
+              color={error ? theme.colors.error : theme.colors.textLight}
             />
           </TouchableOpacity>
         )}
       </View>
-      {error ? (
-        <Text style={styles.errorText}>{error}</Text>
-      ) : helper && (
-        <Text style={[
-          styles.helperText,
-          darkMode && styles.helperTextDark
-        ]}>
-          {helper}
-        </Text>
-      )}
+
+      {/* Error Message */}
+      {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: theme.spacing.md,
-  },
-  label: {
-    fontFamily: theme.typography.fontFamily.medium,
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.text,
-    marginBottom: theme.spacing.xs,
-  },
-  labelDark: {
-    color: theme.colors.textDark,
+    width: '100%',
   },
   required: {
     color: theme.colors.error,
@@ -126,69 +187,76 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: theme.colors.white,
+    borderRadius: theme.borderRadius.md,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: theme.borderRadius.md,
+    overflow: 'visible',
+    minHeight: 56,
+    ...Platform.select({
+      ios: {
+        shadowColor: theme.colors.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  inputContainerFocused: {
+    borderColor: theme.colors.primary,
     backgroundColor: theme.colors.white,
-    ...theme.shadows.sm,
+    ...Platform.select({
+      ios: {
+        shadowOpacity: 0.1,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
-  inputContainerDark: {
-    borderColor: theme.colors.borderDark,
-    backgroundColor: theme.colors.secondary,
+  inputContainerError: {
+    borderColor: theme.colors.error,
   },
-  inputContainerFilled: {
-    backgroundColor: theme.colors.backgroundDark,
-    borderWidth: 0,
+  inputContainerDisabled: {
+    backgroundColor: theme.colors.background,
+    borderColor: theme.colors.border,
   },
-  inputContainerFilledDark: {
-    backgroundColor: theme.colors.secondary,
-    borderWidth: 0,
-  },
-  inputContainerSuccess: {
-    borderColor: theme.colors.success,
+  inputWrapper: {
+    flex: 1,
+    position: 'relative',
   },
   input: {
-    flex: 1,
     height: 48,
     paddingHorizontal: theme.spacing.md,
     fontSize: theme.typography.fontSize.md,
     fontFamily: theme.typography.fontFamily.regular,
     color: theme.colors.text,
-  },
-  inputDark: {
-    color: theme.colors.textDark,
-  },
-  inputWithLeftIcon: {
-    paddingLeft: theme.spacing.xs,
-  },
-  inputWithRightIcon: {
-    paddingRight: theme.spacing.xs,
+    paddingTop: 12,
   },
   inputError: {
-    borderColor: theme.colors.error,
+    color: theme.colors.error,
+  },
+  inputDisabled: {
+    color: theme.colors.textLight,
   },
   leftIcon: {
     marginLeft: theme.spacing.md,
   },
-  rightIconContainer: {
-    padding: theme.spacing.md,
+  rightIcon: {
+    marginRight: theme.spacing.md,
+  },
+  pressableInput: {
+    flex: 1,
   },
   errorText: {
-    fontFamily: theme.typography.fontFamily.regular,
+    marginTop: theme.spacing.xs,
     fontSize: theme.typography.fontSize.sm,
+    fontFamily: theme.typography.fontFamily.regular,
     color: theme.colors.error,
-    marginTop: theme.spacing.xs,
-  },
-  helperText: {
-    fontFamily: theme.typography.fontFamily.regular,
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.textLight,
-    marginTop: theme.spacing.xs,
-  },
-  helperTextDark: {
-    color: theme.colors.textDarkLight,
   },
 });
 
 export default InputCustom;
-

@@ -88,9 +88,11 @@ const EkycIDCardScreen: StackScreen<'EkycIDCard'> = ({ navigation }) => {
           >
             <Text style={styles.uploadTitle}>Front Side</Text>
             <ImagePicker
-              image={frontImage}
+              imageUri={frontImage || undefined}
               onImageSelected={setFrontImage}
-              style={styles.imagePicker}
+              containerStyle={styles.imagePicker}
+              isCircle={false}
+              size={200}
               placeholder={
                 <View style={styles.placeholderContent}>
                   <Icon name="camera-plus-outline" size={32} color={theme.colors.primary} />
@@ -107,9 +109,11 @@ const EkycIDCardScreen: StackScreen<'EkycIDCard'> = ({ navigation }) => {
           >
             <Text style={styles.uploadTitle}>Back Side</Text>
             <ImagePicker
-              image={backImage}
+              imageUri={backImage || undefined}
               onImageSelected={setBackImage}
-              style={styles.imagePicker}
+              containerStyle={styles.imagePicker}
+              isCircle={false}
+              size={200}
               placeholder={
                 <View style={styles.placeholderContent}>
                   <Icon name="camera-plus-outline" size={32} color={theme.colors.primary} />
@@ -149,7 +153,6 @@ const EkycIDCardScreen: StackScreen<'EkycIDCard'> = ({ navigation }) => {
           style={styles.continueButton}
           disabled={!frontImage || !backImage}
           icon="arrow-right"
-          gradient
         />
       </ScrollView>
 

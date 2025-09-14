@@ -10,8 +10,15 @@
 		0C80B921A6F3F58F76C31292 /* libPods-Mino.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5DCACB8F33CDC322A6C60F78 /* libPods-Mino.a */; };
 		1199A8796975A86038140B7F /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		277DEEE34BCE4DDDBA20321A /* config_sdk.xml in Resources */ = {isa = PBXBuildFile; fileRef = 676685FA75164230AC09F77F /* config_sdk.xml */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		83E742A1B7B6468F803BD520 /* Inter-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D5C80B8EC72C4DE49BD975A2 /* Inter-SemiBold.ttf */; };
+		92FDFB0814C949479840B584 /* Inter-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C7C7404D66D046EFBE5F1FB3 /* Inter-Bold.ttf */; };
+		9E0077FEE1E34FA5B6403E53 /* logo.png in Resources */ = {isa = PBXBuildFile; fileRef = 2BA5088D066C42A2BD41AB82 /* logo.png */; };
+		B805413B0CC74F84B9F86B7F /* SelectVersionViewController.swift in Resources */ = {isa = PBXBuildFile; fileRef = 39F7D02C45D84BCF8BAEB580 /* SelectVersionViewController.swift */; };
+		CDAD71658AD74001AA99A659 /* Inter-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C0A035FC197143D2AEB52D97 /* Inter-Medium.ttf */; };
+		DA1FBB4FF0064C49B0ADED29 /* Inter-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 81B582239C714C6FAE0EA1A3 /* Inter-Regular.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -19,11 +26,18 @@
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = Mino/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Mino/Info.plist; sourceTree = "<group>"; };
 		13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = PrivacyInfo.xcprivacy; path = Mino/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		2BA5088D066C42A2BD41AB82 /* logo.png */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = logo.png; path = ../assets/fonts/configs/logo.png; sourceTree = "<group>"; };
+		39F7D02C45D84BCF8BAEB580 /* SelectVersionViewController.swift */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 4; includeInIndex = 0; lastKnownFileType = sourcecode.swift; name = SelectVersionViewController.swift; path = ../assets/fonts/configs/iOS/SelectVersionViewController.swift; sourceTree = "<group>"; };
 		3B4392A12AC88292D35C810B /* Pods-Mino.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mino.debug.xcconfig"; path = "Target Support Files/Pods-Mino/Pods-Mino.debug.xcconfig"; sourceTree = "<group>"; };
 		5709B34CF0A7D63546082F79 /* Pods-Mino.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Mino.release.xcconfig"; path = "Target Support Files/Pods-Mino/Pods-Mino.release.xcconfig"; sourceTree = "<group>"; };
 		5DCACB8F33CDC322A6C60F78 /* libPods-Mino.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Mino.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		676685FA75164230AC09F77F /* config_sdk.xml */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = config_sdk.xml; path = ../assets/fonts/configs/androind/config_sdk.xml; sourceTree = "<group>"; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Mino/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = Mino/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		81B582239C714C6FAE0EA1A3 /* Inter-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Inter-Regular.ttf"; path = "../assets/fonts/Inter-Regular.ttf"; sourceTree = "<group>"; };
+		C0A035FC197143D2AEB52D97 /* Inter-Medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Inter-Medium.ttf"; path = "../assets/fonts/Inter-Medium.ttf"; sourceTree = "<group>"; };
+		C7C7404D66D046EFBE5F1FB3 /* Inter-Bold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Inter-Bold.ttf"; path = "../assets/fonts/Inter-Bold.ttf"; sourceTree = "<group>"; };
+		D5C80B8EC72C4DE49BD975A2 /* Inter-SemiBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Inter-SemiBold.ttf"; path = "../assets/fonts/Inter-SemiBold.ttf"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -60,6 +74,21 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		392EB18C117540AD8BB372B4 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				C7C7404D66D046EFBE5F1FB3 /* Inter-Bold.ttf */,
+				C0A035FC197143D2AEB52D97 /* Inter-Medium.ttf */,
+				81B582239C714C6FAE0EA1A3 /* Inter-Regular.ttf */,
+				D5C80B8EC72C4DE49BD975A2 /* Inter-SemiBold.ttf */,
+				676685FA75164230AC09F77F /* config_sdk.xml */,
+				39F7D02C45D84BCF8BAEB580 /* SelectVersionViewController.swift */,
+				2BA5088D066C42A2BD41AB82 /* logo.png */,
+			);
+			name = Resources;
+			path = "";
+			sourceTree = "<group>";
+		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
 			isa = PBXGroup;
 			children = (
@@ -75,6 +104,7 @@
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
+				392EB18C117540AD8BB372B4 /* Resources */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -161,6 +191,13 @@
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				1199A8796975A86038140B7F /* PrivacyInfo.xcprivacy in Resources */,
+				92FDFB0814C949479840B584 /* Inter-Bold.ttf in Resources */,
+				CDAD71658AD74001AA99A659 /* Inter-Medium.ttf in Resources */,
+				DA1FBB4FF0064C49B0ADED29 /* Inter-Regular.ttf in Resources */,
+				83E742A1B7B6468F803BD520 /* Inter-SemiBold.ttf in Resources */,
+				277DEEE34BCE4DDDBA20321A /* config_sdk.xml in Resources */,
+				B805413B0CC74F84B9F86B7F /* SelectVersionViewController.swift in Resources */,
+				9E0077FEE1E34FA5B6403E53 /* logo.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -191,13 +228,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Mino/Pods-Mino-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Mino/Pods-Mino-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -234,13 +267,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Mino/Pods-Mino-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Mino/Pods-Mino-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;

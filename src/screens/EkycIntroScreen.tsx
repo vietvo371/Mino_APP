@@ -7,6 +7,7 @@ import {
   ScrollView,
   Dimensions,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -112,7 +113,7 @@ const EkycIntroScreen: StackScreen<'EkycIntro'> = ({ navigation }) => {
           onPress={() => navigation.navigate('EkycIDCard')}
           style={styles.startButton}
           icon="arrow-right"
-          gradient
+          
         />
       </ScrollView>
     </SafeAreaView>
@@ -244,7 +245,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.success + '10',
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
-    borderRadius: theme.borderRadius.full,
+    borderRadius: theme.borderRadius.lg,
     marginTop: theme.spacing.xl,
     marginBottom: theme.spacing.lg,
   },
