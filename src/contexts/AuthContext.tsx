@@ -11,7 +11,7 @@ const STORAGE_KEYS = {
 } as const;
 
 // Types
-type UserRole = 'farmer' | 'bank' | 'cooperative' | 'verifier' | 'government' | 'buyer';
+type UserRole = 'individual' | 'business' | 'farmer' | 'bank' | 'cooperative' | 'verifier' | 'government' | 'buyer';
 
 interface RawUserData extends EkycData {
   id?: number;
@@ -55,10 +55,13 @@ interface SignUpData {
   gps_latitude?: string;
   gps_longitude?: string;
   organization_name?: string;
-  organization_type?: 'bank' | 'cooperative';
+  organization_type?: 'bank' | 'cooperative' | 'business';
   address?: string;
   password: string;
   password_confirmation: string;
+  id_number?: string;
+  id_type?: string;
+  employee_id?: string;
 }
 
 interface ApiError {

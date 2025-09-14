@@ -176,13 +176,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: theme.typography.fontFamily,
     color: theme.colors.white,
     textAlign: 'center',
   },
   description: {
     fontSize: 16,
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: theme.typography.fontFamily,
     color: theme.colors.textDarkLight,
     textAlign: 'center',
     marginBottom: 20,
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontSize: 18,
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: theme.typography.fontFamily,
     color: theme.colors.secondary,
   },
 });

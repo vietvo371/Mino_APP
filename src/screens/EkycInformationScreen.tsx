@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   Platform,
 } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../theme/colors';
@@ -81,10 +80,6 @@ const EkycInformationScreen: StackScreen<'EkycInformation'> = ({ navigation }) =
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.backgroundContainer}>
-        <LinearGradient
-          colors={[theme.colors.primary + '15', theme.colors.white]}
-          style={StyleSheet.absoluteFill}
-        />
         <View style={styles.decorativeCircle1} />
         <View style={styles.decorativeCircle2} />
       </View>
@@ -106,9 +101,9 @@ const EkycInformationScreen: StackScreen<'EkycInformation'> = ({ navigation }) =
           </TouchableOpacity>
 
           <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>Personal Information</Text>
+            <Text style={styles.headerTitle}>Thông tin cá nhân</Text>
             <Text style={styles.headerSubtitle}>
-              Please verify your personal information
+              Vui lòng xác thực thông tin cá nhân của bạn
             </Text>
           </View>
         </Animated.View>
@@ -119,7 +114,7 @@ const EkycInformationScreen: StackScreen<'EkycInformation'> = ({ navigation }) =
           entering={FadeInDown.duration(600).delay(200).springify()}
         >
           <InputCustom
-            label="Full Name"
+            label="Họ và tên"
             placeholder="Enter your full name"
             value={formData.fullName}
             onChangeText={(value) => setFormData({ ...formData, fullName: value })}
@@ -129,7 +124,7 @@ const EkycInformationScreen: StackScreen<'EkycInformation'> = ({ navigation }) =
           />
 
           <InputCustom
-            label="ID Number"
+            label="Số căn cước công dân"
             placeholder="Enter your ID number"
             value={formData.idNumber}
             onChangeText={(value) => setFormData({ ...formData, idNumber: value })}
@@ -141,7 +136,7 @@ const EkycInformationScreen: StackScreen<'EkycInformation'> = ({ navigation }) =
 
 
           <InputCustom
-            label="Address"
+            label="Địa chỉ"
             placeholder="Enter your current address"
             value={formData.address}
             onChangeText={(value) => setFormData({ ...formData, address: value })}
@@ -151,7 +146,7 @@ const EkycInformationScreen: StackScreen<'EkycInformation'> = ({ navigation }) =
           />
 
           <InputCustom
-            label="Nationality"
+            label="Quốc tịch"
             placeholder="Enter your nationality"
             value={formData.nationality}
             onChangeText={(value) => setFormData({ ...formData, nationality: value })}
@@ -176,20 +171,20 @@ const EkycInformationScreen: StackScreen<'EkycInformation'> = ({ navigation }) =
         >
           <Icon name="information" size={20} color={theme.colors.primary} />
           <Text style={styles.noteText}>
-            Please ensure all information matches your ID card exactly
+            Vui lòng đảm bảo tất cả thông tin trùng khớp với thẻ căn cước công dân của bạn
           </Text>
         </Animated.View>
 
         {/* Continue Button */}
         <ButtonCustom
-          title="Continue"
+          title="Tiếp tục"
           onPress={handleSubmit}
           style={styles.continueButton}
           icon="arrow-right"
         />
       </ScrollView>
 
-      <LoadingOverlay visible={loading} message="Submitting information..." />
+      <LoadingOverlay visible={loading} message="Đang gửi thông tin..." />
     </SafeAreaView>
   );
 };
@@ -257,13 +252,13 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: theme.typography.fontSize['2xl'],
     color: theme.colors.text,
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: theme.typography.fontFamily,
     marginBottom: theme.spacing.xs,
   },
   headerSubtitle: {
     fontSize: theme.typography.fontSize.md,
     color: theme.colors.textLight,
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: theme.typography.fontFamily,
   },
   formContainer: {
     marginTop: theme.spacing.md,
@@ -283,7 +278,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: theme.typography.fontSize.sm,
     color: theme.colors.text,
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: theme.typography.fontFamily,
   },
   continueButton: {
     height: 56,

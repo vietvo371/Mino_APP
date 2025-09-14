@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   Platform,
 } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../theme/colors';
@@ -44,10 +43,6 @@ const EkycSelfieScreen: StackScreen<'EkycSelfie'> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.backgroundContainer}>
-        <LinearGradient
-          colors={[theme.colors.primary + '15', theme.colors.white]}
-          style={StyleSheet.absoluteFill}
-        />
         <View style={styles.decorativeCircle1} />
         <View style={styles.decorativeCircle2} />
       </View>
@@ -69,7 +64,7 @@ const EkycSelfieScreen: StackScreen<'EkycSelfie'> = ({ navigation }) => {
           </TouchableOpacity>
 
           <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>Take a Selfie</Text>
+            <Text style={styles.headerTitle}>Chụp ảnh selfie</Text>
             <Text style={styles.headerSubtitle}>
               We need a clear photo of your face for verification
             </Text>
@@ -100,7 +95,7 @@ const EkycSelfieScreen: StackScreen<'EkycSelfie'> = ({ navigation }) => {
           style={styles.guidelines}
           entering={FadeInDown.duration(600).delay(400).springify()}
         >
-          <Text style={styles.guidelinesTitle}>Guidelines</Text>
+          <Text style={styles.guidelinesTitle}>Hướng dẫn</Text>
           <View style={styles.guidelinesList}>
             <View style={styles.guidelineItem}>
               <Icon name="check-circle-outline" size={20} color={theme.colors.success} />
@@ -130,7 +125,7 @@ const EkycSelfieScreen: StackScreen<'EkycSelfie'> = ({ navigation }) => {
 
         {/* Continue Button */}
         <ButtonCustom
-          title="Continue"
+          title="Tiếp tục"
           onPress={handleUpload}
           style={styles.continueButton}
           disabled={!selfieImage}
@@ -138,7 +133,7 @@ const EkycSelfieScreen: StackScreen<'EkycSelfie'> = ({ navigation }) => {
         />
       </ScrollView>
 
-      <LoadingOverlay visible={loading} message="Uploading selfie..." />
+      <LoadingOverlay visible={loading} message="Đang tải ảnh selfie..." />
     </SafeAreaView>
   );
 };
@@ -206,13 +201,13 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: theme.typography.fontSize['2xl'],
     color: theme.colors.text,
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: theme.typography.fontFamily,
     marginBottom: theme.spacing.xs,
   },
   headerSubtitle: {
     fontSize: theme.typography.fontSize.md,
     color: theme.colors.textLight,
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: theme.typography.fontFamily,
   },
   uploadCard: {
     marginTop: theme.spacing.xl,
@@ -251,7 +246,7 @@ const styles = StyleSheet.create({
   placeholderText: {
     fontSize: theme.typography.fontSize.lg,
     color: theme.colors.primary,
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: theme.typography.fontFamily,
   },
   guidelines: {
     marginTop: theme.spacing.xl,
@@ -259,7 +254,7 @@ const styles = StyleSheet.create({
   guidelinesTitle: {
     fontSize: theme.typography.fontSize.lg,
     color: theme.colors.text,
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: theme.typography.fontFamily,
     marginBottom: theme.spacing.md,
   },
   guidelinesList: {
@@ -273,7 +268,7 @@ const styles = StyleSheet.create({
   guidelineText: {
     fontSize: theme.typography.fontSize.md,
     color: theme.colors.text,
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: theme.typography.fontFamily,
   },
   securityNote: {
     flexDirection: 'row',
@@ -289,7 +284,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: theme.typography.fontSize.sm,
     color: theme.colors.text,
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: theme.typography.fontFamily,
   },
   continueButton: {
     height: 56,

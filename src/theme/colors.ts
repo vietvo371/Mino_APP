@@ -2,7 +2,8 @@ import { Platform } from 'react-native';
 
 export const COLORS = {
   // Brand Colors
-  primary: '#F3BA2F',
+  primary: 'black',
+  // F3BA2F
   secondary: '#181A20',
   background: '#FFFFFF',
   backgroundDark: '#0B0E11',

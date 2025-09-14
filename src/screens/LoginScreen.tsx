@@ -22,6 +22,9 @@ import InputCustom from '../component/InputCustom';
 import ButtonCustom from '../component/ButtonCustom';
 import LoadingOverlay from '../component/LoadingOverlay';
 import api from '../utils/Api';
+import LanguageSelector from '../components/LanguageSelector';
+import CountryCodePicker from '../components/CountryCodePicker';
+import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
 interface LoginScreenProps {
   navigation: any;
@@ -32,16 +35,26 @@ const { width, height } = Dimensions.get('window');
 const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const { signIn } = useAuth();
   const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ identifier?: string, password?: string }>({});
   const [isPhoneNumber, setIsPhoneNumber] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showLanguageSelector, setShowLanguageSelector] = useState(false);
+  const [showCountryPicker, setShowCountryPicker] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState({
+    code: 'VN',
+    name: 'Vietnam',
+    dialCode: '+84',
+    flag: '🇻🇳',
+  });
   const validateForm = () => {
-    const newErrors: { identifier?: string } = {};
+    const newErrors: { identifier?: string; password?: string } = {};
 
     if (!identifier) {
       newErrors.identifier = 'Email or phone number is required';
     } else if (isPhoneNumber) {
-      if (!/^\+?[\d\s-]{10,}$/.test(identifier)) {
+      if (!/^\d{9,10}$/.test(identifier)) {
         newErrors.identifier = 'Please enter a valid phone number';
       }
     } else {
@@ -50,13 +63,20 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       }
     }
 
+    if (!password) {
+      newErrors.password = 'Password is required';
+    } else if (password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const detectInputType = (value: string) => {
-    const isPhone = /^[\d\s+-]+$/.test(value);
+  const handleInputTypeChange = (isPhone: boolean) => {
     setIsPhoneNumber(isPhone);
+    setIdentifier('');
+    setErrors({});
   };
 
   const handleLogin = () => {
@@ -84,10 +104,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       {/* Background */}
       <View style={styles.backgroundContainer}>
-        <LinearGradient
-          colors={[theme.colors.primary + '15', theme.colors.white]}
-          style={StyleSheet.absoluteFill}
-        />
 
         {/* Decorative Elements */}
         <View style={styles.decorativeCircle1} />
@@ -97,18 +113,35 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         <View style={styles.headerIcons}>
           <TouchableOpacity
             style={styles.headerIconButton}
-            onPress={() => Alert.alert('Coming soon', 'Language selection will be available soon')}
+            onPress={() => setShowLanguageSelector(true)}
           >
             <Icon name="translate" size={24} color={theme.colors.text} />
           </TouchableOpacity>
           
           <TouchableOpacity
             style={styles.headerIconButton}
-            onPress={() => Alert.alert('Support', 'Contact us at support@mino.com')}
+            onPress={() => navigation.navigate('Help')}
           >
             <Icon name="headset" size={24} color={theme.colors.text} />
           </TouchableOpacity>
         </View>
+
+        <LanguageSelector
+          visible={showLanguageSelector}
+          onClose={() => setShowLanguageSelector(false)}
+          onSelect={(code) => {
+            // Handle language change
+            console.log('Selected language:', code);
+          }}
+          currentLanguage="vi"
+        />
+
+        <CountryCodePicker
+          visible={showCountryPicker}
+          onClose={() => setShowCountryPicker(false)}
+          onSelect={(country) => setSelectedCountry(country)}
+          selectedCountry={selectedCountry}
+        />
       </View>
 
       <KeyboardAvoidingView
@@ -138,13 +171,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             >
               MINO
             </Animated.Text>
-
-            <Animated.Text
-              style={styles.subtitle}
-              entering={FadeInDown.duration(800).delay(600).springify()}
-            >
-              Sign in to continue your journey
-            </Animated.Text>
           </Animated.View>
 
           {/* Form Section */}
@@ -162,10 +188,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             <View style={styles.form}>
               {/* Input Type Indicator */}
               <View style={styles.inputTypeIndicator}>
-                <View style={[
-                  styles.inputTypeTab,
-                  !isPhoneNumber && styles.inputTypeTabActive
-                ]}>
+                <TouchableOpacity 
+                  style={[
+                    styles.inputTypeTab,
+                    !isPhoneNumber && styles.inputTypeTabActive
+                  ]}
+                  onPress={() => handleInputTypeChange(false)}
+                >
                   <Icon
                     name="email-outline"
                     size={16}
@@ -177,11 +206,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                   ]}>
                     Email
                   </Text>
-                </View>
-                <View style={[
-                  styles.inputTypeTab,
-                  isPhoneNumber && styles.inputTypeTabActive
-                ]}>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[
+                    styles.inputTypeTab,
+                    isPhoneNumber && styles.inputTypeTabActive
+                  ]}
+                  onPress={() => handleInputTypeChange(true)}
+                >
                   <Icon
                     name="phone-outline"
                     size={16}
@@ -193,34 +225,72 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                   ]}>
                     Phone
                   </Text>
-                </View>
+                </TouchableOpacity>
               </View>
 
+              {isPhoneNumber ? (
+                <View style={styles.phoneInputContainer}>
+                  {/* <TouchableOpacity
+                    style={styles.countryPicker}
+                    onPress={() => setShowCountryPicker(true)}
+                  >
+                    <Text style={styles.countryFlag}>{selectedCountry.flag}</Text>
+                    <Text style={styles.countryCode}>{selectedCountry.dialCode}</Text>
+                    <Icon name="chevron-down" size={20} color="#666" />
+                  </TouchableOpacity> */}
+                  <View style={styles.phoneInputWrapper}>
+                    <InputCustom
+                      label="Phone Number"
+                      placeholder="Enter your phone number"
+                      value={identifier}
+                      onChangeText={setIdentifier}
+                      keyboardType="phone-pad"
+                      autoCapitalize="none"
+                      error={errors.identifier}
+                      required
+                      leftIcon="phone-outline"
+                      containerStyle={styles.phoneInput}
+                    />
+                  </View>
+                </View>
+              ) : (
+                <InputCustom
+                  label="Email Address"
+                  placeholder="Enter your email address"
+                  value={identifier}
+                  onChangeText={setIdentifier}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  error={errors.identifier}
+                  required
+                  leftIcon="email-outline"
+                  containerStyle={styles.input}
+                />
+              )}
+
               <InputCustom
-                label={isPhoneNumber ? "Phone Number" : "Email Address"}
-                placeholder={isPhoneNumber ? "Enter your phone number" : "Enter your email address"}
-                value={identifier}
-                onChangeText={(value) => {
-                  setIdentifier(value);
-                  detectInputType(value);
-                }}
-                keyboardType={isPhoneNumber ? "phone-pad" : "email-address"}
-                autoCapitalize="none"
-                error={errors.identifier}
+                label="Password"
+                placeholder="Enter your password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                error={errors.password}
                 required
-                leftIcon={isPhoneNumber ? "phone-outline" : "email-outline"}
+                leftIcon="lock-outline"
+                rightIcon={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                onRightIconPress={() => setShowPassword(!showPassword)}
                 containerStyle={styles.input}
               />
 
               <ButtonCustom
-                title="Send OTP"
+                title="Sign In"
                 onPress={handleLogin}
                 style={styles.loginButton}
                 icon="login"
               />
 
               {/* Social Login */}
-              {/* <View style={styles.socialContainer}>
+              <View style={styles.socialContainer}>
                 <TouchableOpacity
                   style={[styles.socialButton, styles.googleButton]}
                   onPress={() => handleSocialLogin('Google')}
@@ -234,7 +304,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                   onPress={() => handleSocialLogin('Facebook')}
                   activeOpacity={0.7}
                 >
-                  <Icon name="facebook" size={24} color="#4267B2" />
+                  <Icon name="whatsapp" size={24} color="#4267B2" />
                 </TouchableOpacity>
 
                 {Platform.OS === 'ios' && (
@@ -246,7 +316,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                     <Icon name="apple" size={24} color="#000000" />
                   </TouchableOpacity>
                 )}
-              </View> */}
+              </View>
             </View>
           </Animated.View>
 
@@ -374,17 +444,17 @@ const styles = StyleSheet.create({
   welcomeText: {
     fontSize: theme.typography.fontSize.md,
     color: theme.colors.textLight,
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: theme.typography.fontFamily,
     marginBottom: theme.spacing.xs,
   },
   title: {
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: theme.typography.fontFamily,
     fontSize: 36,
     color: theme.colors.primary,
     marginBottom: theme.spacing.sm,
   },
   subtitle: {
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: theme.typography.fontFamily,
     fontSize: theme.typography.fontSize.md,
     color: theme.colors.textLight,
     textAlign: 'center',
@@ -415,7 +485,7 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.xl,
   },
   formTitle: {
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: theme.typography.fontFamily,
     fontSize: theme.typography.fontSize.xl,
     color: theme.colors.text,
     marginBottom: theme.spacing.xs,
@@ -457,7 +527,7 @@ const styles = StyleSheet.create({
   inputTypeText: {
     fontSize: theme.typography.fontSize.sm,
     color: theme.colors.textLight,
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: theme.typography.fontFamily,
   },
   inputTypeTextActive: {
     color: theme.colors.primary,
@@ -465,6 +535,33 @@ const styles = StyleSheet.create({
 
   input: {
     marginBottom: theme.spacing.lg,
+  },
+  phoneInputContainer: {
+    marginBottom: theme.spacing.lg,
+  },
+  countryPicker: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.background,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  countryFlag: {
+    fontSize: 24,
+    marginRight: 8,
+  },
+  countryCode: {
+    fontSize: wp('4%'),
+    color: theme.colors.text,
+    marginRight: 8,
+  },
+  phoneInputWrapper: {
+    flex: 1,
+  },
+  phoneInput: {
+    flex: 1,
   },
   loginButton: {
     marginBottom: theme.spacing.lg,
@@ -483,7 +580,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.border,
   },
   dividerText: {
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: theme.typography.fontFamily,
     fontSize: theme.typography.fontSize.sm,
     color: theme.colors.textLight,
     marginHorizontal: theme.spacing.lg,
@@ -531,14 +628,14 @@ const styles = StyleSheet.create({
     paddingVertical: theme.spacing.sm,
   },
   registerText: {
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: theme.typography.fontFamily,
     fontSize: theme.typography.fontSize.md,
     color: theme.colors.text,
     textAlign: 'center',
   },
   registerLinkText: {
     color: theme.colors.primary,
-    fontFamily: theme.typography.fontFamily.bold,
+      fontFamily: theme.typography.fontFamily, 
   },
   helpSection: {
     alignItems: 'center',
@@ -552,7 +649,7 @@ const styles = StyleSheet.create({
   helpText: {
     fontSize: theme.typography.fontSize.sm,
     color: theme.colors.textLight,
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: theme.typography.fontFamily,
   },
   securityBadge: {
     flexDirection: 'row',
@@ -568,7 +665,7 @@ const styles = StyleSheet.create({
   securityText: {
     fontSize: theme.typography.fontSize.xs,
     color: theme.colors.text,
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: theme.typography.fontFamily,
     textAlign: 'center',
     flex: 1,
   },

@@ -9,7 +9,6 @@ import {
   Image,
   Platform,
 } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../theme/colors';
@@ -47,10 +46,6 @@ const EkycIDCardScreen: StackScreen<'EkycIDCard'> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.backgroundContainer}>
-        <LinearGradient
-          colors={[theme.colors.primary + '15', theme.colors.white]}
-          style={StyleSheet.absoluteFill}
-        />
         <View style={styles.decorativeCircle1} />
         <View style={styles.decorativeCircle2} />
       </View>
@@ -224,13 +219,13 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: theme.typography.fontSize['2xl'],
     color: theme.colors.text,
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: theme.typography.fontFamily,
     marginBottom: theme.spacing.xs,
   },
   headerSubtitle: {
     fontSize: theme.typography.fontSize.md,
     color: theme.colors.textLight,
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: theme.typography.fontFamily,
   },
   uploadSection: {
     marginTop: theme.spacing.xl,
@@ -257,7 +252,7 @@ const styles = StyleSheet.create({
   uploadTitle: {
     fontSize: theme.typography.fontSize.lg,
     color: theme.colors.text,
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: theme.typography.fontFamily,
     marginBottom: theme.spacing.md,
   },
   imagePicker: {
@@ -278,7 +273,7 @@ const styles = StyleSheet.create({
   placeholderText: {
     fontSize: theme.typography.fontSize.md,
     color: theme.colors.primary,
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: theme.typography.fontFamily,
   },
   guidelines: {
     marginTop: theme.spacing.xl,
@@ -287,7 +282,7 @@ const styles = StyleSheet.create({
   guidelinesTitle: {
     fontSize: theme.typography.fontSize.lg,
     color: theme.colors.text,
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: theme.typography.fontFamily,
     marginBottom: theme.spacing.md,
   },
   guidelinesList: {
@@ -301,7 +296,7 @@ const styles = StyleSheet.create({
   guidelineText: {
     fontSize: theme.typography.fontSize.md,
     color: theme.colors.text,
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: theme.typography.fontFamily,
   },
   continueButton: {
     height: 56,

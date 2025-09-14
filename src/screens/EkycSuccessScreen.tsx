@@ -7,7 +7,6 @@ import {
   Platform,
   Dimensions,
 } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../theme/colors';
@@ -20,10 +19,6 @@ const EkycSuccessScreen: StackScreen<'EkycSuccess'> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.backgroundContainer}>
-        <LinearGradient
-          colors={[theme.colors.primary + '15', theme.colors.white]}
-          style={StyleSheet.absoluteFill}
-        />
         <View style={styles.decorativeCircle1} />
         <View style={styles.decorativeCircle2} />
       </View>
@@ -44,7 +39,7 @@ const EkycSuccessScreen: StackScreen<'EkycSuccess'> = ({ navigation }) => {
           style={styles.messageContainer}
           entering={FadeInDown.duration(800).delay(800)}
         >
-          <Text style={styles.title}>Verification Complete!</Text>
+          <Text style={styles.title}>Xác thực hoàn tất!</Text>
           <Text style={styles.subtitle}>
             Your identity has been successfully verified. You now have full access to all features.
           </Text>
@@ -57,15 +52,15 @@ const EkycSuccessScreen: StackScreen<'EkycSuccess'> = ({ navigation }) => {
         >
           <View style={styles.featureItem}>
             <Icon name="shield-check" size={24} color={theme.colors.success} />
-            <Text style={styles.featureText}>Enhanced Security</Text>
+            <Text style={styles.featureText}>Bảo mật được cải thiện</Text>
           </View>
           <View style={styles.featureItem}>
             <Icon name="cash-multiple" size={24} color={theme.colors.success} />
-            <Text style={styles.featureText}>Higher Transaction Limits</Text>
+            <Text style={styles.featureText}>Giới hạn giao dịch được tăng</Text>
           </View>
           <View style={styles.featureItem}>
             <Icon name="account-check" size={24} color={theme.colors.success} />
-            <Text style={styles.featureText}>Verified Account Status</Text>
+            <Text style={styles.featureText}>Trạng thái tài khoản được xác thực</Text>
           </View>
         </Animated.View>
 
@@ -75,7 +70,7 @@ const EkycSuccessScreen: StackScreen<'EkycSuccess'> = ({ navigation }) => {
           style={styles.buttonContainer}
         >
           <ButtonCustom
-            title="Continue to App"
+            title="Tiếp tục đến ứng dụng"
             onPress={() => navigation.replace('MainTabs')}
             style={styles.continueButton}
             icon="arrow-right"
@@ -149,14 +144,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: theme.typography.fontSize['2xl'],
     color: theme.colors.text,
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: theme.typography.fontFamily,
     marginBottom: theme.spacing.md,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: theme.typography.fontSize.md,
     color: theme.colors.textLight,
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: theme.typography.fontFamily,
     textAlign: 'center',
     maxWidth: width * 0.8,
   },
@@ -187,7 +182,7 @@ const styles = StyleSheet.create({
   featureText: {
     fontSize: theme.typography.fontSize.md,
     color: theme.colors.text,
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: theme.typography.fontFamily,
   },
   buttonContainer: {
     width: '100%',

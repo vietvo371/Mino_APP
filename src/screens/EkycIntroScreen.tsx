@@ -9,7 +9,6 @@ import {
   TouchableOpacity,
   Platform,
 } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../theme/colors';
@@ -45,10 +44,6 @@ const EkycIntroScreen: StackScreen<'EkycIntro'> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.backgroundContainer}>
-        <LinearGradient
-          colors={[theme.colors.primary + '15', theme.colors.white]}
-          style={StyleSheet.absoluteFill}
-        />
         <View style={styles.decorativeCircle1} />
         <View style={styles.decorativeCircle2} />
       </View>
@@ -70,7 +65,7 @@ const EkycIntroScreen: StackScreen<'EkycIntro'> = ({ navigation }) => {
           </TouchableOpacity>
 
           <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>Identity Verification</Text>
+            <Text style={styles.headerTitle}>Xác thực Identity</Text>
             <Text style={styles.headerSubtitle}>
               Complete the verification process to access all features
             </Text>
@@ -109,7 +104,7 @@ const EkycIntroScreen: StackScreen<'EkycIntro'> = ({ navigation }) => {
 
         {/* Start Button */}
         <ButtonCustom
-          title="Start Verification"
+          title="Bắt đầu xác thực"
           onPress={() => navigation.navigate('EkycIDCard')}
           style={styles.startButton}
           icon="arrow-right"
@@ -183,13 +178,13 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: theme.typography.fontSize['2xl'],
     color: theme.colors.text,
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: theme.typography.fontFamily,
     marginBottom: theme.spacing.xs,
   },
   headerSubtitle: {
     fontSize: theme.typography.fontSize.md,
     color: theme.colors.textLight,
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: theme.typography.fontFamily,
   },
   stepsContainer: {
     marginTop: theme.spacing.xl,
@@ -230,13 +225,13 @@ const styles = StyleSheet.create({
   stepTitle: {
     fontSize: theme.typography.fontSize.lg,
     color: theme.colors.text,
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: theme.typography.fontFamily,
     marginBottom: theme.spacing.xs,
   },
   stepDescription: {
     fontSize: theme.typography.fontSize.sm,
     color: theme.colors.textLight,
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: theme.typography.fontFamily,
   },
   securityBadge: {
     flexDirection: 'row',
@@ -253,7 +248,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: theme.typography.fontSize.sm,
     color: theme.colors.text,
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: theme.typography.fontFamily,
   },
   startButton: {
     height: 56,
