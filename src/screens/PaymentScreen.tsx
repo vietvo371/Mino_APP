@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -31,6 +31,44 @@ const PaymentScreen = () => {
 
   const [selectedBank, setSelectedBank] = useState('');
   const [selectedTRC20, setSelectedTRC20] = useState('');
+  const [currentRate, setCurrentRate] = useState<number>(paymentInfo.rate || 0);
+  const [secondsLeft, setSecondsLeft] = useState<number>(20);
+  const isFetchingRef = useRef<boolean>(false);
+  const transactionIdRef = useRef<string>(`MINO${Date.now().toString().slice(-6)}`);
+
+  // Fetch USD→VND rate (USDT≈USD)
+  const fetchExchangeRate = async () => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
+    try {
+      const res = await fetch('https://api.exchangerate.host/latest?base=USD&symbols=VND');
+      const json = await res.json();
+      const vnd = json?.rates?.VND;
+      if (typeof vnd === 'number' && isFinite(vnd)) {
+        setCurrentRate(Math.round(vnd));
+      }
+    } catch (e) {
+      // ignore network errors, keep old rate
+    } finally {
+      isFetchingRef.current = false;
+    }
+  };
+
+  // 20s countdown and auto-refresh
+  useEffect(() => {
+    setSecondsLeft(20);
+    const timer = setInterval(() => {
+      setSecondsLeft((prev) => {
+        if (prev <= 1) {
+          // time to refresh
+          fetchExchangeRate();
+          return 20;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleSelectBank = () => {
     navigation.navigate('BankAccounts');
@@ -62,14 +100,14 @@ const PaymentScreen = () => {
   const getTransactionInfo = () => {
     const amountNum = parseFloat(paymentInfo.amount);
     if (paymentInfo.type === 'buy') {
-      const usdtAmount = (amountNum / paymentInfo.rate).toFixed(2);
+      const usdtAmount = (amountNum / (currentRate || paymentInfo.rate)).toFixed(2);
       const fee = 13500;
       const totalVND = amountNum + fee;
-      const transactionId = `MINO${Date.now().toString().slice(-6)}`;
+      const transactionId = transactionIdRef.current;
       
       return {
         usdtWant: `${usdtAmount} USDT`,
-        exchangeRate: `1 USDT = ${paymentInfo.rate.toLocaleString('vi-VN')} VND`,
+        exchangeRate: `1 USDT = ${(currentRate || paymentInfo.rate).toLocaleString('vi-VN')} VND`,
         fee: `${fee.toLocaleString('vi-VN')} VND`,
         totalVND: `${totalVND.toLocaleString('vi-VN')} VND`,
         transactionId,
@@ -83,12 +121,13 @@ const PaymentScreen = () => {
       };
     } else {
       const feeRate = 0.5; // 0.5%
-      const feeAmount = amountNum * paymentInfo.rate * (feeRate / 100);
-      const receiveAmount = (amountNum * paymentInfo.rate) - feeAmount;
+      const rate = currentRate || paymentInfo.rate;
+      const feeAmount = amountNum * rate * (feeRate / 100);
+      const receiveAmount = (amountNum * rate) - feeAmount;
       
       return {
         usdtSell: `${paymentInfo.amount} USDT`,
-        exchangeRate: `1 USDT = ${paymentInfo.rate.toLocaleString('vi-VN')} VND`,
+        exchangeRate: `1 USDT = ${(currentRate || paymentInfo.rate).toLocaleString('vi-VN')} VND`,
         fee: `${feeAmount.toLocaleString('vi-VN')} VND (${feeRate}%)`,
         receiveVND: `${receiveAmount.toLocaleString('vi-VN')} VND`,
         sendAmount: `${paymentInfo.amount} USDT`,
@@ -117,15 +156,15 @@ const PaymentScreen = () => {
       const amountNum = parseFloat(paymentInfo.amount);
       const paymentData = {
         merchant: "Mino Exchange",
-        transactionId: `TXN${Date.now()}`,
+        transactionId: transactionIdRef.current,
         type: paymentInfo.type,
         amount: paymentInfo.amount,
         currency: 'USDT',
-        rate: paymentInfo.rate,
+        rate: currentRate || paymentInfo.rate,
         timestamp: new Date().toISOString(),
         status: "pending",
-        totalAmount: `${(amountNum * paymentInfo.rate * 0.995).toLocaleString('vi-VN')} VND`,
-        receiveAmount: `${(amountNum * paymentInfo.rate).toLocaleString('vi-VN')} VND`,
+        totalAmount: `${(amountNum * (currentRate || paymentInfo.rate) * 0.995).toLocaleString('vi-VN')} VND`,
+        receiveAmount: `${(amountNum * (currentRate || paymentInfo.rate)).toLocaleString('vi-VN')} VND`,
         fee: '0.5%',
         paymentMethod: 'crypto_transfer'
       };
@@ -148,7 +187,12 @@ const PaymentScreen = () => {
         <Text style={styles.headerTitle}>
           {paymentInfo.type === 'buy' ? 'Mua USDT' : 'Bán USDT'}
         </Text>
-        <View style={styles.placeholder} />
+        <TouchableOpacity style={styles.headerRight} onPress={fetchExchangeRate}>
+          <Icon name="refresh" size={16} color="#4A90E2" />
+          <Text style={styles.headerRightText}>
+            {secondsLeft}s • {(currentRate || paymentInfo.rate).toLocaleString('vi-VN')}
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content}>
@@ -437,8 +481,19 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#000',
   },
-  placeholder: {
-    width: 32,
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    backgroundColor: '#EEF5FF',
+    borderRadius: 16,
+  },
+  headerRightText: {
+    marginLeft: 6,
+    color: '#4A90E2',
+    fontSize: wp('3.2%'),
+    fontWeight: '600',
   },
   content: {
     flex: 1,
