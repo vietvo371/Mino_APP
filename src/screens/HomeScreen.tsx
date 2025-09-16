@@ -72,26 +72,26 @@ const HomeScreen: StackScreen<'Home'> = () => {
     if (/^\d*\.?\d{0,2}$/.test(newAmount)) {
       const numValue = parseFloat(newAmount);
       if (!isNaN(numValue)) {
-        // Kiểm tra giới hạn theo loại giao dịch
+        // Check limit by transaction type
         const maxAmount = activeTab === 'buy' ? MAX_VND_AMOUNT : MAX_USDT_AMOUNT;
         if (numValue > maxAmount) {
           Alert.alert(
-            'Thông báo',
+            'Notification',
             activeTab === 'buy'
-              ? 'Số tiền VND tối đa là 999,999,999,999'
-              : 'Số USDT tối đa là 999,999.99'
+              ? 'Maximum VND amount is 999,999,999,999'
+              : 'Maximum USDT amount is 999,999.99'
           );
           return;
         }
 
-        // Giới hạn số chữ số thập phân
+        // Limit decimal places
         if (activeTab === 'buy') {
-          // VND không có số thập phân
+          // VND has no decimal places
           if (!newAmount.includes('.')) {
             setAmount(newAmount);
           }
         } else {
-          // USDT tối đa 2 số thập phân
+          // USDT maximum 2 decimal places
           setAmount(newAmount);
         }
       }
@@ -104,7 +104,7 @@ const HomeScreen: StackScreen<'Home'> = () => {
 
   const handleShortcutPress = (shortcut: string) => {
     let value = shortcut;
-    // Chỉ xử lý K, M cho VND
+    // Only process K, M for VND
     if (activeTab === 'buy') {
       if (shortcut.endsWith('K')) {
         value = (parseFloat(shortcut.replace('K', '')) * 1000).toString();
@@ -115,24 +115,24 @@ const HomeScreen: StackScreen<'Home'> = () => {
 
     const numValue = parseFloat(value);
     if (!isNaN(numValue)) {
-      // Kiểm tra giới hạn theo loại giao dịch
+      // Check limit by transaction type
       const maxAmount = activeTab === 'buy' ? MAX_VND_AMOUNT : MAX_USDT_AMOUNT;
       if (numValue > maxAmount) {
         Alert.alert(
-          'Thông báo',
+          'Notification',
           activeTab === 'buy'
-            ? 'Số tiền VND tối đa là 999,999,999,999'
-            : 'Số USDT tối đa là 999,999.99'
+            ? 'Maximum VND amount is 999,999,999,999'
+            : 'Maximum USDT amount is 999,999.99'
         );
         return;
       }
 
-      // Format số theo loại tiền
+      // Format number by currency type
       if (activeTab === 'buy') {
-        // VND làm tròn số nguyên
+        // VND round to integer
         setAmount(Math.round(numValue).toString());
       } else {
-        // USDT giữ nguyên số để có thể tiếp tục nhập
+        // USDT keep original number to continue input
         setAmount(value);
       }
     }
@@ -255,7 +255,7 @@ const HomeScreen: StackScreen<'Home'> = () => {
           disabled={!amount || parseFloat(amount) === 0}
         >
           <Text style={styles.confirmButtonText}>
-            {activeTab === 'buy' ? 'Mua USDT' : 'Bán USDT'}
+            {activeTab === 'buy' ? 'Buy USDT' : 'Sell USDT'}
           </Text>
         </TouchableOpacity>
       </View>

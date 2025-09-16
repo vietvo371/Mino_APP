@@ -16,25 +16,25 @@ const NOTIFICATIONS = [
   {
     id: '1',
     type: 'transaction',
-    title: 'Giao dịch thành công',
-    message: 'Bạn đã nạp thành công 100 USDT vào ví',
-    time: '2 giờ trước',
+    title: 'Transaction Successful',
+    message: 'You have successfully deposited 100 USDT to your wallet',
+    time: '2 hours ago',
     read: false,
   },
   {
     id: '2',
     type: 'security',
-    title: 'Đăng nhập mới',
-    message: 'Phát hiện đăng nhập từ thiết bị mới',
-    time: '1 ngày trước',
+    title: 'New Login',
+    message: 'Login detected from new device',
+    time: '1 day ago',
     read: true,
   },
   {
     id: '3',
     type: 'system',
-    title: 'Bảo trì hệ thống',
-    message: 'Hệ thống sẽ bảo trì từ 22:00 - 23:00',
-    time: '2 ngày trước',
+    title: 'System Maintenance',
+    message: 'System will be under maintenance from 22:00 - 23:00',
+    time: '2 days ago',
     read: true,
   },
 ];
@@ -64,7 +64,7 @@ const NotificationsScreen = () => {
         >
           <Icon name="arrow-left" size={24} color="#1C1C1E" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Thông báo</Text>
+        <Text style={styles.headerTitle}>Notifications</Text>
         <TouchableOpacity style={styles.headerRight}>
           <Icon name="dots-horizontal" size={24} color="#1C1C1E" />
         </TouchableOpacity>
@@ -73,9 +73,9 @@ const NotificationsScreen = () => {
       <ScrollView style={styles.content}>
         {/* Today Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Hôm nay</Text>
+          <Text style={styles.sectionTitle}>Today</Text>
           <View style={styles.notificationList}>
-            {NOTIFICATIONS.filter(n => n.time.includes('giờ')).map(notification => (
+            {NOTIFICATIONS.filter(n => n.time.includes('hour')).map(notification => (
               <TouchableOpacity
                 key={notification.id}
                 style={[
@@ -106,9 +106,9 @@ const NotificationsScreen = () => {
 
         {/* Earlier Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Trước đó</Text>
+          <Text style={styles.sectionTitle}>Earlier</Text>
           <View style={styles.notificationList}>
-            {NOTIFICATIONS.filter(n => n.time.includes('ngày')).map(notification => (
+            {NOTIFICATIONS.filter(n => n.time.includes('day')).map(notification => (
               <TouchableOpacity
                 key={notification.id}
                 style={[

@@ -35,7 +35,7 @@ const EditBankAccountScreen = () => {
 
   const handleSave = () => {
     if (!accountName.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập tên chủ tài khoản');
+      Alert.alert('Error', 'Please enter account holder name');
       return;
     }
     // Save changes and navigate back
@@ -44,12 +44,12 @@ const EditBankAccountScreen = () => {
 
   const handleDelete = () => {
     Alert.alert(
-      'Xóa tài khoản',
-      'Bạn có chắc chắn muốn xóa tài khoản ngân hàng này?',
+      'Delete Account',
+      'Are you sure you want to delete this bank account?',
       [
-        { text: 'Hủy', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Xóa',
+          text: 'Delete',
           style: 'destructive',
           onPress: () => {
             // Delete account and navigate back
@@ -69,35 +69,35 @@ const EditBankAccountScreen = () => {
         >
           <Icon name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Chỉnh sửa tài khoản</Text>
+        <Text style={styles.headerTitle}>Edit Account</Text>
         <TouchableOpacity 
           style={styles.saveButton}
           onPress={handleSave}
         >
-          <Text style={styles.saveText}>Lưu</Text>
+          <Text style={styles.saveText}>Save</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content}>
         {/* Bank Info (Non-editable) */}
-        <Text style={styles.label}>Ngân hàng</Text>
+        <Text style={styles.label}>Bank</Text>
         <View style={styles.infoField}>
           <Text style={styles.infoText}>{account?.bank}</Text>
         </View>
 
         {/* Account Number (Non-editable) */}
-        <Text style={styles.label}>Số tài khoản</Text>
+        <Text style={styles.label}>Account Number</Text>
         <View style={styles.infoField}>
           <Text style={styles.infoText}>{account?.accountNumber}</Text>
         </View>
 
         {/* Account Name */}
-        <Text style={styles.label}>Tên chủ tài khoản</Text>
+        <Text style={styles.label}>Account Holder Name</Text>
         <TextInput
           style={styles.input}
           value={accountName}
           onChangeText={setAccountName}
-          placeholder="Nhập tên chủ tài khoản"
+          placeholder="Enter account holder name"
           autoCapitalize="characters"
           placeholderTextColor="#999"
         />
@@ -105,9 +105,9 @@ const EditBankAccountScreen = () => {
         {/* Default Account Toggle */}
         <View style={styles.defaultContainer}>
           <View>
-            <Text style={styles.defaultTitle}>Đặt làm tài khoản mặc định</Text>
+            <Text style={styles.defaultTitle}>Set as default account</Text>
             <Text style={styles.defaultDescription}>
-              Tài khoản này sẽ được chọn mặc định khi rút tiền
+              This account will be selected by default when withdrawing
             </Text>
           </View>
           <Switch
@@ -124,13 +124,13 @@ const EditBankAccountScreen = () => {
           onPress={handleDelete}
         >
           <Icon name="trash-can-outline" size={20} color="#FF3B30" />
-          <Text style={styles.deleteText}>Xóa tài khoản này</Text>
+          <Text style={styles.deleteText}>Delete this account</Text>
         </TouchableOpacity>
 
         <View style={styles.infoBox}>
           <Icon name="information" size={20} color="#666" />
           <Text style={styles.infoText}>
-            Để thay đổi ngân hàng hoặc số tài khoản, vui lòng xóa và thêm tài khoản mới
+            To change bank or account number, please delete and add a new account
           </Text>
         </View>
       </ScrollView>

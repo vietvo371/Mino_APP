@@ -24,13 +24,13 @@ type TRC20Address = {
 const TRC20_ADDRESSES: TRC20Address[] = [
   {
     id: '1',
-    name: 'Ví chính',
+    name: 'Main Wallet',
     address: 'TRC20abc...xyz',
     isDefault: true,
   },
   {
     id: '2',
-    name: 'Ví phụ',
+    name: 'Secondary Wallet',
     address: 'TRC20def...uvw',
   },
 ];
@@ -59,7 +59,7 @@ const TRC20AddressesScreen = () => {
         >
           <Icon name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Địa chỉ TRC20</Text>
+        <Text style={styles.headerTitle}>TRC20 Addresses</Text>
         <TouchableOpacity 
           style={styles.addButton}
           onPress={handleAddAddress}
@@ -69,7 +69,7 @@ const TRC20AddressesScreen = () => {
       </View>
 
       <ScrollView style={styles.content}>
-        <Text style={styles.sectionTitle}>Danh sách địa chỉ</Text>
+        <Text style={styles.sectionTitle}>Address List</Text>
         
         {TRC20_ADDRESSES.map((item) => (
           <View key={item.id} style={styles.addressCard}>
@@ -77,14 +77,14 @@ const TRC20AddressesScreen = () => {
               <Text style={styles.addressName}>{item.name}</Text>
               {item.isDefault && (
                 <View style={styles.defaultBadge}>
-                  <Text style={styles.defaultText}>Mặc định</Text>
+                  <Text style={styles.defaultText}>Default</Text>
                 </View>
               )}
             </View>
 
             <View style={styles.addressInfo}>
               <View style={styles.addressContainer}>
-                <Text style={styles.addressLabel}>Địa chỉ ví</Text>
+                <Text style={styles.addressLabel}>Wallet Address</Text>
                 <Text style={styles.address}>{item.address}</Text>
               </View>
               <TouchableOpacity 
@@ -100,7 +100,7 @@ const TRC20AddressesScreen = () => {
               onPress={() => handleEditAddress(item)}
             >
               <Icon name="pencil" size={16} color="#666" />
-              <Text style={styles.editText}>Chỉnh sửa</Text>
+              <Text style={styles.editText}>Edit</Text>
             </TouchableOpacity>
           </View>
         ))}
@@ -108,7 +108,7 @@ const TRC20AddressesScreen = () => {
         <View style={styles.infoBox}>
           <Icon name="information" size={20} color="#666" />
           <Text style={styles.infoText}>
-            Chỉ chấp nhận địa chỉ ví TRC20 từ các sàn giao dịch hoặc ví điện tử được hỗ trợ
+            Only accept TRC20 wallet addresses from supported exchanges or e-wallets
           </Text>
         </View>
       </ScrollView>

@@ -23,7 +23,7 @@ const BANKS = [
   'ACB',
   'VPBank',
   'BIDV',
-  // Thêm các ngân hàng khác
+  // Add other banks
 ];
 
 const AddBankAccountScreen = () => {
@@ -53,24 +53,24 @@ const AddBankAccountScreen = () => {
         >
           <Icon name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Thêm tài khoản ngân hàng</Text>
+        <Text style={styles.headerTitle}>Add Bank Account</Text>
         <TouchableOpacity 
           style={styles.saveButton}
           onPress={handleSave}
         >
-          <Text style={styles.saveText}>Lưu</Text>
+          <Text style={styles.saveText}>Save</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content}>
         {/* Bank Selection */}
-        <Text style={styles.label}>Ngân hàng</Text>
+        <Text style={styles.label}>Bank</Text>
         <TouchableOpacity 
           style={styles.bankSelector}
           onPress={() => setShowBankList(!showBankList)}
         >
           <Text style={selectedBank ? styles.selectedText : styles.placeholderText}>
-            {selectedBank || 'Chọn ngân hàng'}
+            {selectedBank || 'Select bank'}
           </Text>
           <Icon name="chevron-down" size={20} color="#666" />
         </TouchableOpacity>
@@ -98,23 +98,23 @@ const AddBankAccountScreen = () => {
         )}
 
         {/* Account Number */}
-        <Text style={styles.label}>Số tài khoản</Text>
+        <Text style={styles.label}>Account Number</Text>
         <TextInput
           style={styles.input}
           value={accountNumber}
           onChangeText={setAccountNumber}
-          placeholder="Nhập số tài khoản"
+          placeholder="Enter account number"
           keyboardType="numeric"
           placeholderTextColor="#999"
         />
 
         {/* Account Name */}
-        <Text style={styles.label}>Tên chủ tài khoản</Text>
+        <Text style={styles.label}>Account Holder Name</Text>
         <TextInput
           style={styles.input}
           value={accountName}
           onChangeText={setAccountName}
-          placeholder="Nhập tên chủ tài khoản"
+          placeholder="Enter account holder name"
           autoCapitalize="characters"
           placeholderTextColor="#999"
         />
@@ -122,9 +122,9 @@ const AddBankAccountScreen = () => {
         {/* Default Account Toggle */}
         <View style={styles.defaultContainer}>
           <View>
-            <Text style={styles.defaultTitle}>Đặt làm tài khoản mặc định</Text>
+            <Text style={styles.defaultTitle}>Set as default account</Text>
             <Text style={styles.defaultDescription}>
-              Tài khoản này sẽ được chọn mặc định khi rút tiền
+              This account will be selected by default when withdrawing
             </Text>
           </View>
           <Switch
@@ -138,7 +138,7 @@ const AddBankAccountScreen = () => {
         <View style={styles.infoBox}>
           <Icon name="information" size={20} color="#666" />
           <Text style={styles.infoText}>
-            Vui lòng kiểm tra kỹ thông tin tài khoản trước khi lưu để đảm bảo giao dịch được xử lý chính xác
+            Please check account information carefully before saving to ensure accurate transaction processing
           </Text>
         </View>
       </ScrollView>

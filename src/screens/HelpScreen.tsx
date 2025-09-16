@@ -15,33 +15,33 @@ import { theme } from '../theme/colors';
 const FAQ_ITEMS = [
   {
     id: '1',
-    category: 'Tài khoản',
+    category: 'Account',
     questions: [
       {
         id: '1-1',
-        question: 'Làm thế nào để xác thực tài khoản?',
-        answer: 'Để xác thực tài khoản, bạn cần cung cấp CCCD/CMND và chụp ảnh selfie.',
+        question: 'How to verify account?',
+        answer: 'To verify your account, you need to provide ID card and take a selfie.',
       },
       {
         id: '1-2',
-        question: 'Quên mật khẩu phải làm sao?',
-        answer: 'Bạn có thể sử dụng chức năng Quên mật khẩu và làm theo hướng dẫn.',
+        question: 'What to do if forgot password?',
+        answer: 'You can use the Forgot Password feature and follow the instructions.',
       },
     ],
   },
   {
     id: '2',
-    category: 'Giao dịch',
+    category: 'Trading',
     questions: [
       {
         id: '2-1',
-        question: 'Phí giao dịch là bao nhiêu?',
-        answer: 'Phí giao dịch được tính dựa trên loại giao dịch và số lượng.',
+        question: 'What are the transaction fees?',
+        answer: 'Transaction fees are calculated based on transaction type and amount.',
       },
       {
         id: '2-2',
-        question: 'Thời gian xử lý giao dịch?',
-        answer: 'Thời gian xử lý thông thường từ 5-10 phút tùy loại giao dịch.',
+        question: 'Transaction processing time?',
+        answer: 'Normal processing time is 5-10 minutes depending on transaction type.',
       },
     ],
   },
@@ -62,8 +62,8 @@ const CONTACT_METHODS = [
   },
   {
     id: 'chat',
-    title: 'Chat trực tuyến',
-    description: 'Hỗ trợ 24/7',
+    title: 'Live Chat',
+    description: '24/7 Support',
     icon: 'message-text',
   },
 ];
@@ -82,7 +82,7 @@ const HelpScreen = () => {
         >
           <Icon name="arrow-left" size={24} color="#1C1C1E" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Trợ giúp</Text>
+        <Text style={styles.headerTitle}>Help</Text>
         <View style={styles.headerRight} />
       </View>
 
@@ -90,7 +90,7 @@ const HelpScreen = () => {
         {/* Search Bar */}
         <TouchableOpacity style={styles.searchBar}>
           <Icon name="magnify" size={20} color="#8E8E93" />
-          <Text style={styles.searchPlaceholder}>Tìm kiếm câu hỏi...</Text>
+          <Text style={styles.searchPlaceholder}>Search questions...</Text>
         </TouchableOpacity>
 
         {/* FAQ Sections */}
@@ -141,7 +141,7 @@ const HelpScreen = () => {
 
         {/* Contact Methods */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Liên hệ hỗ trợ</Text>
+          <Text style={styles.sectionTitle}>Contact Support</Text>
           <View style={styles.contactList}>
             {CONTACT_METHODS.map(method => (
               <TouchableOpacity key={method.id} style={styles.contactItem}>

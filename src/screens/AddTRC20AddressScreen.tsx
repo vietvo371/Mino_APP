@@ -26,13 +26,13 @@ const AddTRC20AddressScreen = () => {
   const handleSave = () => {
     // Validate
     if (!name.trim() || !address.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin');
+      Alert.alert('Error', 'Please fill in all information');
       return;
     }
 
     // Validate TRC20 address format
     if (!address.startsWith('T') || address.length !== 34) {
-      Alert.alert('Lỗi', 'Địa chỉ TRC20 không hợp lệ');
+      Alert.alert('Error', 'Invalid TRC20 address');
       return;
     }
 
@@ -57,34 +57,34 @@ const AddTRC20AddressScreen = () => {
         >
           <Icon name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Thêm địa chỉ TRC20</Text>
+        <Text style={styles.headerTitle}>Add TRC20 Address</Text>
         <TouchableOpacity 
           style={styles.saveButton}
           onPress={handleSave}
         >
-          <Text style={styles.saveText}>Lưu</Text>
+          <Text style={styles.saveText}>Save</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content}>
         {/* Wallet Name */}
-        <Text style={styles.label}>Tên ví</Text>
+        <Text style={styles.label}>Wallet Name</Text>
         <TextInput
           style={styles.input}
           value={name}
           onChangeText={setName}
-          placeholder="Nhập tên ví (VD: Ví chính)"
+          placeholder="Enter wallet name (e.g. Main Wallet)"
           placeholderTextColor="#999"
         />
 
         {/* TRC20 Address */}
-        <Text style={styles.label}>Địa chỉ TRC20</Text>
+        <Text style={styles.label}>TRC20 Address</Text>
         <View style={styles.addressInputContainer}>
           <TextInput
             style={styles.addressInput}
             value={address}
             onChangeText={setAddress}
-            placeholder="Nhập hoặc dán địa chỉ TRC20"
+            placeholder="Enter or paste TRC20 address"
             placeholderTextColor="#999"
             autoCapitalize="none"
           />
@@ -107,9 +107,9 @@ const AddTRC20AddressScreen = () => {
         {/* Default Address Toggle */}
         <View style={styles.defaultContainer}>
           <View>
-            <Text style={styles.defaultTitle}>Đặt làm địa chỉ mặc định</Text>
+            <Text style={styles.defaultTitle}>Set as default address</Text>
             <Text style={styles.defaultDescription}>
-              Địa chỉ này sẽ được chọn mặc định khi nhận USDT
+              This address will be selected by default when receiving USDT
             </Text>
           </View>
           <Switch
@@ -123,12 +123,12 @@ const AddTRC20AddressScreen = () => {
         <View style={styles.infoBox}>
           <Icon name="information" size={20} color="#666" />
           <Text style={styles.infoText}>
-            Vui lòng kiểm tra kỹ địa chỉ ví TRC20 trước khi lưu. Địa chỉ không hợp lệ có thể dẫn đến mất tiền và không thể khôi phục.
+            Please check TRC20 wallet address carefully before saving. Invalid addresses may result in loss of funds that cannot be recovered.
           </Text>
         </View>
 
         <View style={styles.supportedBox}>
-          <Text style={styles.supportedTitle}>Các sàn giao dịch được hỗ trợ:</Text>
+          <Text style={styles.supportedTitle}>Supported exchanges:</Text>
           <Text style={styles.supportedText}>
             • Binance{'\n'}
             • Huobi{'\n'}

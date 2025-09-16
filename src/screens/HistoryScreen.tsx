@@ -20,7 +20,7 @@ import {
 
 const { width } = Dimensions.get('window');
 
-// Dữ liệu mô phỏng cho lịch sử giao dịch
+// Mock data for transaction history
 const MOCK_TRANSACTIONS = [
   {
     id: '1',
@@ -65,10 +65,10 @@ const MOCK_TRANSACTIONS = [
 ];
 
 const TIME_FILTERS = [
-  { id: '1d', label: '1 ngày' },
-  { id: '1w', label: '1 tuần' },
-  { id: '1m', label: '1 tháng' },
-  { id: '6m', label: '6 tháng' },
+  { id: '1d', label: '1 Day' },
+  { id: '1w', label: '1 Week' },
+  { id: '1m', label: '1 Month' },
+  { id: '6m', label: '6 Months' },
 ];
 
 const HistoryScreen = () => {
@@ -85,7 +85,7 @@ const HistoryScreen = () => {
   };
 
   const handleFilterConfirm = () => {
-    // Xử lý lọc dữ liệu ở đây
+    // Handle data filtering here
     setShowFilterModal(false);
   };
 
@@ -117,7 +117,7 @@ const HistoryScreen = () => {
               </View>
               <View>
                 <Text style={styles.transactionType}>
-                  {isBuy ? 'Mua USDT' : 'Bán USDT'}
+                  {isBuy ? 'Buy USDT' : 'Sell USDT'}
                 </Text>
                 <Text style={styles.transactionDate}>
                   {transaction.date} • {transaction.time}
@@ -133,24 +133,24 @@ const HistoryScreen = () => {
                 styles.transactionStatus,
                 { color: transaction.status === 'completed' ? '#34C759' : '#FF9500' }
               ]}>
-                {transaction.status === 'completed' ? 'Hoàn thành' : 'Đang chờ'}
+                {transaction.status === 'completed' ? 'Completed' : 'Pending'}
               </Text>
             </View>
           </View>
 
           <View style={styles.amountContainer}>
             <View style={styles.amountRow}>
-              <Text style={styles.amountLabel}>Số tiền:</Text>
+              <Text style={styles.amountLabel}>Amount:</Text>
               <Text style={[styles.amountValue, { color: isBuy ? '#4A90E2' : '#7B68EE' }]}>
                 {amount}
               </Text>
             </View>
             <View style={styles.amountRow}>
-              <Text style={styles.amountLabel}>Quy đổi:</Text>
+              <Text style={styles.amountLabel}>Exchange:</Text>
               <Text style={styles.exchangeValue}>{exchangeAmount}</Text>
             </View>
             <View style={styles.amountRow}>
-              <Text style={styles.amountLabel}>Tỷ giá:</Text>
+              <Text style={styles.amountLabel}>Rate:</Text>
               <Text style={styles.exchangeRateValue}>
                 {transaction.exchangeRate} VND/USDT
               </Text>
@@ -164,7 +164,7 @@ const HistoryScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Lịch sử giao dịch</Text>
+        <Text style={styles.headerTitle}>Transaction History</Text>
         <TouchableOpacity 
           style={styles.filterButton}
           onPress={() => setShowFilterModal(true)}
@@ -193,7 +193,7 @@ const HistoryScreen = () => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Bộ lọc</Text>
+              <Text style={styles.modalTitle}>Filter</Text>
               <TouchableOpacity 
                 style={styles.closeButton}
                 onPress={() => setShowFilterModal(false)}
@@ -202,7 +202,7 @@ const HistoryScreen = () => {
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.filterLabel}>Thời gian</Text>
+            <Text style={styles.filterLabel}>Time</Text>
             <View style={styles.timeFilterContainer}>
               {TIME_FILTERS.map((filter) => (
                 <TouchableOpacity
@@ -227,7 +227,7 @@ const HistoryScreen = () => {
               <TouchableOpacity style={styles.dateInput}>
                 <Text style={styles.dateInputText}>{selectedStartDate}</Text>
               </TouchableOpacity>
-              <Text style={styles.dateRangeSeparator}>đến</Text>
+              <Text style={styles.dateRangeSeparator}>to</Text>
               <TouchableOpacity style={styles.dateInput}>
                 <Text style={styles.dateInputText}>{selectedEndDate}</Text>
               </TouchableOpacity>
@@ -252,7 +252,7 @@ const HistoryScreen = () => {
                       styles.monthButtonText,
                       selectedMonth === month && styles.monthButtonTextActive
                     ]}>
-                      tháng {month}
+                      Month {month}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -294,13 +294,13 @@ const HistoryScreen = () => {
                   setSelectedYear(2025);
                 }}
               >
-                <Text style={styles.resetButtonText}>Đặt lại</Text>
+                <Text style={styles.resetButtonText}>Reset</Text>
               </TouchableOpacity>
               <TouchableOpacity 
                 style={styles.confirmButton}
                 onPress={handleFilterConfirm}
               >
-                <Text style={styles.confirmButtonText}>Xác nhận</Text>
+                <Text style={styles.confirmButtonText}>Confirm</Text>
               </TouchableOpacity>
             </View>
           </View>

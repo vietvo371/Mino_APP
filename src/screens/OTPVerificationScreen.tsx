@@ -72,11 +72,11 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
     newOtp[currentInputIndex] = num;
     setOtp(newOtp);
 
-    // Chuyển đến ô tiếp theo
+    // Move to next input
     if (currentInputIndex < OTP_LENGTH - 1) {
       setCurrentInputIndex(currentInputIndex + 1);
     } else {
-      // Nếu đã nhập đủ số thì verify
+      // If all digits entered, verify
       setTimeout(() => handleVerifyOTP(), 300);
     }
   };
@@ -88,7 +88,7 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
       setOtp(newOtp);
       setCurrentInputIndex(currentInputIndex - 1);
     } else if (otp[currentInputIndex]) {
-      // Nếu đang ở ô đầu và có số thì xóa số đó
+      // If at first input and has digit, clear it
       const newOtp = [...otp];
       newOtp[currentInputIndex] = '';
       setOtp(newOtp);
@@ -98,15 +98,15 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
   const handleVerifyOTP = () => {
     const otpString = otp.join('');
     // if (otpString.length !== OTP_LENGTH) {
-    //   Alert.alert('Thông báo', 'Vui lòng nhập đầy đủ mã OTP');
+    //   Alert.alert('Notification', 'Please enter complete OTP code');
     //   return;
     // }
 
-    // Giả lập loading 1 giây
+    // Simulate loading 1 second
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      // Luôn chuyển đến flow eKYC cho demo
+      // Always navigate to eKYC flow for demo
       navigation.replace('MainTabs');
     }, 1000);
   };
@@ -114,7 +114,7 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
   const handleResendOTP = () => {
     if (!canResend) return;
 
-    // Giả lập loading 1 giây
+    // Simulate loading 1 second
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
@@ -122,7 +122,7 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
       setCanResend(false);
       setOtp(['', '', '', '', '', '']);
       setCurrentInputIndex(0);
-      Alert.alert('Thành công', 'Mã OTP đã được gửi lại');
+      Alert.alert('Success', 'OTP code has been resent');
     }, 1000);
   };
 
@@ -160,9 +160,9 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
             </TouchableOpacity>
 
             <View style={styles.headerContent}>
-              <Text style={styles.headerTitle}>Xác thực OTP</Text>
+              <Text style={styles.headerTitle}>OTP Verification</Text>
               <Text style={styles.headerSubtitle}>
-                Nhập mã xác thực được gửi đến {formatIdentifier(identifier)}
+                Enter verification code sent to {formatIdentifier(identifier)}
               </Text>
             </View>
           </Animated.View>
@@ -223,14 +223,14 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
             <View style={styles.resendContainer}>
               {!canResend ? (
                 <Text style={styles.timerText}>
-                  Gửi lại mã sau <Text style={styles.timer}>{timer}s</Text>
+                  Resend code after <Text style={styles.timer}>{timer}s</Text>
                 </Text>
               ) : (
                 <TouchableOpacity 
                   onPress={handleResendOTP}
                   style={styles.resendButton}
                   activeOpacity={0.7}>
-                  <Text style={styles.resendButtonText}>Gửi lại mã</Text>
+                  <Text style={styles.resendButtonText}>Resend Code</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -279,7 +279,7 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
         </Animated.View>
       </View>
 
-      <LoadingOverlay visible={loading} message="Đang xác thực..." />
+      <LoadingOverlay visible={loading} message="Verifying..." />
     </SafeAreaView>
   );
 };

@@ -34,7 +34,7 @@ const EditTRC20AddressScreen = () => {
 
   const handleSave = () => {
     if (!name.trim()) {
-      Alert.alert('Lỗi', 'Vui lòng nhập tên ví');
+      Alert.alert('Error', 'Please enter wallet name');
       return;
     }
     // Save changes and navigate back
@@ -43,12 +43,12 @@ const EditTRC20AddressScreen = () => {
 
   const handleDelete = () => {
     Alert.alert(
-      'Xóa địa chỉ',
-      'Bạn có chắc chắn muốn xóa địa chỉ TRC20 này?',
+      'Delete Address',
+      'Are you sure you want to delete this TRC20 address?',
       [
-        { text: 'Hủy', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Xóa',
+          text: 'Delete',
           style: 'destructive',
           onPress: () => {
             // Delete address and navigate back
@@ -72,28 +72,28 @@ const EditTRC20AddressScreen = () => {
         >
           <Icon name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Chỉnh sửa địa chỉ</Text>
+        <Text style={styles.headerTitle}>Edit Address</Text>
         <TouchableOpacity 
           style={styles.saveButton}
           onPress={handleSave}
         >
-          <Text style={styles.saveText}>Lưu</Text>
+          <Text style={styles.saveText}>Save</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content}>
         {/* Wallet Name */}
-        <Text style={styles.label}>Tên ví</Text>
+        <Text style={styles.label}>Wallet Name</Text>
         <TextInput
           style={styles.input}
           value={name}
           onChangeText={setName}
-          placeholder="Nhập tên ví"
+          placeholder="Enter wallet name"
           placeholderTextColor="#999"
         />
 
         {/* TRC20 Address (Non-editable) */}
-        <Text style={styles.label}>Địa chỉ TRC20</Text>
+        <Text style={styles.label}>TRC20 Address</Text>
         <View style={styles.addressContainer}>
           <Text style={styles.addressText}>{addressData?.address}</Text>
           <TouchableOpacity 
@@ -107,9 +107,9 @@ const EditTRC20AddressScreen = () => {
         {/* Default Address Toggle */}
         <View style={styles.defaultContainer}>
           <View>
-            <Text style={styles.defaultTitle}>Đặt làm địa chỉ mặc định</Text>
+            <Text style={styles.defaultTitle}>Set as default address</Text>
             <Text style={styles.defaultDescription}>
-              Địa chỉ này sẽ được chọn mặc định khi nhận USDT
+              This address will be selected by default when receiving USDT
             </Text>
           </View>
           <Switch
@@ -126,13 +126,13 @@ const EditTRC20AddressScreen = () => {
           onPress={handleDelete}
         >
           <Icon name="trash-can-outline" size={20} color="#FF3B30" />
-          <Text style={styles.deleteText}>Xóa địa chỉ này</Text>
+          <Text style={styles.deleteText}>Delete this address</Text>
         </TouchableOpacity>
 
         <View style={styles.infoBox}>
           <Icon name="information" size={20} color="#666" />
           <Text style={styles.infoText}>
-            Để thay đổi địa chỉ TRC20, vui lòng xóa và thêm địa chỉ mới
+            To change TRC20 address, please delete and add a new address
           </Text>
         </View>
       </ScrollView>

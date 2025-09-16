@@ -35,6 +35,8 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    phone: '',
+    address: '',
     password: '',
     password_confirmation: '',
   });
@@ -61,6 +63,13 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email';
+    }
+
+    // Phone validation
+    if (!formData.phone) {
+      newErrors.phone = 'Phone number is required';
+    } else if (!/^[0-9+().\-\s]{7,15}$/.test(formData.phone)) {
+      newErrors.phone = 'Please enter a valid phone number';
     }
 
     // Password validation
@@ -91,10 +100,11 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
     try {
       const registrationData = {
         email: formData.email,
-        phone: '', // Optional for simplified registration
+        phone: formData.phone,
         full_name: formData.name,
         date_of_birth: new Date().toISOString().split('T')[0], // Default to today
         user_type: 'individual' as const,
+        address: formData.address || undefined,
         password: formData.password,
         password_confirmation: formData.password_confirmation,
       };
@@ -151,7 +161,6 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
       entering={SlideInDown.duration(800).delay(800).springify()}
     >
       <View style={styles.formHeader}>
-        <Text style={styles.formTitle}>Create Account</Text>
         <Text style={styles.formSubtitle}>
           Sign up to start your trading journey
         </Text>
@@ -166,6 +175,18 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
           error={errors.name}
           required
           leftIcon="account-outline"
+          containerStyle={styles.input}
+        />
+
+        <InputCustom
+          label="Phone Number"
+          placeholder="Enter your phone number"
+          value={formData.phone}
+          onChangeText={value => updateFormData('phone', value)}
+          keyboardType="phone-pad"
+          error={errors.phone}
+          required
+          leftIcon="phone-outline"
           containerStyle={styles.input}
         />
 
@@ -236,6 +257,16 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
           containerStyle={styles.input}
         />
 
+        <InputCustom
+          label="Address"
+          placeholder="Enter your address"
+          value={formData.address}
+          onChangeText={value => updateFormData('address', value)}
+          error={errors.address}
+          leftIcon="map-marker-outline"
+          containerStyle={styles.input}
+        />
+
         <ButtonCustom
           title="Create Account"
           onPress={handleRegister}
@@ -300,13 +331,6 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
               entering={FadeInDown.duration(800).delay(400).springify()}
             >
               Create Account
-            </Animated.Text>
-
-            <Animated.Text
-              style={styles.subtitle}
-              entering={FadeInDown.duration(800).delay(600).springify()}
-            >
-              Start your digital asset trading journey today
             </Animated.Text>
           </Animated.View>
 

@@ -21,19 +21,19 @@ const SecurityScreen = () => {
   const SECURITY_ITEMS = [
     {
       id: 'password',
-      title: 'Đổi mật khẩu',
+      title: 'Change Password',
       icon: 'lock',
       onPress: () => {},
     },
     {
       id: 'pin',
-      title: 'Mã PIN',
+      title: 'PIN Code',
       icon: 'numeric',
       onPress: () => {},
     },
     {
       id: '2fa',
-      title: 'Xác thực 2 lớp',
+      title: 'Two-Factor Authentication',
       icon: 'shield-check',
       onPress: () => {},
     },
@@ -48,7 +48,7 @@ const SecurityScreen = () => {
         >
           <Icon name="arrow-left" size={24} color="#1C1C1E" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Bảo mật</Text>
+        <Text style={styles.headerTitle}>Security</Text>
         <View style={styles.headerRight} />
       </View>
 
@@ -57,14 +57,14 @@ const SecurityScreen = () => {
         <View style={styles.statusCard}>
           <View style={styles.statusHeader}>
             <Icon name="shield-check" size={24} color="#34C759" />
-            <Text style={styles.statusTitle}>Trạng thái bảo mật</Text>
+            <Text style={styles.statusTitle}>Security Status</Text>
           </View>
-          <Text style={styles.statusText}>Tài khoản của bạn đang được bảo vệ</Text>
+          <Text style={styles.statusText}>Your account is protected</Text>
         </View>
 
         {/* Security Options */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Tùy chọn bảo mật</Text>
+          <Text style={styles.sectionTitle}>Security Options</Text>
           <View style={styles.optionsList}>
             {SECURITY_ITEMS.map(item => (
               <TouchableOpacity
@@ -86,14 +86,14 @@ const SecurityScreen = () => {
 
         {/* Additional Settings */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Cài đặt bổ sung</Text>
+          <Text style={styles.sectionTitle}>Additional Settings</Text>
           <View style={styles.optionsList}>
             <View style={styles.optionItem}>
               <View style={styles.optionIcon}>
                 <Icon name="fingerprint" size={24} color="#4A90E2" />
               </View>
               <View style={styles.optionInfo}>
-                <Text style={styles.optionTitle}>Đăng nhập sinh trắc học</Text>
+                <Text style={styles.optionTitle}>Biometric Login</Text>
                 <Text style={styles.optionDescription}>Face ID, Touch ID</Text>
               </View>
               <Switch
@@ -109,8 +109,8 @@ const SecurityScreen = () => {
                 <Icon name="bell" size={24} color="#4A90E2" />
               </View>
               <View style={styles.optionInfo}>
-                <Text style={styles.optionTitle}>Thông báo bảo mật</Text>
-                <Text style={styles.optionDescription}>Đăng nhập, giao dịch</Text>
+                <Text style={styles.optionTitle}>Security Notifications</Text>
+                <Text style={styles.optionDescription}>Login, Transactions</Text>
               </View>
               <Switch
                 value={notificationsEnabled}
@@ -124,18 +124,18 @@ const SecurityScreen = () => {
 
         {/* Device Info */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Thông tin thiết bị</Text>
+          <Text style={styles.sectionTitle}>Device Information</Text>
           <View style={styles.optionsList}>
             <View style={styles.optionItem}>
               <View style={styles.optionIcon}>
                 <Icon name="cellphone" size={24} color="#4A90E2" />
               </View>
               <View style={styles.optionInfo}>
-                <Text style={styles.optionTitle}>Thiết bị hiện tại</Text>
+                <Text style={styles.optionTitle}>Current Device</Text>
                 <Text style={styles.optionDescription}>iPhone 12 Pro • iOS 15.5</Text>
               </View>
               <View style={styles.activeTag}>
-                <Text style={styles.activeText}>Đang hoạt động</Text>
+                <Text style={styles.activeText}>Active</Text>
               </View>
             </View>
           </View>

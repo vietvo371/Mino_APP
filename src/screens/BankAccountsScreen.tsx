@@ -62,7 +62,7 @@ const BankAccountsScreen = () => {
         >
           <Icon name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Tài khoản ngân hàng</Text>
+        <Text style={styles.headerTitle}>Bank Accounts</Text>
         <TouchableOpacity 
           style={styles.addButton}
           onPress={handleAddAccount}
@@ -72,7 +72,7 @@ const BankAccountsScreen = () => {
       </View>
 
       <ScrollView style={styles.content}>
-        <Text style={styles.sectionTitle}>Danh sách tài khoản</Text>
+        <Text style={styles.sectionTitle}>Account List</Text>
         
         {BANK_ACCOUNTS.map((account) => (
           <View key={account.id} style={styles.accountCard}>
@@ -80,14 +80,14 @@ const BankAccountsScreen = () => {
               <Text style={styles.bankName}>{account.bank}</Text>
               {account.isDefault && (
                 <View style={styles.defaultBadge}>
-                  <Text style={styles.defaultText}>Mặc định</Text>
+                  <Text style={styles.defaultText}>Default</Text>
                 </View>
               )}
             </View>
 
             <View style={styles.accountInfo}>
               <View>
-                <Text style={styles.accountLabel}>Số tài khoản</Text>
+                <Text style={styles.accountLabel}>Account Number</Text>
                 <Text style={styles.accountNumber}>{account.accountNumber}</Text>
               </View>
               <TouchableOpacity 
@@ -99,7 +99,7 @@ const BankAccountsScreen = () => {
             </View>
 
             <View style={styles.accountNameContainer}>
-              <Text style={styles.accountLabel}>Chủ tài khoản</Text>
+              <Text style={styles.accountLabel}>Account Holder</Text>
               <Text style={styles.accountName}>{account.accountName}</Text>
             </View>
 
@@ -108,7 +108,7 @@ const BankAccountsScreen = () => {
               onPress={() => handleEditAccount(account)}
             >
               <Icon name="pencil" size={16} color="#666" />
-              <Text style={styles.editText}>Chỉnh sửa</Text>
+              <Text style={styles.editText}>Edit</Text>
             </TouchableOpacity>
           </View>
         ))}

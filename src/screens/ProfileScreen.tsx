@@ -39,36 +39,36 @@ type MenuItem = {
 const MENU_ITEMS = [
   {
     id: 'bank_accounts',
-    title: 'Tài khoản ngân hàng',
-    description: 'Quản lý danh sách ngân hàng',
+    title: 'Bank Accounts',
+    description: 'Manage bank account list',
     icon: 'bank',
     route: 'BankAccounts',
   },
   {
     id: 'trc20_addresses',
-    title: 'Địa chỉ TRC20',
-    description: 'Quản lý ví TRC20',
+    title: 'TRC20 Addresses',
+    description: 'Manage TRC20 wallets',
     icon: 'wallet',
     route: 'TRC20Addresses',
   },
   {
     id: 'security',
-    title: 'Xác thực eKYC',
-    description: 'Xác thực danh tính',
+    title: 'eKYC Verification',
+    description: 'Identity verification',
     icon: 'shield-lock',
     route: 'EkycIntro',
   },
   {
     id: 'notifications',
-    title: 'Thông báo',
-    description: 'Cài đặt thông báo',
+    title: 'Notifications',
+    description: 'Notification settings',
     icon: 'bell',
     route: 'Notifications',
   },
   {
     id: 'help',
-    title: 'Trợ giúp',
-    description: 'FAQ và hỗ trợ',
+    title: 'Help',
+    description: 'FAQ and support',
     icon: 'help-circle',
     route: 'Help',
   },
@@ -80,12 +80,12 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
 
   const handleSignOut = () => {
     Alert.alert(
-      'Đăng xuất',
-      'Bạn có chắc chắn muốn đăng xuất?',
+      'Sign Out',
+      'Are you sure you want to sign out?',
       [
-        { text: 'Hủy', style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Đăng xuất',
+          text: 'Sign Out',
           style: 'destructive',
           onPress: () => {
             signOut();
@@ -195,7 +195,7 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
             <Text style={styles.email}>john.doe@example.com</Text>
             <View style={styles.verifiedBadge}>
               <Icon name="check-circle" size={16} color="#34C759" />
-              <Text style={styles.verifiedText}>Đã xác thực</Text>
+              <Text style={styles.verifiedText}>Verified</Text>
             </View>
           </View>
         </View>
@@ -212,7 +212,7 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
           activeOpacity={0.7}
         >
           <Icon name="logout" size={20} color="#FF3B30" />
-          <Text style={styles.signOutText}>Đăng xuất</Text>
+          <Text style={styles.signOutText}>Sign Out</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
