@@ -104,7 +104,7 @@ const PaymentScreen = () => {
       const fee = 13500;
       const totalVND = amountNum + fee;
       const transactionId = transactionIdRef.current;
-      
+
       return {
         usdtWant: `${usdtAmount} USDT`,
         exchangeRate: `1 USDT = ${(currentRate || paymentInfo.rate).toLocaleString('vi-VN')} VND`,
@@ -112,10 +112,10 @@ const PaymentScreen = () => {
         totalVND: `${totalVND.toLocaleString('vi-VN')} VND`,
         transactionId,
         transferInfo: {
-          bankName: 'Vietcombank',
-          accountNumber: '1234567890',
-          accountName: 'MINO EXCHANGE',
-          transferContent: `MINO ${transactionId} ${usdtAmount}USDT`,
+          bankName: 'BIDV',
+          accountNumber: '963336984884401',
+          accountName: 'BAOKIM CONG TY CO PHAN THUONG MAI DIEN TU BAO KIM',
+          transferContent: 'Lien ket vi Baokim',
           amount: totalVND.toLocaleString('vi-VN'),
         }
       };
@@ -124,7 +124,7 @@ const PaymentScreen = () => {
       const rate = currentRate || paymentInfo.rate;
       const feeAmount = amountNum * rate * (feeRate / 100);
       const receiveAmount = (amountNum * rate) - feeAmount;
-      
+
       return {
         usdtSell: `${paymentInfo.amount} USDT`,
         exchangeRate: `1 USDT = ${(currentRate || paymentInfo.rate).toLocaleString('vi-VN')} VND`,
@@ -140,7 +140,7 @@ const PaymentScreen = () => {
 
   const generateQRData = () => {
     const transactionInfo = getTransactionInfo();
-    
+
     if (paymentInfo.type === 'buy') {
       const qrData = {
         bankName: transactionInfo.transferInfo?.bankName || 'Vietcombank',
@@ -150,7 +150,7 @@ const PaymentScreen = () => {
         transferContent: transactionInfo.transferInfo?.transferContent || 'MINO TXN',
         currency: 'VND'
       };
-      
+
       return JSON.stringify(qrData);
     } else {
       const amountNum = parseFloat(paymentInfo.amount);
@@ -168,7 +168,7 @@ const PaymentScreen = () => {
         fee: '0.5%',
         paymentMethod: 'crypto_transfer'
       };
-      
+
       return JSON.stringify(paymentData);
     }
   };
@@ -178,7 +178,7 @@ const PaymentScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
@@ -241,96 +241,6 @@ const PaymentScreen = () => {
           )}
         </View>
 
-        {/* Transfer Information - Only for BUY USDT */}
-        {paymentInfo.type === 'buy' && (
-          <View style={styles.transferSection}>
-            <Text style={styles.sectionTitle}>Thông tin chuyển khoản</Text>
-            <View style={styles.transferCard}>
-              {/* Bank Name */}
-              <View style={styles.transferRow}>
-                <Text style={styles.transferLabel}>Ngân hàng:</Text>
-                <View style={styles.transferValueContainer}>
-                  <Text style={styles.transferValue}>{transactionInfo.transferInfo?.bankName || 'Vietcombank'}</Text>
-                  <TouchableOpacity 
-                    onPress={() => copyToClipboard(transactionInfo.transferInfo?.bankName || 'Vietcombank', 'Đã sao chép tên ngân hàng')}
-                    style={styles.copyButton}
-                  >
-                    <Icon name="content-copy" size={16} color="#4A90E2" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Account Number */}
-              <View style={styles.transferRow}>
-                <Text style={styles.transferLabel}>Số tài khoản:</Text>
-                <View style={styles.transferValueContainer}>
-                  <Text style={styles.transferValue}>{transactionInfo.transferInfo?.accountNumber || '1234567890'}</Text>
-                  <TouchableOpacity 
-                    onPress={() => copyToClipboard(transactionInfo.transferInfo?.accountNumber || '1234567890', 'Đã sao chép số tài khoản')}
-                    style={styles.copyButton}
-                  >
-                    <Icon name="content-copy" size={16} color="#4A90E2" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Account Name */}
-              <View style={styles.transferRow}>
-                <Text style={styles.transferLabel}>Tên tài khoản:</Text>
-                <View style={styles.transferValueContainer}>
-                  <Text style={styles.transferValue}>{transactionInfo.transferInfo?.accountName || 'MINO EXCHANGE'}</Text>
-                  <TouchableOpacity 
-                    onPress={() => copyToClipboard(transactionInfo.transferInfo?.accountName || 'MINO EXCHANGE', 'Đã sao chép tên tài khoản')}
-                    style={styles.copyButton}
-                  >
-                    <Icon name="content-copy" size={16} color="#4A90E2" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Amount */}
-              <View style={styles.transferRow}>
-                <Text style={styles.transferLabel}>Số tiền:</Text>
-                <View style={styles.transferValueContainer}>
-                  <Text style={styles.transferValueHighlight}>{transactionInfo.transferInfo?.amount || '0'} VND</Text>
-                  <TouchableOpacity 
-                    onPress={() => copyToClipboard(transactionInfo.transferInfo?.amount?.replace(/\./g, '') || '0', 'Đã sao chép số tiền')}
-                    style={styles.copyButton}
-                  >
-                    <Icon name="content-copy" size={16} color="#4A90E2" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Transfer Content */}
-              <View style={styles.transferRow}>
-                <Text style={styles.transferLabel}>Nội dung chuyển khoản:</Text>
-                <View style={styles.transferValueContainer}>
-                  <Text style={styles.transferValueHighlight}>{transactionInfo.transferInfo?.transferContent || 'MINO TXN'}</Text>
-                  <TouchableOpacity 
-                    onPress={() => copyToClipboard(transactionInfo.transferInfo?.transferContent || 'MINO TXN', 'Đã sao chép nội dung chuyển khoản')}
-                    style={styles.copyButton}
-                  >
-                    <Icon name="content-copy" size={16} color="#4A90E2" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-
-            {/* Copy All Button */}
-            <TouchableOpacity 
-              style={styles.copyAllButton}
-              onPress={() => {
-                const allInfo = `Ngân hàng: ${transactionInfo.transferInfo?.bankName || 'Vietcombank'}\nSố tài khoản: ${transactionInfo.transferInfo?.accountNumber || '1234567890'}\nTên tài khoản: ${transactionInfo.transferInfo?.accountName || 'MINO EXCHANGE'}\nSố tiền: ${transactionInfo.transferInfo?.amount || '0'} VND\nNội dung: ${transactionInfo.transferInfo?.transferContent || 'MINO TXN'}`;
-                copyToClipboard(allInfo, 'Đã sao chép toàn bộ thông tin chuyển khoản');
-              }}
-            >
-              <Icon name="content-copy" size={20} color="#FFFFFF" />
-              <Text style={styles.copyAllText}>Sao chép toàn bộ thông tin</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
         {/* QR Code Section - Only for BUY USDT */}
         {paymentInfo.type === 'buy' && (
           <View style={styles.qrSection}>
@@ -352,63 +262,98 @@ const PaymentScreen = () => {
           </View>
         )}
 
-        {/* Payment Methods - Only for SELL USDT */}
-        {paymentInfo.type === 'sell' && (
-          <>
-            <Text style={styles.sectionTitle}>Chọn tài khoản nhận tiền</Text>
-            <TouchableOpacity 
-              style={styles.selectButton}
-              onPress={handleSelectBank}
-            >
-              <View style={styles.selectLeft}>
-                <Icon name="bank" size={24} color="#4A90E2" />
-                <View style={styles.selectInfo}>
-                  <Text style={styles.selectTitle}>Tài khoản ngân hàng</Text>
-                  <Text style={styles.selectDescription}>
-                    {selectedBank || 'Chọn tài khoản ngân hàng'}
-                  </Text>
-                </View>
-              </View>
-              <Icon name="chevron-right" size={24} color="#666" />
-            </TouchableOpacity>
-
-            <Text style={styles.sectionTitle}>Ví gửi USDT</Text>
-            <View style={styles.walletCard}>
-              <View style={styles.walletHeader}>
-                <Icon name="wallet" size={20} color="#7B68EE" />
-                <Text style={styles.walletTitle}>Địa chỉ ví TRC20</Text>
-              </View>
-              <View style={styles.walletAddressContainer}>
-                <Text style={styles.walletAddress}>TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE</Text>
-                <TouchableOpacity 
-                  style={styles.copyButton}
-                  onPress={() => copyToClipboard('TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE', 'Đã sao chép địa chỉ ví')}
-                >
-                  <Icon name="content-copy" size={16} color="#4A90E2" />
-                </TouchableOpacity>
-              </View>
-              
-              {/* USDT Amount */}
-              <View style={styles.usdtAmountContainer}>
-                <View style={styles.usdtAmountHeader}>
-                  <Icon name="currency-usd" size={16} color="#7B68EE" />
-                  <Text style={styles.usdtAmountLabel}>Số USDT cần gửi</Text>
-                </View>
-                <View style={styles.usdtAmountValueContainer}>
-                  <Text style={styles.usdtAmountValue}>{transactionInfo.usdtSell || '0 USDT'}</Text>
-                  <TouchableOpacity 
+        {/* Transfer Information - Only for BUY USDT */}
+        {paymentInfo.type === 'buy' && (
+          <View style={styles.transferSection}>
+            <View style={styles.transferCard}>
+              {/* Bank Name */}
+              <View style={styles.transferRow}>
+                <Text style={styles.transferLabel}>Tên ngân hàng</Text>
+                <View style={styles.transferValueContainer}>
+                  <Text style={styles.transferValue}>{transactionInfo.transferInfo?.bankName || 'BIDV'}</Text>
+                  <TouchableOpacity
+                    onPress={() => copyToClipboard(transactionInfo.transferInfo?.bankName || 'BIDV', 'Đã sao chép tên ngân hàng')}
                     style={styles.copyButton}
-                    onPress={() => copyToClipboard(transactionInfo.usdtSell || '0 USDT', 'Đã sao chép số USDT')}
                   >
                     <Icon name="content-copy" size={16} color="#4A90E2" />
                   </TouchableOpacity>
                 </View>
               </View>
-              
-              <Text style={styles.walletNote}>
-                Gửi {transactionInfo.usdtSell} đến địa chỉ này để hoàn tất giao dịch
-              </Text>
+
+              {/* Account Name */}
+              <View style={styles.transferRow}>
+                <Text style={styles.transferLabel}>Tên tài khoản</Text>
+                <View style={styles.transferValueContainer}>
+                  <Text style={styles.transferValue}>{transactionInfo.transferInfo?.accountName || 'BAOKIM CONG TY CO PHAN THUONG MAI DIEN TU BAO KIM'}</Text>
+                  <TouchableOpacity
+                    onPress={() => copyToClipboard(transactionInfo.transferInfo?.accountName || 'BAOKIM CONG TY CO PHAN THUONG MAI DIEN TU BAO KIM', 'Đã sao chép tên tài khoản')}
+                    style={styles.copyButton}
+                  >
+                    <Icon name="content-copy" size={16} color="#4A90E2" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Account Number */}
+              <View style={styles.transferRow}>
+                <Text style={styles.transferLabel}>Số tài khoản</Text>
+                <View style={styles.transferValueContainer}>
+                  <Text style={styles.transferValue}>{transactionInfo.transferInfo?.accountNumber || '963336984884401'}</Text>
+                  <TouchableOpacity
+                    onPress={() => copyToClipboard(transactionInfo.transferInfo?.accountNumber || '963336984884401', 'Đã sao chép số tài khoản')}
+                    style={styles.copyButton}
+                  >
+                    <Icon name="content-copy" size={16} color="#4A90E2" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Amount */}
+              <View style={styles.transferRow}>
+                <Text style={styles.transferLabel}>Số tiền</Text>
+                <View style={styles.transferValueContainer}>
+                  <Text style={styles.transferValueHighlight}>{transactionInfo.transferInfo?.amount || '0'} VND</Text>
+                  <TouchableOpacity
+                    onPress={() => copyToClipboard(transactionInfo.transferInfo?.amount?.replace(/\./g, '') || '0', 'Đã sao chép số tiền')}
+                    style={styles.copyButton}
+                  >
+                    <Icon name="content-copy" size={16} color="#4A90E2" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Transfer Content */}
+              <View style={styles.transferRow}>
+                <Text style={styles.transferLabel}>Nội dung</Text>
+                <View style={styles.transferValueContainer}>
+                  <Text style={styles.transferValueHighlight}>{transactionInfo.transferInfo?.transferContent || 'Lien ket vi Baokim'}</Text>
+                  <TouchableOpacity
+                    onPress={() => copyToClipboard(transactionInfo.transferInfo?.transferContent || 'Lien ket vi Baokim', 'Đã sao chép nội dung chuyển khoản')}
+                    style={styles.copyButton}
+                  >
+                    <Icon name="content-copy" size={16} color="#4A90E2" />
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
+
+            {/* Copy All Button */}
+            <TouchableOpacity
+              style={styles.copyAllButton}
+              onPress={() => {
+                const allInfo = `Tên ngân hàng: ${transactionInfo.transferInfo?.bankName || 'BIDV'}\nTên tài khoản: ${transactionInfo.transferInfo?.accountName || 'BAOKIM CONG TY CO PHAN THUONG MAI DIEN TU BAO KIM'}\nSố tài khoản: ${transactionInfo.transferInfo?.accountNumber || '963336984884401'}\nSố tiền: ${transactionInfo.transferInfo?.amount || '0'} VND\nNội dung: ${transactionInfo.transferInfo?.transferContent || 'Lien ket vi Baokim'}`;
+                copyToClipboard(allInfo, 'Đã sao chép toàn bộ thông tin chuyển khoản');
+              }}
+            >
+              <Icon name="content-copy" size={20} color="#FFFFFF" />
+              <Text style={styles.copyAllText}>Sao chép toàn bộ thông tin</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Payment Methods - Only for SELL USDT */}
+        {paymentInfo.type === 'sell' && (
+          <>
 
             {/* QR Code for Wallet */}
             <View style={styles.qrSection}>
@@ -428,13 +373,69 @@ const PaymentScreen = () => {
                 </Text>
               </View>
             </View>
+
+            <View style={styles.walletCard}>
+              <View style={styles.walletHeader}>
+                <Icon name="wallet" size={20} color="#7B68EE" />
+                <Text style={styles.walletTitle}>Địa chỉ ví TRC20</Text>
+              </View>
+              <View style={styles.walletAddressContainer}>
+                <Text style={styles.walletAddress}>TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE</Text>
+                <TouchableOpacity
+                  style={styles.copyButton}
+                  onPress={() => copyToClipboard('TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE', 'Đã sao chép địa chỉ ví')}
+                >
+                  <Icon name="content-copy" size={16} color="#4A90E2" />
+                </TouchableOpacity>
+              </View>
+
+              {/* USDT Amount */}
+              <View style={styles.usdtAmountContainer}>
+                <View style={styles.usdtAmountHeader}>
+                  <Icon name="currency-usd" size={16} color="#7B68EE" />
+                  <Text style={styles.usdtAmountLabel}>Số USDT cần gửi</Text>
+                </View>
+                <View style={styles.usdtAmountValueContainer}>
+                  <Text style={styles.usdtAmountValue}>{transactionInfo.usdtSell || '0 USDT'}</Text>
+                  <TouchableOpacity
+                    style={styles.copyButton}
+                    onPress={() => copyToClipboard(transactionInfo.usdtSell || '0 USDT', 'Đã sao chép số USDT')}
+                  >
+                    <Icon name="content-copy" size={16} color="#4A90E2" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <Text style={styles.walletNote}>
+                Gửi {transactionInfo.usdtSell} đến địa chỉ này để hoàn tất giao dịch
+              </Text>
+            </View>
+            <Text style={styles.sectionTitle}>Chọn tài khoản nhận tiền</Text>
+            <TouchableOpacity
+              style={styles.selectButton}
+              onPress={handleSelectBank}
+            >
+              <View style={styles.selectLeft}>
+                <Icon name="bank" size={24} color="#4A90E2" />
+                <View style={styles.selectInfo}>
+                  <Text style={styles.selectTitle}>Tài khoản ngân hàng</Text>
+                  <Text style={styles.selectDescription}>
+                    {selectedBank || 'Chọn tài khoản ngân hàng'}
+                  </Text>
+                </View>
+              </View>
+              <Icon name="chevron-right" size={24} color="#666" />
+            </TouchableOpacity>
+
+
+
           </>
         )}
 
         <View style={styles.noteContainer}>
           <Icon name="information" size={20} color="#666" />
           <Text style={styles.noteText}>
-            {paymentInfo.type === 'buy' 
+            {paymentInfo.type === 'buy'
               ? 'Vui lòng chuyển khoản đúng số tiền và nội dung. Giao dịch sẽ được xử lý tự động sau khi nhận được thanh toán (5-20 phút).'
               : 'Thời gian xử lý giao dịch từ 5-20 phút. Vui lòng kiểm tra kỹ thông tin trước khi xác nhận.'
             }
@@ -444,7 +445,7 @@ const PaymentScreen = () => {
 
       {/* Confirm Button */}
       <View style={styles.footer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[
             styles.confirmButton,
             (paymentInfo.type === 'sell' && !selectedBank) && styles.confirmButtonDisabled
@@ -545,40 +546,48 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   transferCard: {
-    backgroundColor: '#F8F8F8',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    padding: 16,
+    padding: 0,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+    overflow: 'hidden',
   },
   transferRow: {
-    marginBottom: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
   },
   transferLabel: {
-    fontSize: wp('3.5%'),
+    fontSize: wp('3.8%'),
     color: '#666',
-    marginBottom: 8,
+    fontWeight: '500',
+    flex: 1,
   },
   transferValueContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E5E5EA',
+    flex: 2,
+    justifyContent: 'flex-end',
   },
   transferValue: {
     fontSize: wp('3.8%'),
     color: '#000',
     fontWeight: '500',
     flex: 1,
+    textAlign: 'right',
   },
   transferValueHighlight: {
     fontSize: wp('3.8%'),
     color: '#4A90E2',
     fontWeight: '600',
     flex: 1,
+    textAlign: 'right',
   },
   copyButton: {
     padding: 8,

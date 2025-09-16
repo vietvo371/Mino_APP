@@ -27,6 +27,7 @@ const MOCK_TRANSACTIONS = [
     type: 'buy',
     amount: '1000000',
     usdt: '40.82',
+    exchangeRate: '24,500',
     status: 'completed',
     date: '13/03/2024',
     time: '15:30',
@@ -36,6 +37,7 @@ const MOCK_TRANSACTIONS = [
     type: 'sell',
     amount: '2450000',
     usdt: '100',
+    exchangeRate: '24,500',
     status: 'completed',
     date: '13/03/2024',
     time: '14:20',
@@ -45,6 +47,7 @@ const MOCK_TRANSACTIONS = [
     type: 'buy',
     amount: '12250000',
     usdt: '500',
+    exchangeRate: '24,500',
     status: 'completed',
     date: '12/03/2024',
     time: '18:45',
@@ -54,6 +57,7 @@ const MOCK_TRANSACTIONS = [
     type: 'sell',
     amount: '4900000',
     usdt: '200',
+    exchangeRate: '24,500',
     status: 'completed',
     date: '12/03/2024',
     time: '10:15',
@@ -144,6 +148,12 @@ const HistoryScreen = () => {
             <View style={styles.amountRow}>
               <Text style={styles.amountLabel}>Quy đổi:</Text>
               <Text style={styles.exchangeValue}>{exchangeAmount}</Text>
+            </View>
+            <View style={styles.amountRow}>
+              <Text style={styles.amountLabel}>Tỷ giá:</Text>
+              <Text style={styles.exchangeRateValue}>
+                {transaction.exchangeRate} VND/USDT
+              </Text>
             </View>
           </View>
         </View>
@@ -405,6 +415,11 @@ const styles = StyleSheet.create({
   exchangeValue: {
     fontSize: wp('4%'),
     color: '#000',
+  },
+  exchangeRateValue: {
+    fontSize: wp('4%'),
+    color: '#666',
+    fontWeight: '500',
   },
   // Modal Styles
   modalOverlay: {
