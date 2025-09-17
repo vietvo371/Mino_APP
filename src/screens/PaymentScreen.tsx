@@ -11,12 +11,29 @@ import {
   Clipboard,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import QRCode from '../component/QRCode';
+
+// API endpoint từ backend của bạn
+const RATE_API_URL = 'https://your-backend-api.com/api/exchange-rate';
+
+// Fallback rate nếu API fail
+const FALLBACK_RATE = 24500;
+
+// Transaction fee percentage - có thể cập nhật từ API sau
+const TRANSACTION_FEE_PERCENTAGE = 0.5; // 0.5%
+
+// Mock defaults for preview
+const DEFAULT_TRC20_ADDRESS = 'TR7NHqjeKQxCw1234abcdXYZ7890pqrsLMN';
+const DEFAULT_BANK = {
+  bankName: 'Vietcombank',
+  accountNumber: '0123456789',
+  accountName: 'NGUYEN VAN A',
+};
 
 type PaymentInfo = {
   type: 'buy' | 'sell';
@@ -31,26 +48,63 @@ const PaymentScreen = () => {
 
   const [selectedBank, setSelectedBank] = useState('');
   const [selectedTRC20, setSelectedTRC20] = useState('');
-  const [currentRate, setCurrentRate] = useState<number>(paymentInfo.rate || 0);
+  const [selectedReceiveTRC20, setSelectedReceiveTRC20] = useState('');
+  const [currentRate, setCurrentRate] = useState<number>(paymentInfo.rate || FALLBACK_RATE);
   const [secondsLeft, setSecondsLeft] = useState<number>(20);
+  const [isLoadingRate, setIsLoadingRate] = useState(false);
   const isFetchingRef = useRef<boolean>(false);
   const transactionIdRef = useRef<string>(`MINO${Date.now().toString().slice(-6)}`);
 
-  // Fetch USD→VND rate (USDT≈USD)
+  // Sync selected TRC20 address from navigation params (supports default and selection)
+  useFocusEffect(
+    React.useCallback(() => {
+      const params: any = route.params || {};
+      const picked = params?.selectedTRC20 || params?.selectedReceiveTRC20 || params?.address;
+      const defaultAddr = params?.defaultTRC20 || params?.defaultAddress;
+      if (picked && typeof picked === 'string' && picked.trim().length > 0) {
+        setSelectedReceiveTRC20(picked.trim());
+      } else if (!selectedReceiveTRC20 && defaultAddr && typeof defaultAddr === 'string') {
+        setSelectedReceiveTRC20(defaultAddr.trim());
+      }
+      return () => {};
+    }, [route.params, selectedReceiveTRC20])
+  );
+
+  // Set mock defaults to preview if nothing selected yet
+  useEffect(() => {
+    if (paymentInfo.type === 'buy' && !selectedReceiveTRC20) {
+      setSelectedReceiveTRC20(DEFAULT_TRC20_ADDRESS);
+    }
+    if (paymentInfo.type === 'sell' && !selectedBank) {
+      setSelectedBank(`${DEFAULT_BANK.bankName} - ${DEFAULT_BANK.accountNumber}`);
+    }
+  }, []);
+
+  // Function to fetch rate from your backend API
   const fetchExchangeRate = async () => {
     if (isFetchingRef.current) return;
     isFetchingRef.current = true;
+    setIsLoadingRate(true);
+    
     try {
-      const res = await fetch('https://api.exchangerate.host/latest?base=USD&symbols=VND');
-      const json = await res.json();
-      const vnd = json?.rates?.VND;
-      if (typeof vnd === 'number' && isFinite(vnd)) {
-        setCurrentRate(Math.round(vnd));
+      const response = await fetch(RATE_API_URL);
+      const data = await response.json();
+      
+      // Giả sử API trả về format: { rate: 24500 } hoặc { usdt_vnd_rate: 24500 }
+      const rate = data.rate || data.usdt_vnd_rate || data.exchange_rate;
+      
+      if (rate && !isNaN(parseFloat(rate))) {
+        setCurrentRate(parseFloat(rate));
+        console.log('Rate updated from API:', rate);
+      } else {
+        throw new Error('Invalid rate format');
       }
-    } catch (e) {
-      // ignore network errors, keep old rate
+    } catch (error) {
+      console.log('API failed, using fallback rate:', error);
+      setCurrentRate(FALLBACK_RATE);
     } finally {
       isFetchingRef.current = false;
+      setIsLoadingRate(false);
     }
   };
 
@@ -78,17 +132,61 @@ const PaymentScreen = () => {
     navigation.navigate('TRC20Addresses');
   };
 
+  const handleSelectReceiveTRC20 = () => {
+    navigation.navigate('TRC20Addresses');
+  };
+
   const handleConfirm = () => {
     if (paymentInfo.type === 'buy') {
-      Alert.alert('Success', 'USDT purchase transaction is being processed. Please make payment according to the transfer information.');
-      navigation.navigate('History');
+      if (!selectedReceiveTRC20) {
+        Alert.alert('Notification', 'Please select a TRC20 wallet to receive USDT');
+        return;
+      }
+      // Tạo transaction data cho DetailHistoryScreen
+      const transactionData = {
+        id: `MINO${Date.now().toString().slice(-6)}`,
+        type: paymentInfo.type,
+        amount: paymentInfo.amount,
+        usdt: (parseFloat(paymentInfo.amount) / currentRate).toFixed(2),
+        exchangeRate: currentRate.toLocaleString('vi-VN'),
+        status: 'pending' as const,
+        date: new Date().toLocaleDateString('vi-VN'),
+        time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+        transactionId: `MINO${Date.now().toString().slice(-6)}`,
+        fee: `${(parseFloat(paymentInfo.amount) * (TRANSACTION_FEE_PERCENTAGE / 100)).toLocaleString('vi-VN')} VND (${TRANSACTION_FEE_PERCENTAGE}%)`,
+        totalAmount: `${(parseFloat(paymentInfo.amount) + (parseFloat(paymentInfo.amount) * (TRANSACTION_FEE_PERCENTAGE / 100))).toLocaleString('vi-VN')} VND`,
+        transferInfo: {
+          bankName: 'BIDV',
+          accountNumber: '963336984884401',
+          accountName: 'BAOKIM CONG TY CO PHAN THUONG MAI DIEN TU BAO KIM',
+          transferContent: 'Lien ket vi Baokim',
+          amount: (parseFloat(paymentInfo.amount) + (parseFloat(paymentInfo.amount) * (TRANSACTION_FEE_PERCENTAGE / 100))).toLocaleString('vi-VN'),
+        },
+        receiveAddress: selectedReceiveTRC20,
+      };
+      navigation.navigate('DetailHistory', { transaction: transactionData });
     } else {
       if (!selectedBank) {
         Alert.alert('Notification', 'Please select a bank account to receive money');
         return;
       }
-      Alert.alert('Success', 'USDT sell transaction is being processed. Please send USDT to the provided wallet address.');
-      navigation.navigate('History');
+      // Tạo transaction data cho DetailHistoryScreen
+      const transactionData = {
+        id: `MINO${Date.now().toString().slice(-6)}`,
+        type: paymentInfo.type,
+        amount: paymentInfo.amount,
+        usdt: paymentInfo.amount,
+        exchangeRate: currentRate.toLocaleString('vi-VN'),
+        status: 'pending' as const,
+        date: new Date().toLocaleDateString('vi-VN'),
+        time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+        transactionId: `MINO${Date.now().toString().slice(-6)}`,
+        fee: `${(parseFloat(paymentInfo.amount) * currentRate * (TRANSACTION_FEE_PERCENTAGE / 100)).toLocaleString('vi-VN')} VND (${TRANSACTION_FEE_PERCENTAGE}%)`,
+        totalAmount: `${((parseFloat(paymentInfo.amount) * currentRate) - (parseFloat(paymentInfo.amount) * currentRate * (TRANSACTION_FEE_PERCENTAGE / 100))).toLocaleString('vi-VN')} VND`,
+        receiveAddress: 'TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE',
+        bankAccount: selectedBank,
+      };
+      navigation.navigate('DetailHistory', { transaction: transactionData });
     }
   };
 
@@ -100,15 +198,15 @@ const PaymentScreen = () => {
   const getTransactionInfo = () => {
     const amountNum = parseFloat(paymentInfo.amount);
     if (paymentInfo.type === 'buy') {
-      const usdtAmount = (amountNum / (currentRate || paymentInfo.rate)).toFixed(2);
-      const fee = 13500;
-      const totalVND = amountNum + fee;
+      const usdtAmount = (amountNum / currentRate).toFixed(2);
+      const feeAmount = amountNum * (TRANSACTION_FEE_PERCENTAGE / 100);
+      const totalVND = amountNum + feeAmount;
       const transactionId = transactionIdRef.current;
 
       return {
         usdtWant: `${usdtAmount} USDT`,
-        exchangeRate: `1 USDT = ${(currentRate || paymentInfo.rate).toLocaleString('vi-VN')} VND`,
-        fee: `${fee.toLocaleString('vi-VN')} VND`,
+        exchangeRate: `1 USDT = ${currentRate.toLocaleString('vi-VN')} VND`,
+        fee: `${feeAmount.toLocaleString('vi-VN')} VND (${TRANSACTION_FEE_PERCENTAGE}%)`,
         totalVND: `${totalVND.toLocaleString('vi-VN')} VND`,
         transactionId,
         transferInfo: {
@@ -120,15 +218,14 @@ const PaymentScreen = () => {
         }
       };
     } else {
-      const feeRate = 0.5; // 0.5%
-      const rate = currentRate || paymentInfo.rate;
-      const feeAmount = amountNum * rate * (feeRate / 100);
-      const receiveAmount = (amountNum * rate) - feeAmount;
+      // Sell USDT: sử dụng phí từ biến cố định
+      const feeAmount = amountNum * currentRate * (TRANSACTION_FEE_PERCENTAGE / 100);
+      const receiveAmount = (amountNum * currentRate) - feeAmount;
 
       return {
         usdtSell: `${paymentInfo.amount} USDT`,
-        exchangeRate: `1 USDT = ${(currentRate || paymentInfo.rate).toLocaleString('vi-VN')} VND`,
-        fee: `${feeAmount.toLocaleString('vi-VN')} VND (${feeRate}%)`,
+        exchangeRate: `1 USDT = ${currentRate.toLocaleString('vi-VN')} VND`,
+        fee: `${feeAmount.toLocaleString('vi-VN')} VND (${TRANSACTION_FEE_PERCENTAGE}%)`,
         receiveVND: `${receiveAmount.toLocaleString('vi-VN')} VND`,
         sendAmount: `${paymentInfo.amount} USDT`,
         receiveAmount: `${receiveAmount.toLocaleString('vi-VN')} VND`,
@@ -142,13 +239,18 @@ const PaymentScreen = () => {
     const transactionInfo = getTransactionInfo();
 
     if (paymentInfo.type === 'buy') {
+      const amountNum = parseFloat(paymentInfo.amount);
+      const feeAmount = amountNum * (TRANSACTION_FEE_PERCENTAGE / 100);
+      const totalAmount = amountNum + feeAmount;
+      
       const qrData = {
         bankName: transactionInfo.transferInfo?.bankName || 'Vietcombank',
         accountNumber: transactionInfo.transferInfo?.accountNumber || '1234567890',
         accountName: transactionInfo.transferInfo?.accountName || 'MINO EXCHANGE',
-        amount: transactionInfo.transferInfo?.amount?.replace(/\./g, '') || '0',
+        amount: totalAmount.toLocaleString('vi-VN').replace(/\./g, ''),
         transferContent: transactionInfo.transferInfo?.transferContent || 'MINO TXN',
-        currency: 'VND'
+        currency: 'VND',
+        fee: `${TRANSACTION_FEE_PERCENTAGE}%`
       };
 
       return JSON.stringify(qrData);
@@ -160,12 +262,12 @@ const PaymentScreen = () => {
         type: paymentInfo.type,
         amount: paymentInfo.amount,
         currency: 'USDT',
-        rate: currentRate || paymentInfo.rate,
+        rate: currentRate,
         timestamp: new Date().toISOString(),
         status: "pending",
-        totalAmount: `${(amountNum * (currentRate || paymentInfo.rate) * 0.995).toLocaleString('vi-VN')} VND`,
-        receiveAmount: `${(amountNum * (currentRate || paymentInfo.rate)).toLocaleString('vi-VN')} VND`,
-        fee: '0.5%',
+        totalAmount: `${(amountNum * currentRate).toLocaleString('vi-VN')} VND`,
+        receiveAmount: `${((amountNum * currentRate) * (1 - TRANSACTION_FEE_PERCENTAGE / 100)).toLocaleString('vi-VN')} VND`,
+        fee: `${TRANSACTION_FEE_PERCENTAGE}%`,
         paymentMethod: 'crypto_transfer'
       };
 
@@ -190,8 +292,11 @@ const PaymentScreen = () => {
         <TouchableOpacity style={styles.headerRight} onPress={fetchExchangeRate}>
           <Icon name="refresh" size={16} color="#4A90E2" />
           <Text style={styles.headerRightText}>
-            {secondsLeft}s • {(currentRate || paymentInfo.rate).toLocaleString('vi-VN')}
+            {secondsLeft}s • {currentRate.toLocaleString('vi-VN')}
           </Text>
+          {isLoadingRate && (
+            <Icon name="loading" size={14} color="#4A90E2" style={{ marginLeft: 4 }} />
+          )}
         </TouchableOpacity>
       </View>
 
@@ -241,175 +346,53 @@ const PaymentScreen = () => {
           )}
         </View>
 
-        {/* QR Code Section - Only for BUY USDT */}
+
+        {/* Wallet Selection for Buy USDT */}
         {paymentInfo.type === 'buy' && (
-          <View style={styles.qrSection}>
-            <Text style={styles.sectionTitle}>Payment QR Code</Text>
-            <View style={styles.qrContainer}>
-              <QRCode
-                value={generateQRData()}
-                size={wp('60%')}
-                showShare={true}
-                showDownload={true}
-              />
-            </View>
-            <View style={styles.qrInfo}>
-              <Icon name="qrcode-scan" size={20} color="#666" />
-              <Text style={styles.qrInfoText}>
-                Scan QR code with banking app or e-wallet to make payment
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {/* Transfer Information - Only for BUY USDT */}
-        {paymentInfo.type === 'buy' && (
-          <View style={styles.transferSection}>
-            <View style={styles.transferCard}>
-              {/* Bank Name */}
-              <View style={styles.transferRow}>
-                <Text style={styles.transferLabel}>Bank Name</Text>
-                <View style={styles.transferValueContainer}>
-                  <Text style={styles.transferValue}>{transactionInfo.transferInfo?.bankName || 'BIDV'}</Text>
-                  <TouchableOpacity
-                    onPress={() => copyToClipboard(transactionInfo.transferInfo?.bankName || 'BIDV', 'Bank name copied')}
-                    style={styles.copyButton}
-                  >
-                    <Icon name="content-copy" size={16} color="#4A90E2" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Account Name */}
-              <View style={styles.transferRow}>
-                <Text style={styles.transferLabel}>Account Name</Text>
-                <View style={styles.transferValueContainer}>
-                  <Text style={styles.transferValue}>{transactionInfo.transferInfo?.accountName || 'BAOKIM CONG TY CO PHAN THUONG MAI DIEN TU BAO KIM'}</Text>
-                  <TouchableOpacity
-                    onPress={() => copyToClipboard(transactionInfo.transferInfo?.accountName || 'BAOKIM CONG TY CO PHAN THUONG MAI DIEN TU BAO KIM', 'Account name copied')}
-                    style={styles.copyButton}
-                  >
-                    <Icon name="content-copy" size={16} color="#4A90E2" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Account Number */}
-              <View style={styles.transferRow}>
-                <Text style={styles.transferLabel}>Account Number</Text>
-                <View style={styles.transferValueContainer}>
-                  <Text style={styles.transferValue}>{transactionInfo.transferInfo?.accountNumber || '963336984884401'}</Text>
-                  <TouchableOpacity
-                    onPress={() => copyToClipboard(transactionInfo.transferInfo?.accountNumber || '963336984884401', 'Account number copied')}
-                    style={styles.copyButton}
-                  >
-                    <Icon name="content-copy" size={16} color="#4A90E2" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Amount */}
-              <View style={styles.transferRow}>
-                <Text style={styles.transferLabel}>Amount</Text>
-                <View style={styles.transferValueContainer}>
-                  <Text style={styles.transferValueHighlight}>{transactionInfo.transferInfo?.amount || '0'} VND</Text>
-                  <TouchableOpacity
-                    onPress={() => copyToClipboard(transactionInfo.transferInfo?.amount?.replace(/\./g, '') || '0', 'Amount copied')}
-                    style={styles.copyButton}
-                  >
-                    <Icon name="content-copy" size={16} color="#4A90E2" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Transfer Content */}
-              <View style={styles.transferRow}>
-                <Text style={styles.transferLabel}>Transfer Content</Text>
-                <View style={styles.transferValueContainer}>
-                  <Text style={styles.transferValueHighlight}>{transactionInfo.transferInfo?.transferContent || 'Lien ket vi Baokim'}</Text>
-                  <TouchableOpacity
-                    onPress={() => copyToClipboard(transactionInfo.transferInfo?.transferContent || 'Lien ket vi Baokim', 'Transfer content copied')}
-                    style={styles.copyButton}
-                  >
-                    <Icon name="content-copy" size={16} color="#4A90E2" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-
-            {/* Copy All Button */}
-            <TouchableOpacity
-              style={styles.copyAllButton}
-              onPress={() => {
-                const allInfo = `Bank Name: ${transactionInfo.transferInfo?.bankName || 'BIDV'}\nAccount Name: ${transactionInfo.transferInfo?.accountName || 'BAOKIM CONG TY CO PHAN THUONG MAI DIEN TU BAO KIM'}\nAccount Number: ${transactionInfo.transferInfo?.accountNumber || '963336984884401'}\nAmount: ${transactionInfo.transferInfo?.amount || '0'} VND\nTransfer Content: ${transactionInfo.transferInfo?.transferContent || 'Lien ket vi Baokim'}`;
-                copyToClipboard(allInfo, 'All transfer information copied');
-              }}
-            >
-              <Icon name="content-copy" size={20} color="#FFFFFF" />
-              <Text style={styles.copyAllText}>Copy All Information</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Payment Methods - Only for SELL USDT */}
-        {paymentInfo.type === 'sell' && (
           <>
-
-            {/* QR Code for Wallet */}
-            <View style={styles.qrSection}>
-              <Text style={styles.sectionTitle}>TRC20 Wallet QR Code</Text>
-              <View style={styles.qrContainer}>
-                <QRCode
-                  value="TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE"
-                  size={wp('60%')}
-                  showShare={true}
-                  showDownload={true}
-                />
+            <Text style={styles.sectionTitle}>Select TRC20 Wallet to Receive USDT</Text>
+            <TouchableOpacity
+              style={styles.selectButton}
+              onPress={handleSelectReceiveTRC20}
+            >
+              <View style={styles.selectLeft}>
+                <Icon name="wallet" size={24} color="#7B68EE" />
+                <View style={styles.selectInfo}>
+                  <Text style={styles.selectTitle}>TRC20 Wallet</Text>
+                  <Text style={styles.selectDescription}>
+                    {selectedReceiveTRC20 || 'Select TRC20 wallet to receive USDT'}
+                  </Text>
+                </View>
               </View>
-              <View style={styles.qrInfo}>
-                <Icon name="qrcode-scan" size={20} color="#666" />
-                <Text style={styles.qrInfoText}>
-                  Scan QR code to send USDT from your wallet
+              <Icon name="chevron-right" size={24} color="#666" />
+            </TouchableOpacity>
+
+            {selectedReceiveTRC20 ? (
+              <View style={styles.walletCard}>
+                <View style={styles.walletHeader}>
+                  <Icon name="wallet" size={20} color="#7B68EE" />
+                  <Text style={styles.walletTitle}>Receive USDT Address</Text>
+                </View>
+                <View style={styles.walletAddressContainer}>
+                  <Text style={styles.walletAddress}>{selectedReceiveTRC20}</Text>
+                  <TouchableOpacity
+                    style={styles.copyButton}
+                    onPress={() => copyToClipboard(selectedReceiveTRC20, 'Wallet address copied')}
+                  >
+                    <Icon name="content-copy" size={16} color="#4A90E2" />
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.walletNote}>
+                  USDT will be received at this address after your payment is confirmed.
                 </Text>
               </View>
-            </View>
+            ) : null}
+          </>
+        )}
 
-            <View style={styles.walletCard}>
-              <View style={styles.walletHeader}>
-                <Icon name="wallet" size={20} color="#7B68EE" />
-                <Text style={styles.walletTitle}>TRC20 Wallet Address</Text>
-              </View>
-              <View style={styles.walletAddressContainer}>
-                <Text style={styles.walletAddress}>TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE</Text>
-                <TouchableOpacity
-                  style={styles.copyButton}
-                  onPress={() => copyToClipboard('TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE', 'Wallet address copied')}
-                >
-                  <Icon name="content-copy" size={16} color="#4A90E2" />
-                </TouchableOpacity>
-              </View>
-
-              {/* USDT Amount */}
-              <View style={styles.usdtAmountContainer}>
-                <View style={styles.usdtAmountHeader}>
-                  <Icon name="currency-usd" size={16} color="#7B68EE" />
-                  <Text style={styles.usdtAmountLabel}>USDT to Send</Text>
-                </View>
-                <View style={styles.usdtAmountValueContainer}>
-                  <Text style={styles.usdtAmountValue}>{transactionInfo.usdtSell || '0 USDT'}</Text>
-                  <TouchableOpacity
-                    style={styles.copyButton}
-                    onPress={() => copyToClipboard(transactionInfo.usdtSell || '0 USDT', 'USDT amount copied')}
-                  >
-                    <Icon name="content-copy" size={16} color="#4A90E2" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <Text style={styles.walletNote}>
-                Send {transactionInfo.usdtSell} to this address to complete the transaction
-              </Text>
-            </View>
+        {/* Wallet Selection for Sell USDT */}
+        {paymentInfo.type === 'sell' && (
+          <>
             <Text style={styles.sectionTitle}>Select Bank Account to Receive Money</Text>
             <TouchableOpacity
               style={styles.selectButton}
@@ -420,19 +403,40 @@ const PaymentScreen = () => {
                 <View style={styles.selectInfo}>
                   <Text style={styles.selectTitle}>Bank Account</Text>
                   <Text style={styles.selectDescription}>
-                    {selectedBank || 'Select bank account'}
+                    {selectedBank || `${DEFAULT_BANK.bankName} - ${DEFAULT_BANK.accountNumber}`}
                   </Text>
                 </View>
               </View>
               <Icon name="chevron-right" size={24} color="#666" />
             </TouchableOpacity>
 
-
-
+            {/* Preview selected/default bank info */}
+            <View style={styles.walletCard}>
+              <View style={styles.walletHeader}>
+                <Icon name="bank" size={20} color="#4A90E2" />
+                <Text style={styles.walletTitle}>Receive Bank Account</Text>
+              </View>
+              <View style={styles.walletAddressContainer}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.walletAddress, { fontFamily: undefined }]}>
+                    {selectedBank || `${DEFAULT_BANK.bankName} - ${DEFAULT_BANK.accountNumber}`}
+                  </Text>
+                  <Text style={{ color: '#666', marginTop: 4 }}>
+                    {DEFAULT_BANK.accountName}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.copyButton}
+                  onPress={() => copyToClipboard(selectedBank || `${DEFAULT_BANK.bankName} - ${DEFAULT_BANK.accountNumber}`, 'Bank info copied')}
+                >
+                  <Icon name="content-copy" size={16} color="#4A90E2" />
+                </TouchableOpacity>
+              </View>
+            </View>
           </>
         )}
 
-        <View style={styles.noteContainer}>
+        {/* <View style={styles.noteContainer}>
           <Icon name="information" size={20} color="#666" />
           <Text style={styles.noteText}>
             {paymentInfo.type === 'buy'
@@ -440,7 +444,7 @@ const PaymentScreen = () => {
               : 'Transaction processing time is 5-20 minutes. Please check the information carefully before confirming.'
             }
           </Text>
-        </View>
+        </View> */}
       </ScrollView>
 
       {/* Confirm Button */}
@@ -448,10 +452,10 @@ const PaymentScreen = () => {
         <TouchableOpacity
           style={[
             styles.confirmButton,
-            (paymentInfo.type === 'sell' && !selectedBank) && styles.confirmButtonDisabled
+            ((paymentInfo.type === 'buy' && !selectedReceiveTRC20) || (paymentInfo.type === 'sell' && !selectedBank)) && styles.confirmButtonDisabled
           ]}
           onPress={handleConfirm}
-          disabled={paymentInfo.type === 'sell' && !selectedBank}
+          disabled={(paymentInfo.type === 'buy' && !selectedReceiveTRC20) || (paymentInfo.type === 'sell' && !selectedBank)}
         >
           <Text style={styles.confirmButtonText}>Confirm Transaction</Text>
         </TouchableOpacity>

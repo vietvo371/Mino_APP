@@ -37,6 +37,13 @@ type MenuItem = {
 
 const MENU_ITEMS = [
   {
+    id: 'security',
+    title: 'Verification',
+    description: 'Verify eKYC, email, and phone number',
+    icon: 'shield-lock',
+    route: 'Security',
+  },
+  {
     id: 'bank_accounts',
     title: 'Bank Accounts',
     description: 'Manage bank account list',
@@ -50,13 +57,7 @@ const MENU_ITEMS = [
     icon: 'wallet',
     route: 'TRC20Addresses',
   },
-  {
-    id: 'security',
-    title: 'eKYC Verification',
-    description: 'Identity verification',
-    icon: 'shield-lock',
-    route: 'EkycIntro',
-  },
+ 
   {
     id: 'notifications',
     title: 'Notifications',
@@ -77,6 +78,11 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
   const navigation = useNavigation();
   const { signOut } = useAuth();
 
+  // Mock verification statuses (replace with real user data later)
+  const isEkycVerified = false;
+  const isEmailVerified = false;
+  const isPhoneVerified = false;
+
   const handleSignOut = () => {
     Alert.alert(
       'Sign Out',
@@ -96,7 +102,7 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
   };
 
   const renderMenuItem = (item: MenuItem) => {
-    const hasItems = 'items' in item;
+    const hasItems = Array.isArray((item as any).items) && ((item as any).items as any[]).length > 0;
     
     return (
       <View key={item.id}>
@@ -117,12 +123,12 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
 
         {hasItems && (
           <View style={styles.subItemsContainer}>
-            {item.items?.map((subItem: any, index: any) => (
+            {(item as any).items?.map((subItem: any, index: number) => (
               <View 
                 key={index} 
                 style={[
                   styles.subItem,
-                  index < (item.items?.length || 0) - 1 && styles.subItemBorder
+                  index < (((item as any).items?.length || 0) - 1) && styles.subItemBorder
                 ]}
               >
                 {item.id === 'bank_accounts' ? (
@@ -193,12 +199,24 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
           <View style={styles.userInfo}>
             <Text style={styles.name}>John Doe</Text>
             <Text style={styles.email}>john.doe@example.com</Text>
-            <View style={styles.verifiedBadge}>
-              <Icon name="check-circle" size={16} color="#34C759" />
-              <Text style={styles.verifiedText}>Verified</Text>
+            <View style={styles.badgesContainer}>
+              <View style={[styles.badge, { backgroundColor: isEkycVerified ? '#34C75915' : '#E5E5EA' }]}>
+                <Icon name="shield-check" size={14} color={isEkycVerified ? '#34C759' : '#8E8E93'} />
+                <Text style={[styles.badgeText, { color: isEkycVerified ? '#34C759' : '#8E8E93' }]}>eKYC</Text>
+              </View>
+              <View style={[styles.badge, { backgroundColor: isEmailVerified ? '#34C75915' : '#E5E5EA' }]}>
+                <Icon name="email-check" size={14} color={isEmailVerified ? '#34C759' : '#8E8E93'} />
+                <Text style={[styles.badgeText, { color: isEmailVerified ? '#34C759' : '#8E8E93' }]}>Email</Text>
+              </View>
+              <View style={[styles.badge, { backgroundColor: isPhoneVerified ? '#34C75915' : '#E5E5EA' }]}>
+                <Icon name="phone-check" size={14} color={isPhoneVerified ? '#34C759' : '#8E8E93'} />
+                <Text style={[styles.badgeText, { color: isPhoneVerified ? '#34C759' : '#8E8E93' }]}>Phone</Text>
+              </View>
             </View>
           </View>
         </View>
+
+     
 
         {/* Menu Items */}
         <View style={styles.menuContainer}>
@@ -337,19 +355,90 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
     marginBottom: 8,
   },
-  verifiedBadge: {
+  badgesContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#34C75915',
-    paddingHorizontal: 12,
+    gap: 8,
+    marginTop: 8,
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 12,
-    gap: 4,
   },
-  verifiedText: {
+  badgeText: {
     fontSize: 12,
-    color: '#34C759',
     fontWeight: '600',
+  },
+  verificationCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    marginBottom: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  verificationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+    gap: 8,
+  },
+  verificationTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#000',
+  },
+  verificationItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#F2F2F7',
+  },
+  verificationIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  verificationContent: {
+    flex: 1,
+  },
+  verificationName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 2,
+  },
+  verificationDesc: {
+    fontSize: 13,
+    color: '#666',
+  },
+  statusChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  statusChipText: {
+    fontSize: 12,
+    fontWeight: '700',
   },
   balanceCard: {
     backgroundColor: '#4A90E2',

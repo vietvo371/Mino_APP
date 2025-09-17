@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -21,11 +21,14 @@ import {
 
 const { width } = Dimensions.get('window');
 
-// Giả lập giá Binance
-const MOCK_BINANCE_RATE = 24500;
+// API endpoint từ backend của bạn
+const RATE_API_URL = 'https://your-backend-api.com/api/exchange-rate';
 
 const MAX_VND_AMOUNT = 999999999999; // 1 tỷ VND
 const MAX_USDT_AMOUNT = 999999.99; // 1 triệu USDT
+
+// Fallback rate nếu API fail
+const FALLBACK_RATE = 24500;
 
 const formatMoney = (amount: string | number) => {
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -54,7 +57,56 @@ const HomeScreen: StackScreen<'Home'> = () => {
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy');
   const [amount, setAmount] = useState('');
-  const [binanceRate] = useState(26389);
+  const [binanceRate, setBinanceRate] = useState(26389);
+  const [isSwapped, setIsSwapped] = useState(false); // true = nhập số muốn nhận, false = nhập số muốn đổi
+  const [countdown, setCountdown] = useState(20); // Countdown 20 giây
+  const [isLoadingRate, setIsLoadingRate] = useState(false);
+
+  // Function to fetch rate from your backend API
+  const fetchExchangeRate = async () => {
+    setIsLoadingRate(true);
+    
+    try {
+      const response = await fetch(RATE_API_URL);
+      const data = await response.json();
+      
+      // Giả sử API trả về format: { rate: 24500 } hoặc { usdt_vnd_rate: 24500 }
+      const rate = data.rate || data.usdt_vnd_rate || data.exchange_rate;
+      
+      if (rate && !isNaN(parseFloat(rate))) {
+        setBinanceRate(parseFloat(rate));
+        console.log('Rate updated from API:', rate);
+      } else {
+        throw new Error('Invalid rate format');
+      }
+    } catch (error) {
+      console.log('API failed, using fallback rate:', error);
+      setBinanceRate(FALLBACK_RATE);
+    } finally {
+      setIsLoadingRate(false);
+    }
+  };
+
+  // Effect để chạy countdown và fetch API
+  useEffect(() => {
+    // Fetch ngay lập tức khi component mount
+    fetchExchangeRate();
+    
+    // Countdown timer
+    const countdownInterval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          // Khi countdown về 0, fetch API và reset về 20
+          fetchExchangeRate();
+          return 20;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    // Cleanup interval khi component unmount
+    return () => clearInterval(countdownInterval);
+  }, []);
 
   // Function to format amount with commas for display
   const formatAmountForDisplay = (amount: string) => {
@@ -63,11 +115,14 @@ const HomeScreen: StackScreen<'Home'> = () => {
     // Remove existing commas
     const cleanAmount = amount.replace(/,/g, '');
     
-    // Add commas for thousands separator
-    if (activeTab === 'buy') {
+    // Add commas for thousands separator based on input type
+    const isInputtingVND = (activeTab === 'buy' && !isSwapped) || (activeTab === 'sell' && isSwapped);
+    const isInputtingUSDT = (activeTab === 'sell' && !isSwapped) || (activeTab === 'buy' && isSwapped);
+    
+    if (isInputtingVND) {
       // For VND, add commas every 3 digits from right
       return cleanAmount.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-    } else {
+    } else if (isInputtingUSDT) {
       // For USDT, keep decimal places but add commas for integer part
       const parts = cleanAmount.split('.');
       if (parts.length === 2) {
@@ -75,6 +130,8 @@ const HomeScreen: StackScreen<'Home'> = () => {
       }
       return parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     }
+    
+    return cleanAmount;
   };
 
   // Function to calculate dynamic font size based on amount length
@@ -102,12 +159,15 @@ const HomeScreen: StackScreen<'Home'> = () => {
     const cleanAmount = amount.replace(/,/g, '');
     const newAmount = cleanAmount + num;
     
-    // Kiểm tra định dạng số theo loại tiền tệ
+    // Kiểm tra định dạng số theo loại tiền tệ và chế độ swap
     let isValidFormat = false;
-    if (activeTab === 'buy') {
+    const isInputtingVND = (activeTab === 'buy' && !isSwapped) || (activeTab === 'sell' && isSwapped);
+    const isInputtingUSDT = (activeTab === 'sell' && !isSwapped) || (activeTab === 'buy' && isSwapped);
+    
+    if (isInputtingVND) {
       // VND: chỉ cho phép số nguyên
       isValidFormat = /^\d+$/.test(newAmount);
-    } else {
+    } else if (isInputtingUSDT) {
       // USDT: cho phép tối đa 2 chữ số thập phân
       isValidFormat = /^\d*\.?\d{0,2}$/.test(newAmount);
     }
@@ -185,15 +245,40 @@ const HomeScreen: StackScreen<'Home'> = () => {
     }
   };
 
+  const handleSwap = () => {
+    setIsSwapped(!isSwapped);
+    setAmount(''); // Clear amount when swapping
+  };
+
   const handleAction = () => {
     const cleanAmount = amount.replace(/,/g, '');
     if (!cleanAmount || parseFloat(cleanAmount) === 0) return;
 
+    let finalAmount = cleanAmount;
+    let finalType = activeTab;
+
+    // Xử lý logic swap
+    if (isSwapped) {
+      if (activeTab === 'buy') {
+        // Buy tab + swap: nhập USDT muốn nhận → cần tính VND cần đổi
+        const usdtAmount = parseFloat(cleanAmount);
+        const vndAmount = (usdtAmount * binanceRate).toString();
+        finalAmount = vndAmount;
+        finalType = 'buy'; // Vẫn là buy nhưng amount là VND
+      } else {
+        // Sell tab + swap: nhập VND muốn nhận → cần tính USDT cần đổi
+        const vndAmount = parseFloat(cleanAmount);
+        const usdtAmount = (vndAmount / binanceRate).toFixed(2);
+        finalAmount = usdtAmount;
+        finalType = 'sell'; // Vẫn là sell nhưng amount là USDT
+      }
+    }
+
     // Navigate to payment screen with transaction info
     navigation.navigate('Payment', {
       paymentInfo: {
-        type: activeTab,
-        amount: cleanAmount,
+        type: finalType,
+        amount: finalAmount,
         rate: binanceRate,
       }
     });
@@ -225,9 +310,6 @@ const HomeScreen: StackScreen<'Home'> = () => {
             USDT → VND
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.filterButton}>
-          <Icon name="filter-variant" size={20} color="#666" />
-        </TouchableOpacity>
       </View>
 
       <View style={styles.mainContent}>
@@ -242,21 +324,51 @@ const HomeScreen: StackScreen<'Home'> = () => {
               <Text style={[styles.amountZero, { fontSize: getAmountFontSize(amount) }]}>
                 {formatAmountForDisplay(amount)}
               </Text>
-              <Text style={styles.amountLabel}>{activeTab === 'buy' ? 'VND' : 'USDT'}</Text>
+              <Text style={styles.amountLabel}>
+                {isSwapped 
+                  ? (activeTab === 'buy' ? 'USDT' : 'VND') 
+                  : (activeTab === 'buy' ? 'VND' : 'USDT')
+                }
+              </Text>
             </View>
 
             {/* Exchange Rate */}
             <View style={styles.exchangeContainer}>
-              <Text style={styles.exchangeAmount}>
-                ≈ {amount ? (
-                  activeTab === 'buy' 
-                    ? `${(parseFloat(amount.replace(/,/g, '')) / binanceRate).toFixed(2)} USDT`
-                    : `${(parseFloat(amount.replace(/,/g, '')) * binanceRate).toLocaleString('vi-VN')} VND`
-                ) : (
-                  activeTab === 'buy' ? '0 USDT' : '0 VND'
-                )}
-              </Text>
-              <Text style={styles.exchangeRate}>1 USDT = {binanceRate.toLocaleString('vi-VN')} VND</Text>
+              <View style={styles.exchangeRow}>
+                <Text style={styles.exchangeAmount}>
+                  ≈ {amount ? (
+                    isSwapped 
+                      ? (activeTab === 'buy' 
+                          ? `${(parseFloat(amount.replace(/,/g, '')) * binanceRate).toLocaleString('vi-VN')} VND`
+                          : `${(parseFloat(amount.replace(/,/g, '')) / binanceRate).toFixed(2)} USDT`
+                        )
+                      : (activeTab === 'buy' 
+                          ? `${(parseFloat(amount.replace(/,/g, '')) / binanceRate).toFixed(2)} USDT`
+                          : `${(parseFloat(amount.replace(/,/g, '')) * binanceRate).toLocaleString('vi-VN')} VND`
+                        )
+                  ) : (
+                    isSwapped 
+                      ? (activeTab === 'buy' ? '0 VND' : '0 USDT')
+                      : (activeTab === 'buy' ? '0 USDT' : '0 VND')
+                  )}
+                </Text>
+                <TouchableOpacity style={styles.swapButton} onPress={handleSwap}>
+                  <Icon name="swap-horizontal" size={20} color="#666" />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.rateContainer}>
+                <Text style={styles.exchangeRate}>
+                  1 USDT = {binanceRate.toLocaleString('vi-VN')} VND
+                </Text>
+                <View style={styles.countdownContainer}>
+                  <Text style={styles.countdownText}>
+                    Update after: {countdown}s
+                  </Text>
+                  {isLoadingRate && (
+                    <Icon name="loading" size={16} color="#666" />
+                  )}
+                </View>
+              </View>
             </View>
           </View>
 
@@ -387,14 +499,41 @@ const styles = StyleSheet.create({
     marginTop: hp("2%"),
     paddingLeft: 20,
   },
+  exchangeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingRight: 20,
+  },
   exchangeAmount: {
     fontSize: wp("5%"),
     color: '#666',
     marginBottom: 4,
+    flex: 1,
+  },
+  swapButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: '#F2F2F7',
+    marginLeft: 10,
+  },
+  rateContainer: {
+    flexDirection: 'column',
   },
   exchangeRate: {
     fontSize: wp("4%"),
     color: '#666',
+  },
+  countdownContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  countdownText: {
+    fontSize: wp("3%"),
+    color: '#999',
+    marginRight: 8,
   },
   quickAmountContainer: {
     flexDirection: 'row',

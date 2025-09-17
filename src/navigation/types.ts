@@ -59,8 +59,34 @@ export type RootStackParamList = {
       rate: number;
     };
   };
+  DetailHistory: {
+    transaction: {
+      id: string;
+      type: 'buy' | 'sell';
+      amount: string;
+      usdt: string;
+      exchangeRate: string;
+      status: 'pending' | 'completed' | 'failed';
+      date: string;
+      time: string;
+      transactionId: string;
+      fee: string;
+      totalAmount: string;
+      receiveAddress?: string;
+      bankAccount?: string;
+      transferInfo?: {
+        bankName: string;
+        accountNumber: string;
+        accountName: string;
+        transferContent: string;
+        amount: string;
+      };
+    };
+  };
 
   // Settings Flow
+  EmailVerification: undefined;
+  PhoneVerification: undefined;
   Settings: undefined;
   Security: undefined;
   Notifications: undefined;

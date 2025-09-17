@@ -9,6 +9,7 @@ import {
   Platform,
   Modal,
   Dimensions,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../theme/colors';
@@ -21,48 +22,99 @@ import {
 const { width } = Dimensions.get('window');
 
 // Mock data for transaction history
-const MOCK_TRANSACTIONS = [
-  {
-    id: '1',
-    type: 'buy',
-    amount: '1000000',
-    usdt: '40.82',
-    exchangeRate: '24,500',
-    status: 'completed',
-    date: '13/03/2024',
-    time: '15:30',
-  },
-  {
-    id: '2',
-    type: 'sell',
-    amount: '2450000',
-    usdt: '100',
-    exchangeRate: '24,500',
-    status: 'completed',
-    date: '13/03/2024',
-    time: '14:20',
-  },
-  {
-    id: '3',
-    type: 'buy',
-    amount: '12250000',
-    usdt: '500',
-    exchangeRate: '24,500',
-    status: 'completed',
-    date: '12/03/2024',
-    time: '18:45',
-  },
-  {
-    id: '4',
-    type: 'sell',
-    amount: '4900000',
-    usdt: '200',
-    exchangeRate: '24,500',
-    status: 'completed',
-    date: '12/03/2024',
-    time: '10:15',
-  },
-];
+const MOCK_TRANSACTIONS = {
+  pending: [
+    {
+      id: '1',
+      type: 'buy',
+      amount: '1000000',
+      usdt: '40.82',
+      exchangeRate: '24,500',
+      status: 'pending',
+      date: '13/03/2024',
+      time: '15:30',
+      transactionId: 'MINO123456',
+      fee: '5,000 VND (0.5%)',
+      totalAmount: '1,005,000 VND',
+      transferInfo: {
+        bankName: 'BIDV',
+        accountNumber: '963336984884401',
+        accountName: 'BAOKIM CONG TY CO PHAN THUONG MAI DIEN TU BAO KIM',
+        transferContent: 'Lien ket vi Baokim',
+        amount: '1,005,000',
+      },
+    },
+    {
+      id: '2',
+      type: 'sell',
+      amount: '2450000',
+      usdt: '100',
+      exchangeRate: '24,500',
+      status: 'pending',
+      date: '13/03/2024',
+      time: '14:20',
+      transactionId: 'MINO123457',
+      fee: '12,250 VND (0.5%)',
+      totalAmount: '2,437,750 VND',
+      receiveAddress: 'TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE',
+      bankAccount: 'Vietcombank - 1234567890',
+    },
+  ],
+  success: [
+    {
+      id: '3',
+      type: 'buy',
+      amount: '12250000',
+      usdt: '500',
+      exchangeRate: '24,500',
+      status: 'completed',
+      date: '12/03/2024',
+      time: '18:45',
+    },
+    {
+      id: '4',
+      type: 'sell',
+      amount: '4900000',
+      usdt: '200',
+      exchangeRate: '24,500',
+      status: 'completed',
+      date: '12/03/2024',
+      time: '10:15',
+    },
+    {
+      id: '5',
+      type: 'buy',
+      amount: '5000000',
+      usdt: '204.08',
+      exchangeRate: '24,500',
+      status: 'completed',
+      date: '11/03/2024',
+      time: '16:20',
+    },
+  ],
+  fail: [
+    {
+      id: '6',
+      type: 'sell',
+      amount: '1000000',
+      usdt: '40.82',
+      exchangeRate: '24,500',
+      status: 'failed',
+      date: '10/03/2024',
+      time: '09:15',
+    },
+    {
+      id: '7',
+      type: 'buy',
+      amount: '2500000',
+      usdt: '102.04',
+      exchangeRate: '24,500',
+      status: 'failed',
+      date: '09/03/2024',
+      time: '11:30',
+    },
+  ],
+};
 
 const TIME_FILTERS = [
   { id: '1d', label: '1 Day' },
@@ -73,6 +125,7 @@ const TIME_FILTERS = [
 
 const HistoryScreen = () => {
   const navigation = useNavigation();
+  const [activeTab, setActiveTab] = useState<'pending' | 'success' | 'fail'>('pending');
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [selectedTimeFilter, setSelectedTimeFilter] = useState('1w');
   const [selectedStartDate, setSelectedStartDate] = useState('2025-09-06');
@@ -89,7 +142,7 @@ const HistoryScreen = () => {
     setShowFilterModal(false);
   };
 
-  const renderTransaction = (transaction: typeof MOCK_TRANSACTIONS[0]) => {
+  const renderTransaction = (transaction: any) => {
     const isBuy = transaction.type === 'buy';
     const amount = isBuy 
       ? `${transaction.usdt} USDT`
@@ -102,7 +155,18 @@ const HistoryScreen = () => {
       <TouchableOpacity
         key={transaction.id}
         style={styles.transactionItem}
-        onPress={() => {}}
+        onPress={() => {
+          // Chỉ cho phép pending transactions vào detail
+          if (transaction.status === 'pending') {
+            navigation.navigate('DetailHistory', { transaction });
+          } else {
+            Alert.alert(
+              'Transaction Detail',
+              'Only pending transactions can be viewed in detail.',
+              [{ text: 'OK' }]
+            );
+          }
+        }}
         activeOpacity={0.7}
       >
         <View style={styles.transactionContent}>
@@ -127,13 +191,20 @@ const HistoryScreen = () => {
             <View style={styles.statusContainer}>
               <View style={[
                 styles.statusDot,
-                { backgroundColor: transaction.status === 'completed' ? '#34C759' : '#FF9500' }
+                { 
+                  backgroundColor: transaction.status === 'completed' ? '#34C759' : 
+                                  transaction.status === 'failed' ? '#FF3B30' : '#FF9500' 
+                }
               ]} />
               <Text style={[
                 styles.transactionStatus,
-                { color: transaction.status === 'completed' ? '#34C759' : '#FF9500' }
+                { 
+                  color: transaction.status === 'completed' ? '#34C759' : 
+                        transaction.status === 'failed' ? '#FF3B30' : '#FF9500' 
+                }
               ]}>
-                {transaction.status === 'completed' ? 'Completed' : 'Pending'}
+                {transaction.status === 'completed' ? 'Success' : 
+                 transaction.status === 'failed' ? 'Failed' : 'Pending'}
               </Text>
             </View>
           </View>
@@ -161,6 +232,10 @@ const HistoryScreen = () => {
     );
   };
 
+  const getCurrentTransactions = () => {
+    return MOCK_TRANSACTIONS[activeTab];
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -173,13 +248,94 @@ const HistoryScreen = () => {
         </TouchableOpacity>
       </View>
 
+      {/* Tab Navigation */}
+      <View style={styles.tabContainer}>
+        <TouchableOpacity
+          style={[
+            styles.tabButton, 
+            activeTab === 'pending' && [styles.tabButtonActive, styles.tabButtonPending]
+          ]}
+          onPress={() => setActiveTab('pending')}
+        >
+          <Text style={[
+            styles.tabText, 
+            activeTab === 'pending' && [styles.tabTextActive, styles.tabTextPending]
+          ]}>
+            Pending
+          </Text>
+          <View style={[
+            styles.tabBadge, 
+            activeTab === 'pending' && [styles.tabBadgeActive, styles.tabBadgePending]
+          ]}>
+            <Text style={[
+              styles.tabBadgeText, 
+              activeTab === 'pending' && [styles.tabBadgeTextActive, styles.tabBadgeTextPending]
+            ]}>
+              {MOCK_TRANSACTIONS.pending.length}
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.tabButton, 
+            activeTab === 'success' && [styles.tabButtonActive, styles.tabButtonSuccess]
+          ]}
+          onPress={() => setActiveTab('success')}
+        >
+          <Text style={[
+            styles.tabText, 
+            activeTab === 'success' && [styles.tabTextActive, styles.tabTextSuccess]
+          ]}>
+            Success
+          </Text>
+          <View style={[
+            styles.tabBadge, 
+            activeTab === 'success' && [styles.tabBadgeActive, styles.tabBadgeSuccess]
+          ]}>
+            <Text style={[
+              styles.tabBadgeText, 
+              activeTab === 'success' && [styles.tabBadgeTextActive, styles.tabBadgeTextSuccess]
+            ]}>
+              {MOCK_TRANSACTIONS.success.length}
+            </Text>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[
+            styles.tabButton, 
+            activeTab === 'fail' && [styles.tabButtonActive, styles.tabButtonFail]
+          ]}
+          onPress={() => setActiveTab('fail')}
+        >
+          <Text style={[
+            styles.tabText, 
+            activeTab === 'fail' && [styles.tabTextActive, styles.tabTextFail]
+          ]}>
+            Failed
+          </Text>
+          <View style={[
+            styles.tabBadge, 
+            activeTab === 'fail' && [styles.tabBadgeActive, styles.tabBadgeFail]
+          ]}>
+            <Text style={[
+              styles.tabBadgeText, 
+              activeTab === 'fail' && [styles.tabBadgeTextActive, styles.tabBadgeTextFail]
+            ]}>
+              {MOCK_TRANSACTIONS.fail.length}
+            </Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+
       <ScrollView
         style={styles.content}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.transactionList}>
-          {MOCK_TRANSACTIONS.map(renderTransaction)}
+          {getCurrentTransactions().map(renderTransaction)}
         </View>
       </ScrollView>
 
@@ -329,6 +485,105 @@ const styles = StyleSheet.create({
   },
   filterButton: {
     padding: 8,
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#F8F8F8',
+    marginHorizontal: 20,
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 20,
+  },
+  tabButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  tabButtonActive: {
+    backgroundColor: '#FFFFFF',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  tabText: {
+    fontSize: wp('3.8%'),
+    fontWeight: '500',
+    color: '#666',
+    marginRight: 6,
+  },
+  tabTextActive: {
+    color: '#000',
+    fontWeight: '600',
+  },
+  tabBadge: {
+    backgroundColor: '#E5E5EA',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    minWidth: 20,
+    alignItems: 'center',
+  },
+  tabBadgeActive: {
+    backgroundColor: '#000',
+  },
+  tabBadgeText: {
+    fontSize: wp('3%'),
+    fontWeight: '600',
+    color: '#666',
+  },
+  tabBadgeTextActive: {
+    color: '#FFFFFF',
+  },
+  // Pending Tab Colors
+  tabButtonPending: {
+    backgroundColor: '#FFF4E6',
+  },
+  tabTextPending: {
+    color: '#FF9500',
+  },
+  tabBadgePending: {
+    backgroundColor: '#FF9500',
+  },
+  tabBadgeTextPending: {
+    color: '#FFFFFF',
+  },
+  // Success Tab Colors
+  tabButtonSuccess: {
+    backgroundColor: '#E8F5E8',
+  },
+  tabTextSuccess: {
+    color: '#34C759',
+  },
+  tabBadgeSuccess: {
+    backgroundColor: '#34C759',
+  },
+  tabBadgeTextSuccess: {
+    color: '#FFFFFF',
+  },
+  // Failed Tab Colors
+  tabButtonFail: {
+    backgroundColor: '#FFEBEE',
+  },
+  tabTextFail: {
+    color: '#FF3B30',
+  },
+  tabBadgeFail: {
+    backgroundColor: '#FF3B30',
+  },
+  tabBadgeTextFail: {
+    color: '#FFFFFF',
   },
   content: {
     flex: 1,

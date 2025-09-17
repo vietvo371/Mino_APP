@@ -35,6 +35,9 @@ import EditBankAccountScreen from '../screens/EditBankAccountScreen';
 import EditTRC20AddressScreen from '../screens/EditTRC20AddressScreen';
 import TransactionScreen from '../screens/TransactionScreen';
 import PaymentScreen from '../screens/PaymentScreen';
+import DetailHistoryScreen from '../screens/DetailHistoryScreen';
+import EmailVerificationScreen from '../screens/EmailVerificationScreen';
+import PhoneVerificationScreen from '../screens/PhoneVerificationScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<RootStackParamList>();
@@ -104,7 +107,7 @@ const MainTabs = () => {
 const MainNavigator = () => {
   return (
     <Stack.Navigator
-      initialRouteName="Loading"
+      initialRouteName="MainTabs" 
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',
@@ -137,8 +140,11 @@ const MainNavigator = () => {
       {/* Main Stack */}
       <Stack.Group>
         <Stack.Screen name="MainTabs" component={MainTabs} />
+        <Stack.Screen name="History" component={HistoryScreen} />
         <Stack.Screen name="Wallet" component={WalletScreen} />
         <Stack.Screen name="Security" component={SecurityScreen} />
+        <Stack.Screen name="EmailVerification" component={EmailVerificationScreen} />
+        <Stack.Screen name="PhoneVerification" component={PhoneVerificationScreen} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} />
         <Stack.Screen name="Help" component={HelpScreen} />
         <Stack.Screen name="BankAccounts" component={BankAccountsScreen} />
@@ -148,6 +154,7 @@ const MainNavigator = () => {
         <Stack.Screen name="EditBankAccount" component={EditBankAccountScreen} />
         <Stack.Screen name="EditTRC20Address" component={EditTRC20AddressScreen} />
         <Stack.Screen name="Payment" component={PaymentScreen} />
+        <Stack.Screen name="DetailHistory" component={DetailHistoryScreen} />
       </Stack.Group>
 
     </Stack.Navigator>

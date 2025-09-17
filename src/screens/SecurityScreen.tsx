@@ -18,6 +18,37 @@ const SecurityScreen = () => {
   const [biometricEnabled, setBiometricEnabled] = React.useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
 
+  // Verification items (hub)
+  const VERIFICATION_ITEMS = [
+    {
+      id: 'ekyc',
+      title: 'Identity Verification (eKYC)',
+      description: 'Verify your identity to unlock all features',
+      icon: 'shield-check',
+      iconColor: '#7B68EE',
+      iconBg: '#7B68EE15',
+      onPress: () => navigation.navigate('EkycIntro' as never),
+    },
+    {
+      id: 'email',
+      title: 'Email Verification',
+      description: 'Confirm your email address',
+      icon: 'email',
+      iconColor: '#4A90E2',
+      iconBg: '#4A90E215',
+      onPress: () => navigation.navigate('EmailVerification' as never),
+    },
+    {
+      id: 'phone',
+      title: 'Phone Verification',
+      description: 'Secure your account with phone verification',
+      icon: 'phone',
+      iconColor: '#34C759',
+      iconBg: '#34C75915',
+      onPress: () => navigation.navigate('PhoneVerification' as never),
+    },
+  ];
+
   const SECURITY_ITEMS = [
     {
       id: 'password',
@@ -25,18 +56,18 @@ const SecurityScreen = () => {
       icon: 'lock',
       onPress: () => {},
     },
-    {
-      id: 'pin',
-      title: 'PIN Code',
-      icon: 'numeric',
-      onPress: () => {},
-    },
-    {
-      id: '2fa',
-      title: 'Two-Factor Authentication',
-      icon: 'shield-check',
-      onPress: () => {},
-    },
+    // {
+    //   id: 'pin',
+    //   title: 'PIN Code',
+    //   icon: 'numeric',
+    //   onPress: () => {},
+    // },
+    // {
+    //   id: '2fa',
+    //   title: 'Two-Factor Authentication',
+    //   icon: 'shield-check',
+    //   onPress: () => {},
+    // },
   ];
 
   return (
@@ -53,13 +84,28 @@ const SecurityScreen = () => {
       </View>
 
       <ScrollView style={styles.content}>
-        {/* Security Status */}
-        <View style={styles.statusCard}>
-          <View style={styles.statusHeader}>
-            <Icon name="shield-check" size={24} color="#34C759" />
-            <Text style={styles.statusTitle}>Security Status</Text>
+        {/* Verification Hub */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Verifications</Text>
+          <View style={styles.optionsList}>
+            {VERIFICATION_ITEMS.map(item => (
+              <TouchableOpacity
+                key={item.id}
+                style={styles.optionItem}
+                onPress={item.onPress}
+                activeOpacity={0.7}
+              >
+                <View style={[styles.optionIcon, { backgroundColor: item.iconBg }]}>
+                  <Icon name={item.icon as any} size={24} color={item.iconColor} />
+                </View>
+                <View style={styles.optionInfo}>
+                  <Text style={styles.optionTitle}>{item.title}</Text>
+                  <Text style={styles.optionDescription}>{item.description}</Text>
+                </View>
+                <Icon name="chevron-right" size={24} color="#8E8E93" />
+              </TouchableOpacity>
+            ))}
           </View>
-          <Text style={styles.statusText}>Your account is protected</Text>
         </View>
 
         {/* Security Options */}
@@ -85,7 +131,7 @@ const SecurityScreen = () => {
         </View>
 
         {/* Additional Settings */}
-        <View style={styles.section}>
+        {/* <View style={styles.section}>
           <Text style={styles.sectionTitle}>Additional Settings</Text>
           <View style={styles.optionsList}>
             <View style={styles.optionItem}>
@@ -120,7 +166,7 @@ const SecurityScreen = () => {
               />
             </View>
           </View>
-        </View>
+        </View> */}
 
         {/* Device Info */}
         <View style={styles.section}>

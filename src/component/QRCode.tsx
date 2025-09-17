@@ -81,7 +81,7 @@ const QRCode: React.FC<QRCodeProps> = ({
           getRef={c => (qrRef = c)}
         />
       </View>
-      <View style={styles.actions}>
+      {/* <View style={styles.actions}>
         {showShare && (
           <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
             <Icon name="share-variant" size={24} color={theme.colors.primary} />
@@ -94,7 +94,7 @@ const QRCode: React.FC<QRCodeProps> = ({
             <Text style={styles.actionText}>Download</Text>
           </TouchableOpacity>
         )}
-      </View>
+      </View> */}
       {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
