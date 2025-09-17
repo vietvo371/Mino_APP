@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
   },
   message: {
     marginTop: theme.spacing.md,
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: theme.typography.fontFamily,
     fontSize: theme.typography.fontSize.md,
     color: theme.colors.text,
   },

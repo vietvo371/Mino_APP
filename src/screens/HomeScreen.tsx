@@ -37,14 +37,6 @@ const formatMoney = (amount: string | number) => {
     minimumFractionDigits: 0
   });
 
-  // Nếu số quá dài, hiển thị dạng rút gọn
-  if (num >= 1000000000) {
-    return (num / 1000000000).toFixed(2) + ' B';
-  } else if (num >= 1000000) {
-    return (num / 1000000).toFixed(2) + ' M';
-  } else if (num >= 1000) {
-    return (num / 1000).toFixed(2) + ' K';
-  }
 
   return formatted;
 };
@@ -64,12 +56,63 @@ const HomeScreen: StackScreen<'Home'> = () => {
   const [amount, setAmount] = useState('');
   const [binanceRate] = useState(26389);
 
+  // Function to format amount with commas for display
+  const formatAmountForDisplay = (amount: string) => {
+    if (!amount || amount === '0') return '0';
+    
+    // Remove existing commas
+    const cleanAmount = amount.replace(/,/g, '');
+    
+    // Add commas for thousands separator
+    if (activeTab === 'buy') {
+      // For VND, add commas every 3 digits from right
+      return cleanAmount.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    } else {
+      // For USDT, keep decimal places but add commas for integer part
+      const parts = cleanAmount.split('.');
+      if (parts.length === 2) {
+        return parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '.' + parts[1];
+      }
+      return parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+  };
+
+  // Function to calculate dynamic font size based on amount length
+  const getAmountFontSize = (amount: string) => {
+    if (!amount || amount === '0') return wp("20%");
+    
+    // Remove commas and count only digits and decimal point
+    const cleanAmount = amount.replace(/,/g, '');
+    const length = cleanAmount.length;
+    
+    // More granular font size adjustment
+    if (length <= 6) return wp("20%");
+    if (length <= 8) return wp("16%");
+    if (length <= 10) return wp("12%");
+    if (length <= 12) return wp("10%");
+    if (length <= 13) return wp("10%");
+    if (length <= 14) return wp("6%");
+    return wp("6%");
+  };
+
   const handleNumberPress = (num: string) => {
     if (num === '.' && amount.includes('.')) return;
 
-    const newAmount = amount + num;
-    // Kiểm tra định dạng số và giới hạn
-    if (/^\d*\.?\d{0,2}$/.test(newAmount)) {
+    // Remove commas from current amount for processing
+    const cleanAmount = amount.replace(/,/g, '');
+    const newAmount = cleanAmount + num;
+    
+    // Kiểm tra định dạng số theo loại tiền tệ
+    let isValidFormat = false;
+    if (activeTab === 'buy') {
+      // VND: chỉ cho phép số nguyên
+      isValidFormat = /^\d+$/.test(newAmount);
+    } else {
+      // USDT: cho phép tối đa 2 chữ số thập phân
+      isValidFormat = /^\d*\.?\d{0,2}$/.test(newAmount);
+    }
+    
+    if (isValidFormat) {
       const numValue = parseFloat(newAmount);
       if (!isNaN(numValue)) {
         // Check limit by transaction type
@@ -84,32 +127,36 @@ const HomeScreen: StackScreen<'Home'> = () => {
           return;
         }
 
-        // Limit decimal places
-        if (activeTab === 'buy') {
-          // VND has no decimal places
-          if (!newAmount.includes('.')) {
-            setAmount(newAmount);
-          }
-        } else {
-          // USDT maximum 2 decimal places
-          setAmount(newAmount);
-        }
+        // Always set the amount, let formatAmountForDisplay handle the formatting
+        setAmount(newAmount);
       }
     }
   };
 
   const handleDelete = () => {
-    setAmount(amount.slice(0, -1));
+    // Remove commas before processing
+    const cleanAmount = amount.replace(/,/g, '');
+    const newAmount = cleanAmount.slice(0, -1);
+    setAmount(newAmount);
   };
 
   const handleShortcutPress = (shortcut: string) => {
     let value = shortcut;
-    // Only process K, M for VND
+    
     if (activeTab === 'buy') {
+      // For VND (buy tab) - handle K, M shortcuts
       if (shortcut.endsWith('K')) {
         value = (parseFloat(shortcut.replace('K', '')) * 1000).toString();
       } else if (shortcut.endsWith('M')) {
         value = (parseFloat(shortcut.replace('M', '')) * 1000000).toString();
+      }
+    } else {
+      // For USDT (sell tab) - handle direct USDT amounts
+      // The shortcuts are already in USDT format (10, 50, 100, 500)
+      // Don't add .00 to allow further input
+      const numValue = parseFloat(shortcut);
+      if (!isNaN(numValue)) {
+        value = numValue.toString();
       }
     }
 
@@ -127,25 +174,26 @@ const HomeScreen: StackScreen<'Home'> = () => {
         return;
       }
 
-      // Format number by currency type
+      // Set amount without formatting - let formatAmountForDisplay handle it
       if (activeTab === 'buy') {
         // VND round to integer
         setAmount(Math.round(numValue).toString());
       } else {
-        // USDT keep original number to continue input
+        // USDT keep as string to allow further input
         setAmount(value);
       }
     }
   };
 
   const handleAction = () => {
-    if (!amount || parseFloat(amount) === 0) return;
+    const cleanAmount = amount.replace(/,/g, '');
+    if (!cleanAmount || parseFloat(cleanAmount) === 0) return;
 
     // Navigate to payment screen with transaction info
     navigation.navigate('Payment', {
       paymentInfo: {
         type: activeTab,
-        amount: amount,
+        amount: cleanAmount,
         rate: binanceRate,
       }
     });
@@ -191,7 +239,9 @@ const HomeScreen: StackScreen<'Home'> = () => {
           {/* Amount Display */}
           <View style={styles.topSection}>
             <View style={styles.amountContainer}>
-              <Text style={styles.amountZero}>{amount || '0'}</Text>
+              <Text style={[styles.amountZero, { fontSize: getAmountFontSize(amount) }]}>
+                {formatAmountForDisplay(amount)}
+              </Text>
               <Text style={styles.amountLabel}>{activeTab === 'buy' ? 'VND' : 'USDT'}</Text>
             </View>
 
@@ -200,8 +250,8 @@ const HomeScreen: StackScreen<'Home'> = () => {
               <Text style={styles.exchangeAmount}>
                 ≈ {amount ? (
                   activeTab === 'buy' 
-                    ? `${(parseFloat(amount) / binanceRate).toFixed(2)} USDT`
-                    : `${(parseFloat(amount) * binanceRate).toLocaleString('vi-VN')} VND`
+                    ? `${(parseFloat(amount.replace(/,/g, '')) / binanceRate).toFixed(2)} USDT`
+                    : `${(parseFloat(amount.replace(/,/g, '')) * binanceRate).toLocaleString('vi-VN')} VND`
                 ) : (
                   activeTab === 'buy' ? '0 USDT' : '0 VND'
                 )}
@@ -213,13 +263,18 @@ const HomeScreen: StackScreen<'Home'> = () => {
           <View style={styles.bottomSection}>
             {/* Quick Amount Buttons */}
             <View style={styles.quickAmountContainer}>
-              {['300K', '2M', '8M', '20M'].map((amount, index) => (
+              {(activeTab === 'buy' 
+                ? ['300K', '2M', '8M', '20M'] 
+                : ['10', '50', '100', '500']
+              ).map((amount, index) => (
                 <TouchableOpacity
                   key={index}
                   style={styles.quickAmountButton}
                   onPress={() => handleShortcutPress(amount)}
                 >
-                  <Text style={styles.quickAmountText}>đ{amount}</Text>
+                  <Text style={styles.quickAmountText}>
+                    {activeTab === 'buy' ? `đ${amount}` : `${amount} USDT`}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -249,10 +304,10 @@ const HomeScreen: StackScreen<'Home'> = () => {
         <TouchableOpacity 
           style={[
             styles.confirmButton,
-            (!amount || parseFloat(amount) === 0) && styles.confirmButtonDisabled
+            (!amount || parseFloat(amount.replace(/,/g, '')) === 0) && styles.confirmButtonDisabled
           ]}
           onPress={handleAction}
-          disabled={!amount || parseFloat(amount) === 0}
+          disabled={!amount || parseFloat(amount.replace(/,/g, '')) === 0}
         >
           <Text style={styles.confirmButtonText}>
             {activeTab === 'buy' ? 'Buy USDT' : 'Sell USDT'}
@@ -318,9 +373,9 @@ const styles = StyleSheet.create({
     paddingLeft: 20,
   },
   amountZero: {
-    fontSize: wp("20%"),
     fontWeight: '300',
     color: '#000000',
+    // fontSize will be set dynamically
   },
   amountLabel: {
     fontSize: wp("8%"),

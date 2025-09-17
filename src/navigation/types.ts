@@ -5,7 +5,12 @@ export type RootStackParamList = {
   Loading: undefined;
   Login: undefined;
   Register: undefined;
-  OTPVerification: { identifier: string; type: 'phone' | 'email' };
+  OTPVerification: { 
+    identifier: string; 
+    type: 'phone' | 'email';
+    flow?: 'register' | 'login';
+    registrationData?: any;
+  };
   Onboarding: undefined;
   ForgotPassword: undefined;
   

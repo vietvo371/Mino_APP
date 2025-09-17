@@ -32,6 +32,8 @@ interface OTPVerificationScreenProps {
     params: {
       identifier: string;
       type: 'phone' | 'email';
+      flow?: 'register' | 'login';
+      registrationData?: any;
     };
   };
 }
@@ -41,7 +43,7 @@ const OTP_LENGTH = 6;
 
 const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, route }) => {
   const { signIn } = useAuth();
-  const { identifier, type } = route.params;
+  const { identifier, type, flow = 'login', registrationData } = route.params;
 
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
@@ -95,20 +97,52 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
     }
   };
 
-  const handleVerifyOTP = () => {
+  const handleVerifyOTP = async () => {
     const otpString = otp.join('');
-    // if (otpString.length !== OTP_LENGTH) {
-    //   Alert.alert('Notification', 'Please enter complete OTP code');
-    //   return;
-    // }
+    if (otpString.length !== OTP_LENGTH) {
+      Alert.alert('Notification', 'Please enter complete OTP code');
+      return;
+    }
 
-    // Simulate loading 1 second
     setLoading(true);
-    setTimeout(() => {
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      if (flow === 'register') {
+        // Flow đăng ký: Xác thực OTP thành công → Chuyển về Login
+        Alert.alert(
+          'Registration Successful!', 
+          'Your account has been created successfully. Please sign in with your credentials.',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.replace('Login')
+            }
+          ]
+        );
+      } else {
+        // Flow đăng nhập: Xác thực OTP thành công → Chuyển về MainTabs
+        const mockUser = {
+          id: '1',
+          email: identifier,
+          name: 'User Name',
+          phone: type === 'phone' ? identifier : '',
+          isVerified: true,
+        };
+        
+        await signIn({
+          identifier: identifier,
+          type: type
+        });
+        navigation.replace('MainTabs');
+      }
+    } catch (error) {
+      console.error('OTP verification error:', error);
+      Alert.alert('Verification Failed', 'Invalid OTP code. Please try again.');
+    } finally {
       setLoading(false);
-      // Always navigate to eKYC flow for demo
-      navigation.replace('MainTabs');
-    }, 1000);
+    }
   };
 
   const handleResendOTP = () => {
@@ -160,9 +194,14 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
             </TouchableOpacity>
 
             <View style={styles.headerContent}>
-              <Text style={styles.headerTitle}>OTP Verification</Text>
+              <Text style={styles.headerTitle}>
+                {flow === 'register' ? 'Verify Your Account' : 'OTP Verification'}
+              </Text>
               <Text style={styles.headerSubtitle}>
-                Enter verification code sent to {formatIdentifier(identifier)}
+                {flow === 'register' 
+                  ? `Enter verification code sent to ${formatIdentifier(identifier)} to complete your registration`
+                  : `Enter verification code sent to ${formatIdentifier(identifier)}`
+                }
               </Text>
             </View>
           </Animated.View>
@@ -279,7 +318,10 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
         </Animated.View>
       </View>
 
-      <LoadingOverlay visible={loading} message="Verifying..." />
+      <LoadingOverlay 
+        visible={loading} 
+        message={flow === 'register' ? "Verifying your account..." : "Verifying OTP..."} 
+      />
     </SafeAreaView>
   );
 };

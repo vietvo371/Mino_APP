@@ -108,8 +108,17 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
         password: formData.password,
         password_confirmation: formData.password_confirmation,
       };
-      await signUp(registrationData);
-      navigation.replace('Login');
+      
+      // Giả lập đăng ký thành công và gửi OTP
+      await new Promise<void>(resolve => setTimeout(resolve, 1500)); // Simulate API call
+      
+      // Chuyển đến màn hình OTP verification với thông tin đăng ký
+      navigation.navigate('OTPVerification', {
+        identifier: formData.email,
+        type: 'email',
+        flow: 'register', // Đánh dấu đây là flow đăng ký
+        registrationData: registrationData
+      });
     } catch (error: any) {
       console.error('Registration error:', error);
 
@@ -363,7 +372,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <LoadingOverlay visible={loading} message="Creating your account..." />
+      <LoadingOverlay visible={loading} message="Creating your account and sending verification code..." />
     </SafeAreaView>
   );
 };
@@ -432,7 +441,7 @@ const styles = StyleSheet.create({
   // Header Styles
   headerContainer: {
     alignItems: 'center',
-    paddingTop: height * 0.08,
+    paddingTop: height * 0.03,
     paddingBottom: theme.spacing.xl,
   },
   welcomeText: {

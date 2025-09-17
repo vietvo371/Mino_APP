@@ -9,6 +9,7 @@ import { useAuth } from '../contexts/AuthContext';
 import LoadingScreen from '../screens/LoadingScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import OTPVerificationScreen from '../screens/OTPVerificationScreen';
 
 // Main Screens
@@ -129,6 +130,7 @@ const MainNavigator = () => {
       <Stack.Group>
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         <Stack.Screen name="OTPVerification" component={OTPVerificationScreen} />
         <Stack.Screen name="Onboarding" component={OnboardingScreen} />
       </Stack.Group>

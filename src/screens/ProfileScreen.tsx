@@ -10,7 +10,6 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { theme } from '../theme/colors';
@@ -88,6 +87,7 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
           text: 'Sign Out',
           style: 'destructive',
           onPress: () => {
+            navigation.navigate('Login');
             signOut();
           },
         },
@@ -117,7 +117,7 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
 
         {hasItems && (
           <View style={styles.subItemsContainer}>
-            {item.items?.map((subItem, index) => (
+            {item.items?.map((subItem: any, index: any) => (
               <View 
                 key={index} 
                 style={[

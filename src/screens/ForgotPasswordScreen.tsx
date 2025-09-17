@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Image,
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
@@ -12,34 +11,26 @@ import {
   Dimensions,
   Alert,
 } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 import Animated, { FadeInDown, FadeInUp, SlideInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../theme/colors';
-import { useAuth } from '../contexts/AuthContext';
 import InputCustom from '../component/InputCustom';
 import ButtonCustom from '../component/ButtonCustom';
 import LoadingOverlay from '../component/LoadingOverlay';
-import api from '../utils/Api';
 import LanguageSelector from '../components/LanguageSelector';
 import CountryCodePicker from '../components/CountryCodePicker';
-import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
-interface LoginScreenProps {
+interface ForgotPasswordScreenProps {
   navigation: any;
 }
 
 const { width, height } = Dimensions.get('window');
 
-const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
-  const { signIn } = useAuth();
+const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation }) => {
   const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<{ identifier?: string, password?: string }>({});
+  const [errors, setErrors] = useState<{ identifier?: string }>({});
   const [isPhoneNumber, setIsPhoneNumber] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const [showCountryPicker, setShowCountryPicker] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState({
@@ -48,8 +39,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     dialCode: '+84',
     flag: '🇻🇳',
   });
+
   const validateForm = () => {
-    const newErrors: { identifier?: string; password?: string } = {};
+    const newErrors: { identifier?: string } = {};
 
     if (!identifier) {
       newErrors.identifier = 'Email or phone number is required';
@@ -63,12 +55,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       }
     }
 
-    if (!password) {
-      newErrors.password = 'Password is required';
-    } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -79,50 +65,31 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     setErrors({});
   };
 
-  const handleLogin = async () => {
+  const handleResetPassword = () => {
     if (!validateForm()) {
       return;
     }
 
     setLoading(true);
-    try {
-      // Giả lập API call đăng nhập
-      await new Promise<void>(resolve => setTimeout(resolve, 1500));
-      
-      // Giả lập đăng nhập thành công
-      const mockUser = {
-        id: '1',
-        email: identifier,
-        name: 'User Name',
-        phone: isPhoneNumber ? identifier : '',
-        isVerified: true,
-      };
-      
-      // // Lưu thông tin user vào context
-      // await signIn({
-      //   identifier: identifier,
-      //   type: isPhoneNumber ? 'phone' : 'email'
-      // });
-      
-      // Chuyển trực tiếp đến MainTabs (Home)
-      navigation.replace('MainTabs');
-    } catch (error) {
-      console.error('Login error:', error);
-      Alert.alert('Login Failed', 'Invalid credentials. Please try again.');
-    } finally {
+    setTimeout(() => {
       setLoading(false);
-    }
-  };
-
-  const handleSocialLogin = (provider: string) => {
-    Alert.alert('Coming Soon', `${provider} login will be available soon`);
+      Alert.alert(
+        'Reset Link Sent',
+        `We've sent a password reset link to your ${isPhoneNumber ? 'phone' : 'email'}. Please check your ${isPhoneNumber ? 'SMS' : 'inbox'} and follow the instructions to reset your password.`,
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.goBack(),
+          },
+        ]
+      );
+    }, 2000);
   };
 
   return (
     <SafeAreaView style={styles.container}>
       {/* Background */}
       <View style={styles.backgroundContainer}>
-
         {/* Decorative Elements */}
         <View style={styles.decorativeCircle1} />
         <View style={styles.decorativeCircle2} />
@@ -148,7 +115,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           visible={showLanguageSelector}
           onClose={() => setShowLanguageSelector(false)}
           onSelect={(code) => {
-            // Handle language change
             console.log('Selected language:', code);
           }}
           currentLanguage="vi"
@@ -171,38 +137,39 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
+          {/* Back Button */}
+          <Animated.View
+            style={styles.backButtonContainer}
+            entering={FadeInDown.duration(400).springify()}
+          >
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <Icon name="arrow-left" size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+          </Animated.View>
+
           {/* Header Section */}
           <Animated.View
             style={styles.headerContainer}
-            entering={FadeInDown.duration(600).springify()}
+            entering={FadeInDown.duration(600).delay(200).springify()}
           >
-            <Animated.Text
-              style={styles.welcomeText}
-              entering={FadeInDown.duration(800).delay(200).springify()}
-            >
-              Welcome Back
-            </Animated.Text>
-
-            <Animated.Text
-              style={styles.title}
-              entering={FadeInDown.duration(800).delay(400).springify()}
-            >
-              MINO
-            </Animated.Text>
+            <View style={styles.iconContainer}>
+              <Icon name="lock-reset" size={48} color={theme.colors.primary} />
+            </View>
+            
+            <Text style={styles.title}>Forgot Password?</Text>
+            <Text style={styles.subtitle}>
+              Don't worry! Enter your email or phone number and we'll send you a reset link.
+            </Text>
           </Animated.View>
 
           {/* Form Section */}
           <Animated.View
             style={styles.formContainer}
-            entering={SlideInDown.duration(800).delay(800).springify()}
+            entering={SlideInDown.duration(800).delay(400).springify()}
           >
-            <View style={styles.formHeader}>
-              <Text style={styles.formTitle}>Sign In</Text>
-              <Text style={styles.formSubtitle}>
-                Enter your credentials to access your MINO account
-              </Text>
-            </View>
-
             <View style={styles.form}>
               {/* Input Type Indicator */}
               <View style={styles.inputTypeIndicator}>
@@ -248,14 +215,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
               {isPhoneNumber ? (
                 <View style={styles.phoneInputContainer}>
-                  {/* <TouchableOpacity
-                    style={styles.countryPicker}
-                    onPress={() => setShowCountryPicker(true)}
-                  >
-                    <Text style={styles.countryFlag}>{selectedCountry.flag}</Text>
-                    <Text style={styles.countryCode}>{selectedCountry.dialCode}</Text>
-                    <Icon name="chevron-down" size={20} color="#666" />
-                  </TouchableOpacity> */}
                   <View style={styles.phoneInputWrapper}>
                     <InputCustom
                       label="Phone Number"
@@ -286,83 +245,31 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                 />
               )}
 
-              <InputCustom
-                label="Password"
-                placeholder="Enter your password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                error={errors.password}
-                required
-                leftIcon="lock-outline"
-                rightIcon={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                onRightIconPress={() => setShowPassword(!showPassword)}
-                containerStyle={styles.input}
-              />
-
               <ButtonCustom
-                title="Sign In"
-                onPress={handleLogin}
-                style={styles.loginButton}
-                icon="login"
+                title="Send Reset Link"
+                onPress={handleResetPassword}
+                style={styles.resetButton}
+                icon="send"
               />
 
-              {/* Forgot Password */}
+              {/* Back to Login */}
               <TouchableOpacity
-                onPress={() => navigation.navigate('ForgotPassword')}
-                style={styles.forgotPasswordContainer}
+                onPress={() => navigation.goBack()}
+                style={styles.backToLoginContainer}
               >
-                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                <Text style={styles.backToLoginText}>
+                  Remember your password?{' '}
+                  <Text style={styles.backToLoginLinkText}>Sign In</Text>
+                </Text>
               </TouchableOpacity>
-
-              {/* Social Login */}
-              <View style={styles.socialContainer}>
-                <TouchableOpacity
-                  style={[styles.socialButton, styles.googleButton]}
-                  onPress={() => handleSocialLogin('Google')}
-                  activeOpacity={0.7}
-                >
-                  <Icon name="google" size={24} color="#DB4437" />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.socialButton, styles.facebookButton]}
-                  onPress={() => handleSocialLogin('Facebook')}
-                  activeOpacity={0.7}
-                >
-                  <Icon name="whatsapp" size={24} color="#4267B2" />
-                </TouchableOpacity>
-
-                {Platform.OS === 'ios' && (
-                  <TouchableOpacity
-                    style={[styles.socialButton, styles.appleButton]}
-                    onPress={() => handleSocialLogin('Apple')}
-                    activeOpacity={0.7}
-                  >
-                    <Icon name="apple" size={24} color="#000000" />
-                  </TouchableOpacity>
-                )}
-              </View>
             </View>
           </Animated.View>
 
           {/* Footer */}
           <Animated.View
             style={styles.footerContainer}
-            entering={FadeInUp.duration(600).delay(1200).springify()}
+            entering={FadeInUp.duration(600).delay(800).springify()}
           >
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Register')}
-              style={styles.registerLink}
-            >
-              <Text style={styles.registerText}>
-                Don't have an account?{' '}
-                <Text style={styles.registerLinkText}>Create Account</Text>
-              </Text>
-            </TouchableOpacity>
-
-
-
             {/* Security Badge */}
             <View style={styles.securityBadge}>
               <Icon name="shield-check" size={16} color={theme.colors.success} />
@@ -374,7 +281,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <LoadingOverlay visible={loading} message="Signing in..." />
+      <LoadingOverlay visible={loading} message="Sending reset link..." />
     </SafeAreaView>
   );
 };
@@ -440,44 +347,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.lg,
   },
 
+  // Back Button
+  backButtonContainer: {
+    paddingTop: height * 0.02,
+    paddingBottom: theme.spacing.md,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
   // Header Styles
   headerContainer: {
     alignItems: 'center',
-    paddingTop: height * 0.08,
     paddingBottom: theme.spacing.xl,
   },
-  logoContainer: {
-    marginBottom: theme.spacing.lg,
-  },
-  logoBackground: {
+  iconContainer: {
     width: 80,
     height: 80,
     borderRadius: 40,
+    backgroundColor: theme.colors.primary + '10',
     justifyContent: 'center',
     alignItems: 'center',
-    ...Platform.select({
-      ios: {
-        shadowColor: theme.colors.primary,
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.3,
-        shadowRadius: 16,
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
-  },
-  welcomeText: {
-    fontSize: theme.typography.fontSize.md,
-    color: theme.colors.textLight,
-    fontFamily: theme.typography.fontFamily,
-    marginBottom: theme.spacing.xs,
+    marginBottom: theme.spacing.lg,
   },
   title: {
     fontFamily: theme.typography.fontFamily,
-    fontSize: 36,
-    color: theme.colors.primary,
+    fontSize: 28,
+    color: theme.colors.text,
     marginBottom: theme.spacing.sm,
+    textAlign: 'center',
   },
   subtitle: {
     fontFamily: theme.typography.fontFamily,
@@ -505,21 +408,6 @@ const styles = StyleSheet.create({
         elevation: 12,
       },
     }),
-  },
-  formHeader: {
-    alignItems: 'center',
-    marginBottom: theme.spacing.xl,
-  },
-  formTitle: {
-    fontFamily: theme.typography.fontFamily,
-    fontSize: theme.typography.fontSize.xl,
-    color: theme.colors.text,
-    marginBottom: theme.spacing.xs,
-  },
-  formSubtitle: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.textLight,
-    textAlign: 'center',
   },
   form: {
     width: '100%',
@@ -565,129 +453,37 @@ const styles = StyleSheet.create({
   phoneInputContainer: {
     marginBottom: theme.spacing.lg,
   },
-  countryPicker: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.background,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginBottom: 8,
-  },
-  countryFlag: {
-    fontSize: 24,
-    marginRight: 8,
-  },
-  countryCode: {
-    fontSize: wp('4%'),
-    color: theme.colors.text,
-    marginRight: 8,
-  },
   phoneInputWrapper: {
     flex: 1,
   },
   phoneInput: {
     flex: 1,
   },
-  loginButton: {
-    marginBottom: theme.spacing.md,
+  resetButton: {
+    marginBottom: theme.spacing.lg,
     height: 56,
   },
 
-  // Forgot Password Styles
-  forgotPasswordContainer: {
-    alignItems: 'flex-end',
-    marginBottom: theme.spacing.lg,
-  },
-  forgotPasswordText: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.primary,
-    fontFamily: theme.typography.fontFamily,
-    textDecorationLine: 'underline',
-  },
-
-  // Divider Styles
-  dividerContainer: {
-    flexDirection: 'row',
+  // Back to Login
+  backToLoginContainer: {
     alignItems: 'center',
-    marginVertical: theme.spacing.lg,
-  },
-  divider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: theme.colors.border,
-  },
-  dividerText: {
-    fontFamily: theme.typography.fontFamily,
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.textLight,
-    marginHorizontal: theme.spacing.lg,
-  },
-
-  // Social Login Styles
-  socialContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: theme.spacing.lg,
-    marginBottom: theme.spacing.lg,
-  },
-  socialButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: theme.colors.white,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
-  },
-  googleButton: {},
-  facebookButton: {},
-  appleButton: {},
-
-  // Footer Styles
-  footerContainer: {
-    alignItems: 'center',
-    paddingBottom: theme.spacing.xl,
-    gap: theme.spacing.lg,
-  },
-  registerLink: {
     paddingVertical: theme.spacing.sm,
   },
-  registerText: {
+  backToLoginText: {
     fontFamily: theme.typography.fontFamily,
     fontSize: theme.typography.fontSize.md,
     color: theme.colors.text,
     textAlign: 'center',
   },
-  registerLinkText: {
+  backToLoginLinkText: {
     color: theme.colors.primary,
-      fontFamily: theme.typography.fontFamily, 
-  },
-  helpSection: {
-    alignItems: 'center',
-  },
-  helpButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: theme.spacing.sm,
-  },
-  helpText: {
-    fontSize: theme.typography.fontSize.sm,
-    color: theme.colors.textLight,
     fontFamily: theme.typography.fontFamily,
+  },
+
+  // Footer Styles
+  footerContainer: {
+    alignItems: 'center',
+    paddingBottom: theme.spacing.xl,
   },
   securityBadge: {
     flexDirection: 'row',
@@ -709,4 +505,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default LoginScreen;
+export default ForgotPasswordScreen;

@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   label: {
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: theme.typography.fontFamily,
     fontSize: theme.typography.fontSize.sm,
     color: theme.colors.text,
     marginBottom: theme.spacing.xs,
@@ -225,12 +225,12 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     marginTop: theme.spacing.xs,
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: theme.typography.fontFamily,
     fontSize: theme.typography.fontSize.sm,
     color: theme.colors.primary,
   },
   errorText: {
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: theme.typography.fontFamily,
     fontSize: theme.typography.fontSize.sm,
     color: theme.colors.error,
     marginTop: theme.spacing.xs,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   TextStyle,
   Platform,
   Animated,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../theme/colors';
@@ -57,6 +58,7 @@ const InputCustom: React.FC<InputCustomProps> = ({
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const animatedValue = useState(new Animated.Value(value ? 1 : 0))[0];
+  const inputRef = useRef<TextInput>(null);
 
   const handleFocus = () => {
     setIsFocused(true);
@@ -80,7 +82,7 @@ const InputCustom: React.FC<InputCustomProps> = ({
 
   const labelStyle = {
     position: 'absolute',
-    left: leftIcon ? 45 : theme.spacing.md,
+    left: leftIcon ? 20 : theme.spacing.md,
     top: animatedValue.interpolate({
       inputRange: [0, 1],
       outputRange: [14, -8],
@@ -96,10 +98,11 @@ const InputCustom: React.FC<InputCustomProps> = ({
     backgroundColor: theme.colors.white,
     paddingHorizontal: 4,
     zIndex: 1,
-  };
+  } as any;
 
   const renderInput = () => (
     <TextInput
+      ref={inputRef}
       style={[
         styles.input,
         inputStyle,
@@ -122,54 +125,63 @@ const InputCustom: React.FC<InputCustomProps> = ({
 
   return (
     <View style={[styles.container, containerStyle]}>
-      <View style={[
-        styles.inputContainer,
-        isFocused && styles.inputContainerFocused,
-        error && styles.inputContainerError,
-        !editable && styles.inputContainerDisabled,
-      ]}>
-        {leftIcon && (
-          <Icon
-            name={leftIcon}
-            size={20}
-            color={error ? theme.colors.error : theme.colors.textLight}
-            style={styles.leftIcon}
-          />
-        )}
-
-        <View style={styles.inputWrapper}>
-          <Animated.Text style={labelStyle as any}>
-            {placeholder}
-            {required && <Text style={styles.required}> *</Text>}
-          </Animated.Text>
-
-          {onPress ? (
-            <TouchableOpacity
-              style={styles.pressableInput}
-              onPress={onPress}
-              activeOpacity={0.7}
-            >
-              {renderInput()}
-            </TouchableOpacity>
-          ) : (
-            renderInput()
-          )}
-        </View>
-
-        {rightIcon && (
-          <TouchableOpacity
-            onPress={onRightIconPress}
-            style={styles.rightIcon}
-            disabled={!onRightIconPress}
-          >
+      <TouchableWithoutFeedback
+        onPress={() => {
+          if (!onPress && editable) {
+            inputRef.current?.focus();
+          }
+        }}
+        disabled={!!onPress}
+      >
+        <View style={[
+          styles.inputContainer,
+          isFocused && styles.inputContainerFocused,
+          error && styles.inputContainerError,
+          !editable && styles.inputContainerDisabled,
+        ]}>
+          {leftIcon && (
             <Icon
-              name={rightIcon}
+              name={leftIcon}
               size={20}
               color={error ? theme.colors.error : theme.colors.textLight}
+              style={styles.leftIcon}
             />
-          </TouchableOpacity>
-        )}
-      </View>
+          )}
+
+          <View style={styles.inputWrapper}>
+            <Animated.Text style={labelStyle} pointerEvents="none">
+              {placeholder}
+              {required && <Text style={styles.required}> *</Text>}
+            </Animated.Text>
+
+            {onPress ? (
+              <TouchableOpacity
+                style={styles.pressableInput}
+                onPress={onPress}
+                activeOpacity={0.7}
+              >
+                {renderInput()}
+              </TouchableOpacity>
+            ) : (
+              renderInput()
+            )}
+          </View>
+
+          {rightIcon && (
+            <TouchableOpacity
+              onPress={onRightIconPress}
+              style={styles.rightIcon}
+              disabled={!onRightIconPress}
+            >
+              <Icon
+                name={rightIcon}
+                size={20}
+                color={error ? theme.colors.error : theme.colors.textLight}
+              />
+            </TouchableOpacity>
+          )}
+        </View>
+      </TouchableWithoutFeedback>
 
       {/* Error Message */}
       {error && <Text style={styles.errorText}>{error}</Text>}
@@ -232,7 +244,7 @@ const styles = StyleSheet.create({
     height: 48,
     paddingHorizontal: theme.spacing.md,
     fontSize: theme.typography.fontSize.md,
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: theme.typography.fontFamily,
     color: theme.colors.text,
     paddingTop: 12,
   },
@@ -254,7 +266,7 @@ const styles = StyleSheet.create({
   errorText: {
     marginTop: theme.spacing.xs,
     fontSize: theme.typography.fontSize.sm,
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: theme.typography.fontFamily,
     color: theme.colors.error,
   },
 });
