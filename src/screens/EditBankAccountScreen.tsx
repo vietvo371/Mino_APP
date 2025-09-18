@@ -211,13 +211,16 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
           }}
           options={banks.map(bank => ({
             label: bank.name,
-            value: bank.id.toString()
+            value: bank.id.toString(),
+            subtitle: `${bank.code}`,
+            iconUrl: bank.logo,
+            searchText: `${bank.name} ${bank.code} ${bank.bin}`,
           }))}
           placeholder="Select bank"
           error={errors.bank}
           required
           searchable={true}
-          searchPlaceholder="Search banks..."
+          searchPlaceholder="Search by name, code..."
           containerStyle={styles.selectContainer}
         />
 

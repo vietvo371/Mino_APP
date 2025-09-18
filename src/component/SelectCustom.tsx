@@ -9,13 +9,23 @@ import {
   SafeAreaView,
   ViewStyle,
   TextInput,
+  Image,
+  Animated,
+  Dimensions,
+  Easing,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../theme/colors';
+import { SvgUri } from 'react-native-svg';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 interface SelectOption {
   label: string;
   value: string;
+  subtitle?: string;
+  iconUrl?: string;
+  searchText?: string;
 }
 
 interface SelectCustomProps {
@@ -29,6 +39,7 @@ interface SelectCustomProps {
   containerStyle?: ViewStyle;
   searchable?: boolean;
   searchPlaceholder?: string;
+  disabled?: boolean;
 }
 
 const SelectCustom: React.FC<SelectCustomProps> = ({
@@ -38,56 +49,137 @@ const SelectCustom: React.FC<SelectCustomProps> = ({
   label,
   error,
   required = false,
-  placeholder = 'Select an option',
+  placeholder = 'Chọn một tùy chọn',
   containerStyle,
   searchable = false,
-  searchPlaceholder = 'Search...',
+  searchPlaceholder = 'Tìm kiếm...',
+  disabled = false,
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [slideAnim] = useState(new Animated.Value(SCREEN_HEIGHT));
 
   const selectedOption = options.find(option => option.value === value);
 
-  // Filter options based on search query
   const filteredOptions = useMemo(() => {
     if (!searchable || !searchQuery.trim()) {
       return options;
     }
-    return options.filter(option =>
-      option.label.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const q = searchQuery.toLowerCase();
+    return options.filter(option => {
+      const haystack = [
+        option.label,
+        option.subtitle || '',
+        option.value || '',
+        option.searchText || '',
+      ]
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(q);
+    });
   }, [options, searchQuery, searchable]);
 
   const handleSelect = (option: SelectOption) => {
     onChange(option.value);
-    setModalVisible(false);
-    setSearchQuery(''); // Clear search when selecting
+    handleModalClose();
+  };
+
+  const handleModalOpen = () => {
+    if (disabled) return;
+    setModalVisible(true);
+    Animated.spring(slideAnim, {
+      toValue: 0,
+      useNativeDriver: true,
+      tension: 65,
+      friction: 8,
+    }).start();
   };
 
   const handleModalClose = () => {
-    setModalVisible(false);
-    setSearchQuery(''); // Clear search when closing modal
+     // Close quickly with a short timing animation
+     Animated.timing(slideAnim, {
+       toValue: SCREEN_HEIGHT,
+       duration: 150,
+       easing: Easing.out(Easing.quad),
+       useNativeDriver: true,
+     }).start(() => {
+       setModalVisible(false);
+       setSearchQuery('');
+     });
   };
 
-  const renderOption = ({ item }: { item: SelectOption }) => (
-    <TouchableOpacity
-      style={[
-        styles.option,
-        item.value === value && styles.selectedOption,
-      ]}
-      onPress={() => handleSelect(item)}>
-      <Text
-        style={[
-          styles.optionText,
-          item.value === value && styles.selectedOptionText,
-        ]}>
-        {item.label}
-      </Text>
-      {item.value === value && (
-        <Icon name="check" size={20} color={theme.colors.primary} />
-      )}
-    </TouchableOpacity>
-  );
+  const renderIcon = (iconUrl: string | undefined, size: number = 28, style?: any) => {
+    if (!iconUrl) {
+      return (
+        <View style={[styles.iconFallback, { width: size, height: size }, style]}>
+          <Icon name="bank" size={size * 0.6} color={theme.colors.primary} />
+        </View>
+      );
+    }
+
+    if (iconUrl.toLowerCase().endsWith('.svg')) {
+      return <SvgUri uri={iconUrl} width={size} height={size} style={style} />;
+    }
+
+    return (
+      <Image 
+        source={{ uri: iconUrl }} 
+        style={[{ width: size, height: size, borderRadius: 6 }, style]} 
+        resizeMode="contain" 
+      />
+    );
+  };
+
+  const renderOption = ({ item, index }: { item: SelectOption; index: number }) => {
+    const isSelected = item.value === value;
+    
+    return (
+      <Animated.View
+        style={{
+          opacity: 1,
+          transform: [{
+            translateY: new Animated.Value(0)
+          }]
+        }}
+      >
+        <TouchableOpacity
+          style={[
+            styles.option,
+            isSelected && styles.selectedOption,
+            index === 0 && styles.firstOption,
+            index === filteredOptions.length - 1 && styles.lastOption,
+          ]}
+          onPress={() => handleSelect(item)}
+          activeOpacity={0.7}
+        >
+          <View style={styles.optionContent}>
+            {renderIcon(item.iconUrl, 32, styles.optionIcon)}
+            <View style={styles.optionTextContainer}>
+              <Text
+                style={[
+                  styles.optionText,
+                  isSelected && styles.selectedOptionText,
+                ]}
+                numberOfLines={1}
+              >
+                {item.label}
+              </Text>
+              {!!item.subtitle && (
+                <Text style={styles.optionSubtitle} numberOfLines={1}>
+                  {item.subtitle}
+                </Text>
+              )}
+            </View>
+          </View>
+          {isSelected && (
+            <View style={styles.checkContainer}>
+              <Icon name="check-circle" size={22} color={theme.colors.primary} />
+            </View>
+          )}
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
 
   return (
     <View style={[styles.container, containerStyle]}>
@@ -97,55 +189,113 @@ const SelectCustom: React.FC<SelectCustomProps> = ({
           {required && <Text style={styles.required}> *</Text>}
         </Text>
       )}
+      
       <TouchableOpacity
-        style={[styles.button, error ? styles.buttonError : {}]}
-        onPress={() => setModalVisible(true)}>
-        <Text
-          style={[
-            styles.buttonText,
-            !selectedOption && styles.placeholderText,
-          ]}>
-          {selectedOption ? selectedOption.label : placeholder}
-        </Text>
-        <Icon name="chevron-down" size={24} color={theme.colors.primary} />
+        style={[
+          styles.button,
+          error && styles.buttonError,
+          disabled && styles.buttonDisabled,
+          selectedOption && styles.buttonSelected,
+        ]}
+        onPress={handleModalOpen}
+        disabled={disabled}
+        activeOpacity={0.8}
+      >
+        <View style={styles.buttonContent}>
+          {renderIcon(selectedOption?.iconUrl, 24, styles.buttonIcon)}
+          <View style={styles.buttonTextContainer}>
+            <Text
+              style={[
+                styles.buttonText,
+                !selectedOption && styles.placeholderText,
+                disabled && styles.disabledText,
+              ]}
+              numberOfLines={1}
+            >
+              {selectedOption ? selectedOption.label : placeholder}
+            </Text>
+            {!!selectedOption?.subtitle && (
+              <Text style={[styles.buttonSubtitle, disabled && styles.disabledText]} numberOfLines={1}>
+                {selectedOption.subtitle}
+              </Text>
+            )}
+          </View>
+        </View>
+        <Icon 
+          name="chevron-down" 
+          size={20} 
+          color={disabled ? theme.colors.textLight : theme.colors.primary} 
+          style={[styles.chevron, modalVisible && styles.chevronRotated]}
+        />
       </TouchableOpacity>
-      {error && <Text style={styles.errorText}>{error}</Text>}
+      
+      {error && (
+        <View style={styles.errorContainer}>
+          <Icon name="alert-circle" size={14} color={theme.colors.error} />
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      )}
 
       <Modal
         visible={modalVisible}
-        animationType="slide"
+        animationType="fade"
         transparent={true}
-        onRequestClose={handleModalClose}>
-        <View style={styles.modalContainer}>
-          <SafeAreaView style={styles.modalContent}>
+        onRequestClose={handleModalClose}
+        statusBarTranslucent={true}
+      >
+        <View style={styles.modalOverlay}>
+          <TouchableOpacity 
+            style={styles.modalBackdrop} 
+            activeOpacity={1} 
+            onPress={handleModalClose}
+          />
+          
+          <Animated.View
+            style={[
+              styles.modalContent,
+              {
+                transform: [{ translateY: slideAnim }],
+              },
+            ]}
+          >
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{label || 'Select Option'}</Text>
-              <TouchableOpacity
-                onPress={handleModalClose}
-                style={styles.closeButton}>
-                <Icon name="close" size={24} color={theme.colors.text} />
-              </TouchableOpacity>
+              <View style={styles.grabber} />
+              <View style={styles.modalTitleContainer}>
+                <Text style={styles.modalTitle}>{label || 'Chọn tùy chọn'}</Text>
+                <TouchableOpacity
+                  onPress={handleModalClose}
+                  style={styles.closeButton}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Icon name="close" size={24} color={theme.colors.textLight} />
+                </TouchableOpacity>
+              </View>
             </View>
             
             {searchable && (
-              <View style={styles.searchContainer}>
-                <Icon name="magnify" size={20} color={theme.colors.textLight} style={styles.searchIcon} />
-                <TextInput
-                  style={styles.searchInput}
-                  placeholder={searchPlaceholder}
-                  placeholderTextColor={theme.colors.textLight}
-                  value={searchQuery}
-                  onChangeText={setSearchQuery}
-                  autoCorrect={false}
-                  autoCapitalize="none"
-                />
-                {searchQuery.length > 0 && (
-                  <TouchableOpacity
-                    onPress={() => setSearchQuery('')}
-                    style={styles.clearButton}>
-                    <Icon name="close-circle" size={20} color={theme.colors.textLight} />
-                  </TouchableOpacity>
-                )}
+              <View style={styles.searchSection}>
+                <View style={styles.searchContainer}>
+                  <Icon name="magnify" size={20} color={theme.colors.textLight} />
+                  <TextInput
+                    style={styles.searchInput}
+                    placeholder={searchPlaceholder}
+                    placeholderTextColor={theme.colors.textLight}
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    autoCorrect={false}
+                    autoCapitalize="none"
+                    returnKeyType="search"
+                  />
+                  {searchQuery.length > 0 && (
+                    <TouchableOpacity
+                      onPress={() => setSearchQuery('')}
+                      style={styles.clearButton}
+                      hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
+                    >
+                      <Icon name="close-circle" size={18} color={theme.colors.textLight} />
+                    </TouchableOpacity>
+                  )}
+                </View>
               </View>
             )}
             
@@ -153,20 +303,24 @@ const SelectCustom: React.FC<SelectCustomProps> = ({
               data={filteredOptions}
               renderItem={renderOption}
               keyExtractor={item => item.value}
-              ItemSeparatorComponent={() => <View style={styles.separator} />}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.listContainer}
               ListEmptyComponent={
                 searchQuery ? (
                   <View style={styles.emptyContainer}>
-                    <Icon name="magnify" size={48} color={theme.colors.textLight} />
-                    <Text style={styles.emptyText}>No results found</Text>
+                    <View style={styles.emptyIconContainer}>
+                      <Icon name="magnify" size={48} color={theme.colors.textLight} />
+                    </View>
+                    <Text style={styles.emptyText}>Không tìm thấy kết quả</Text>
                     <Text style={styles.emptySubtext}>
-                      Try searching with different keywords
+                      Thử tìm kiếm với từ khóa khác
                     </Text>
                   </View>
                 ) : null
               }
             />
-          </SafeAreaView>
+          </Animated.View>
         </View>
       </Modal>
     </View>
@@ -180,9 +334,10 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: theme.typography.fontFamily,
     fontSize: theme.typography.fontSize.sm,
-    fontWeight: '500',
+    fontWeight: '600',
     color: theme.colors.text,
     marginBottom: theme.spacing.xs,
+    letterSpacing: 0.3,
   },
   required: {
     color: theme.colors.error,
@@ -191,130 +346,257 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    height: 48,
+    minHeight: 56,
     paddingHorizontal: theme.spacing.md,
-    borderWidth: 1,
+    paddingVertical: theme.spacing.sm,
+    borderWidth: 1.5,
     borderColor: theme.colors.border,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: theme.borderRadius.lg,
     backgroundColor: theme.colors.white,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  buttonSelected: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary + '05',
   },
   buttonError: {
     borderColor: theme.colors.error,
+    backgroundColor: theme.colors.error + '05',
+  },
+  buttonDisabled: {
+    backgroundColor: theme.colors.background,
+    borderColor: theme.colors.border,
+    opacity: 0.6,
+  },
+  buttonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  buttonIcon: {
+    marginRight: theme.spacing.sm,
+    backgroundColor: theme.colors.background,
+  },
+  buttonTextContainer: {
+    flex: 1,
   },
   buttonText: {
-    flex: 1,
     fontFamily: theme.typography.fontFamily,
     fontSize: theme.typography.fontSize.md,
-    fontWeight: '400',
+    fontWeight: '500',
     color: theme.colors.text,
+    lineHeight: 20,
+  },
+  buttonSubtitle: {
+    fontFamily: theme.typography.fontFamily,
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.textLight,
+    marginTop: 2,
+    lineHeight: 16,
   },
   placeholderText: {
     color: theme.colors.textLight,
+    fontWeight: '400',
+  },
+  disabledText: {
+    color: theme.colors.textLight,
+  },
+  chevron: {
+    marginLeft: theme.spacing.sm,
+  },
+  chevronRotated: {
+    transform: [{ rotate: '180deg' }],
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: theme.spacing.xs,
   },
   errorText: {
     fontFamily: theme.typography.fontFamily,
     fontSize: theme.typography.fontSize.sm,
-    fontWeight: '400',
     color: theme.colors.error,
-    marginTop: theme.spacing.xs,
-  },
-  modalContainer: {
+    marginLeft: theme.spacing.xs,
     flex: 1,
-    backgroundColor: theme.colors.overlay,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
   modalContent: {
-    flex: 1,
     backgroundColor: theme.colors.white,
-    marginTop: 80,
-    borderTopLeftRadius: theme.borderRadius.lg,
-    borderTopRightRadius: theme.borderRadius.lg,
+    borderTopLeftRadius: theme.borderRadius.xl,
+    borderTopRightRadius: theme.borderRadius.xl,
+    maxHeight: SCREEN_HEIGHT * 0.8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
   },
   modalHeader: {
+    paddingTop: theme.spacing.md,
+    paddingBottom: theme.spacing.sm,
+    alignItems: 'center',
+  },
+  grabber: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: theme.colors.border,
+    marginBottom: theme.spacing.md,
+  },
+  modalTitleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: theme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    width: '100%',
+    paddingHorizontal: theme.spacing.lg,
   },
   modalTitle: {
     fontFamily: theme.typography.fontFamily,
     fontSize: theme.typography.fontSize.lg,
-    fontWeight: '500',
+    fontWeight: '600',
     color: theme.colors.text,
+    letterSpacing: 0.3,
   },
   closeButton: {
     padding: theme.spacing.xs,
+    borderRadius: theme.borderRadius.sm,
+  },
+  searchSection: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingBottom: theme.spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.border + '30',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.lg,
+    paddingHorizontal: theme.spacing.md,
+    height: 44,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  searchInput: {
+    flex: 1,
+    fontFamily: theme.typography.fontFamily,
+    fontSize: theme.typography.fontSize.md,
+    color: theme.colors.text,
+    marginLeft: theme.spacing.sm,
+    height: '100%',
+  },
+  clearButton: {
+    padding: theme.spacing.xs,
+  },
+  listContainer: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingBottom: theme.spacing.lg,
   },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: theme.spacing.md,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
+    marginVertical: 2,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.white,
+  },
+  firstOption: {
+    marginTop: theme.spacing.md,
+  },
+  lastOption: {
+    marginBottom: theme.spacing.sm,
   },
   selectedOption: {
-    backgroundColor: theme.colors.secondary + '20',
+    backgroundColor: theme.colors.primary + '08',
+    borderWidth: 1,
+    borderColor: theme.colors.primary + '20',
+  },
+  optionContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  optionIcon: {
+    marginRight: theme.spacing.md,
+    backgroundColor: theme.colors.background,
+  },
+  optionTextContainer: {
+    flex: 1,
   },
   optionText: {
     fontFamily: theme.typography.fontFamily,
     fontSize: theme.typography.fontSize.md,
-    fontWeight: '400',
+    fontWeight: '500',
     color: theme.colors.text,
+    lineHeight: 20,
+  },
+  optionSubtitle: {
+    fontFamily: theme.typography.fontFamily,
+    fontSize: theme.typography.fontSize.sm,
+    color: theme.colors.textLight,
+    marginTop: 2,
+    lineHeight: 16,
   },
   selectedOptionText: {
     color: theme.colors.primary,
-    fontFamily: theme.typography.fontFamily,
-    fontWeight: '500',
+    fontWeight: '600',
   },
-  separator: {
-    height: 1,
-    backgroundColor: theme.colors.border,
+  checkContainer: {
+    marginLeft: theme.spacing.md,
   },
-  searchContainer: {
-    flexDirection: 'row',
+  iconFallback: {
+    borderRadius: 6,
     alignItems: 'center',
-    marginHorizontal: theme.spacing.md,
-    marginBottom: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.sm,
+    justifyContent: 'center',
     backgroundColor: theme.colors.background,
-    borderRadius: theme.borderRadius.md,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
-  searchIcon: {
-    marginRight: theme.spacing.sm,
-  },
-  searchInput: {
-    flex: 1,
-    height: 40,
-    fontFamily: theme.typography.fontFamily,
-    fontSize: theme.typography.fontSize.md,
-    fontWeight: '400',
-    color: theme.colors.text,
-  },
-  clearButton: {
-    padding: theme.spacing.xs,
-  },
   emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: theme.spacing.xl,
+    paddingVertical: theme.spacing.xxl,
+    paddingHorizontal: theme.spacing.lg,
+  },
+  emptyIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: theme.colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: theme.spacing.lg,
   },
   emptyText: {
     fontFamily: theme.typography.fontFamily,
     fontSize: theme.typography.fontSize.lg,
-    fontWeight: '500',
+    fontWeight: '600',
     color: theme.colors.text,
-    marginTop: theme.spacing.md,
+    marginBottom: theme.spacing.xs,
+    textAlign: 'center',
   },
   emptySubtext: {
     fontFamily: theme.typography.fontFamily,
     fontSize: theme.typography.fontSize.sm,
-    fontWeight: '400',
     color: theme.colors.textLight,
-    marginTop: theme.spacing.xs,
     textAlign: 'center',
+    lineHeight: 18,
   },
 });
 

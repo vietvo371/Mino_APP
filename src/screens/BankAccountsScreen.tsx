@@ -20,18 +20,20 @@ import api from '../utils/Api';
 
 interface BankAccountData {
   id: number;
-  id_bank: number;
-  name_ekyc: string;
-  bank_number: string;
+  id_bank: number; // bank id reference
+  name_ekyc: string; // owner name
+  bank_number: string; // account number
   is_default: number;
   created_at: string;
   updated_at: string;
+  bank_name?: string; // optional from API
+  bank_code?: string; // optional from API
 }
 
 type BankAccount = {
   id: number;
   bank: string;
-  bankId: number; // Add bankId to store actual bank ID
+  bankId: number;
   accountNumber: string;
   accountName: string;
   isDefault: boolean;
@@ -41,7 +43,7 @@ type BankAccount = {
 const BankAccountsScreen = () => {
   const navigation = useNavigation();
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
-  const [banks, setBanks] = useState<{[key: number]: string}>({});
+  const [banks, setBanks] = useState<{[key: number]: { name: string; code: string; }}>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -51,9 +53,9 @@ const BankAccountsScreen = () => {
       const response = await api.get('/client/bank/data-all');
       if (response.data.status) {
         const bankData = response.data.data;
-        const bankMap: {[key: number]: string} = {};
+        const bankMap: {[key: number]: { name: string; code: string; }} = {};
         bankData.forEach((bank: any) => {
-          bankMap[bank.id] = bank.name;
+          bankMap[bank.id] = { name: bank.name, code: bank.code };
         });
         setBanks(bankMap);
       }
@@ -76,15 +78,18 @@ const BankAccountsScreen = () => {
 
       if (response.data.status) {
         const accountData: BankAccountData[] = response.data.data;
-        const formattedAccounts: BankAccount[] = accountData.map(account => ({
-          id: account.id,
-          bank: banks[account.id_bank] || `Bank ${account.id_bank}`, // Use actual bank name or fallback
-          bankId: account.id_bank,
-          accountNumber: account.bank_number,
-          accountName: account.name_ekyc,
-          isDefault: account.is_default === 1,
-          createdAt: account.created_at
-        }));
+        const formattedAccounts: BankAccount[] = accountData.map(account => {
+          const bankMeta = banks[account.id_bank];
+          return {
+            id: account.id,
+            bank: account.bank_name || (bankMeta ? `${bankMeta.name} (${bankMeta.code})` : `Bank ${account.id_bank}`),
+            bankId: account.id_bank,
+            accountNumber: account.bank_number,
+            accountName: account.name_ekyc,
+            isDefault: account.is_default === 1,
+            createdAt: account.created_at,
+          };
+        });
         setAccounts(formattedAccounts);
       } else {
         Alert.alert('Error', 'Failed to load bank accounts');

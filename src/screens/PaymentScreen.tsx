@@ -17,15 +17,15 @@ import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import QRCode from '../component/QRCode';
+import api from '../utils/Api';
 
-// API endpoint từ backend của bạn
-const RATE_API_URL = 'https://your-backend-api.com/api/exchange-rate';
+// API endpoint: sẽ dùng api.get('/client/exchange/rate')
 
 // Fallback rate nếu API fail
 const FALLBACK_RATE = 24500;
 
-// Transaction fee percentage - có thể cập nhật từ API sau
-const TRANSACTION_FEE_PERCENTAGE = 0.5; // 0.5%
+// Transaction fee percentage fallback (sẽ được cập nhật từ API)
+const TRANSACTION_FEE_PERCENTAGE = 0.5; // %
 
 // Mock defaults for preview
 const DEFAULT_TRC20_ADDRESS = 'TR7NHqjeKQxCw1234abcdXYZ7890pqrsLMN';
@@ -52,6 +52,7 @@ const PaymentScreen = () => {
   const [currentRate, setCurrentRate] = useState<number>(paymentInfo.rate || FALLBACK_RATE);
   const [secondsLeft, setSecondsLeft] = useState<number>(20);
   const [isLoadingRate, setIsLoadingRate] = useState(false);
+  const [feePercent, setFeePercent] = useState<number>(TRANSACTION_FEE_PERCENTAGE);
   const isFetchingRef = useRef<boolean>(false);
   const transactionIdRef = useRef<string>(`MINO${Date.now().toString().slice(-6)}`);
 
@@ -80,24 +81,24 @@ const PaymentScreen = () => {
     }
   }, []);
 
-  // Function to fetch rate from your backend API
+  // Function to fetch rate/fee from backend API
   const fetchExchangeRate = async () => {
     if (isFetchingRef.current) return;
     isFetchingRef.current = true;
     setIsLoadingRate(true);
     
     try {
-      const response = await fetch(RATE_API_URL);
-      const data = await response.json();
-      
-      // Giả sử API trả về format: { rate: 24500 } hoặc { usdt_vnd_rate: 24500 }
-      const rate = data.rate || data.usdt_vnd_rate || data.exchange_rate;
-      
-      if (rate && !isNaN(parseFloat(rate))) {
-        setCurrentRate(parseFloat(rate));
-        console.log('Rate updated from API:', rate);
+      const res = await api.get('/client/exchange/rate');
+      const data: any = res.data || {};
+      const rate = data.rate ?? data.usdt_vnd_rate ?? data.exchange_rate;
+      if (rate && !isNaN(parseFloat(String(rate)))) {
+        setCurrentRate(parseFloat(String(rate)));
       } else {
         throw new Error('Invalid rate format');
+      }
+      const feeValue = parseFloat(String(data.fee));
+      if (!isNaN(feeValue)) {
+        setFeePercent(feeValue);
       }
     } catch (error) {
       console.log('API failed, using fallback rate:', error);
@@ -108,9 +109,11 @@ const PaymentScreen = () => {
     }
   };
 
-  // 20s countdown and auto-refresh
+  // 60s countdown and auto-refresh
   useEffect(() => {
     setSecondsLeft(60);
+    // Fetch ngay lần đầu vào màn hình
+    fetchExchangeRate();
     const timer = setInterval(() => {
       setSecondsLeft((prev) => {
         if (prev <= 1) {
@@ -153,14 +156,14 @@ const PaymentScreen = () => {
         date: new Date().toLocaleDateString('vi-VN'),
         time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
         transactionId: `MINO${Date.now().toString().slice(-6)}`,
-        fee: `${(parseFloat(paymentInfo.amount) * (TRANSACTION_FEE_PERCENTAGE / 100)).toLocaleString('vi-VN')} VND (${TRANSACTION_FEE_PERCENTAGE}%)`,
-        totalAmount: `${(parseFloat(paymentInfo.amount) + (parseFloat(paymentInfo.amount) * (TRANSACTION_FEE_PERCENTAGE / 100))).toLocaleString('vi-VN')} VND`,
+        fee: `${(parseFloat(paymentInfo.amount) * (feePercent / 100)).toLocaleString('vi-VN')} VND (${feePercent}%)`,
+        totalAmount: `${(parseFloat(paymentInfo.amount) + (parseFloat(paymentInfo.amount) * (feePercent / 100))).toLocaleString('vi-VN')} VND`,
         transferInfo: {
           bankName: 'BIDV',
           accountNumber: '963336984884401',
           accountName: 'BAOKIM CONG TY CO PHAN THUONG MAI DIEN TU BAO KIM',
           transferContent: 'Lien ket vi Baokim',
-          amount: (parseFloat(paymentInfo.amount) + (parseFloat(paymentInfo.amount) * (TRANSACTION_FEE_PERCENTAGE / 100))).toLocaleString('vi-VN'),
+          amount: (parseFloat(paymentInfo.amount) + (parseFloat(paymentInfo.amount) * (feePercent / 100))).toLocaleString('vi-VN'),
         },
         receiveAddress: selectedReceiveTRC20,
       };
@@ -181,8 +184,8 @@ const PaymentScreen = () => {
         date: new Date().toLocaleDateString('vi-VN'),
         time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
         transactionId: `MINO${Date.now().toString().slice(-6)}`,
-        fee: `${(parseFloat(paymentInfo.amount) * currentRate * (TRANSACTION_FEE_PERCENTAGE / 100)).toLocaleString('vi-VN')} VND (${TRANSACTION_FEE_PERCENTAGE}%)`,
-        totalAmount: `${((parseFloat(paymentInfo.amount) * currentRate) - (parseFloat(paymentInfo.amount) * currentRate * (TRANSACTION_FEE_PERCENTAGE / 100))).toLocaleString('vi-VN')} VND`,
+        fee: `${(parseFloat(paymentInfo.amount) * currentRate * (feePercent / 100)).toLocaleString('vi-VN')} VND (${feePercent}%)`,
+        totalAmount: `${((parseFloat(paymentInfo.amount) * currentRate) - (parseFloat(paymentInfo.amount) * currentRate * (feePercent / 100))).toLocaleString('vi-VN')} VND`,
         receiveAddress: 'TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE',
         bankAccount: selectedBank,
       };
@@ -199,14 +202,14 @@ const PaymentScreen = () => {
     const amountNum = parseFloat(paymentInfo.amount);
     if (paymentInfo.type === 'buy') {
       const usdtAmount = (amountNum / currentRate).toFixed(2);
-      const feeAmount = amountNum * (TRANSACTION_FEE_PERCENTAGE / 100);
+      const feeAmount = amountNum * (feePercent / 100);
       const totalVND = amountNum + feeAmount;
       const transactionId = transactionIdRef.current;
 
       return {
         usdtWant: `${usdtAmount} USDT`,
         exchangeRate: `1 USDT = ${currentRate.toLocaleString('vi-VN')} VND`,
-        fee: `${feeAmount.toLocaleString('vi-VN')} VND (${TRANSACTION_FEE_PERCENTAGE}%)`,
+        fee: `${feeAmount.toLocaleString('vi-VN')} VND (${feePercent}%)`,
         totalVND: `${totalVND.toLocaleString('vi-VN')} VND`,
         transactionId,
         transferInfo: {
@@ -219,13 +222,13 @@ const PaymentScreen = () => {
       };
     } else {
       // Sell USDT: sử dụng phí từ biến cố định
-      const feeAmount = amountNum * currentRate * (TRANSACTION_FEE_PERCENTAGE / 100);
+      const feeAmount = amountNum * currentRate * (feePercent / 100);
       const receiveAmount = (amountNum * currentRate) - feeAmount;
 
       return {
         usdtSell: `${paymentInfo.amount} USDT`,
         exchangeRate: `1 USDT = ${currentRate.toLocaleString('vi-VN')} VND`,
-        fee: `${feeAmount.toLocaleString('vi-VN')} VND (${TRANSACTION_FEE_PERCENTAGE}%)`,
+        fee: `${feeAmount.toLocaleString('vi-VN')} VND (${feePercent}%)`,
         receiveVND: `${receiveAmount.toLocaleString('vi-VN')} VND`,
         sendAmount: `${paymentInfo.amount} USDT`,
         receiveAmount: `${receiveAmount.toLocaleString('vi-VN')} VND`,
@@ -240,7 +243,7 @@ const PaymentScreen = () => {
 
     if (paymentInfo.type === 'buy') {
       const amountNum = parseFloat(paymentInfo.amount);
-      const feeAmount = amountNum * (TRANSACTION_FEE_PERCENTAGE / 100);
+      const feeAmount = amountNum * (feePercent / 100);
       const totalAmount = amountNum + feeAmount;
       
       const qrData = {
@@ -250,7 +253,7 @@ const PaymentScreen = () => {
         amount: totalAmount.toLocaleString('vi-VN').replace(/\./g, ''),
         transferContent: transactionInfo.transferInfo?.transferContent || 'MINO TXN',
         currency: 'VND',
-        fee: `${TRANSACTION_FEE_PERCENTAGE}%`
+        fee: `${feePercent}%`
       };
 
       return JSON.stringify(qrData);
@@ -266,8 +269,8 @@ const PaymentScreen = () => {
         timestamp: new Date().toISOString(),
         status: "pending",
         totalAmount: `${(amountNum * currentRate).toLocaleString('vi-VN')} VND`,
-        receiveAmount: `${((amountNum * currentRate) * (1 - TRANSACTION_FEE_PERCENTAGE / 100)).toLocaleString('vi-VN')} VND`,
-        fee: `${TRANSACTION_FEE_PERCENTAGE}%`,
+        receiveAmount: `${((amountNum * currentRate) * (1 - feePercent / 100)).toLocaleString('vi-VN')} VND`,
+        fee: `${feePercent}%`,
         paymentMethod: 'crypto_transfer'
       };
 
