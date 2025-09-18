@@ -15,6 +15,7 @@ import { theme } from '../theme/colors';
 interface QRCodeProps {
   value: string;
   size?: number;
+  quietZone?: number;
   label?: string;
   error?: string;
   showShare?: boolean;
@@ -25,6 +26,7 @@ interface QRCodeProps {
 const QRCode: React.FC<QRCodeProps> = ({
   value,
   size = 200,
+  quietZone = 0,
   label,
   error,
   showShare = true,
@@ -78,6 +80,7 @@ const QRCode: React.FC<QRCodeProps> = ({
           size={size}
           color={theme.colors.text}
           backgroundColor={theme.colors.white}
+          quietZone={quietZone}
           getRef={c => (qrRef = c)}
         />
       </View>
@@ -106,7 +109,8 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.md,
   },
   label: {
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: theme.typography.fontFamily as string,
+    fontWeight: '500',
     fontSize: theme.typography.fontSize.sm,
     color: theme.colors.text,
     marginBottom: theme.spacing.md,
@@ -129,12 +133,14 @@ const styles = StyleSheet.create({
   },
   actionText: {
     marginLeft: theme.spacing.xs,
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: theme.typography.fontFamily as string,
+    fontWeight: '500',
     fontSize: theme.typography.fontSize.sm,
     color: theme.colors.primary,
   },
   errorText: {
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: theme.typography.fontFamily as string,
+    fontWeight: '400',
     fontSize: theme.typography.fontSize.sm,
     color: theme.colors.error,
     marginTop: theme.spacing.xs,

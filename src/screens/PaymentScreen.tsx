@@ -18,6 +18,8 @@ import {
 } from 'react-native-responsive-screen';
 import QRCode from '../component/QRCode';
 import api from '../utils/Api';
+import SelectCustom from '../component/SelectCustom';
+import { getUser } from '../utils/TokenManager';
 
 // API endpoint: sẽ dùng api.get('/client/exchange/rate')
 
@@ -41,21 +43,38 @@ type PaymentInfo = {
   rate: number;
 };
 
+type Wallet = {
+  id: number;
+  name: string;
+  address: string;
+  isDefault: boolean;
+  createdAt: string;
+};
+
 const PaymentScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const paymentInfo = (route.params as any)?.paymentInfo as PaymentInfo;
-
   const [selectedBank, setSelectedBank] = useState('');
   const [selectedTRC20, setSelectedTRC20] = useState('');
   const [selectedReceiveTRC20, setSelectedReceiveTRC20] = useState('');
+  const [selectedWalletId, setSelectedWalletId] = useState<string>('');
   const [currentRate, setCurrentRate] = useState<number>(paymentInfo.rate || FALLBACK_RATE);
   const [secondsLeft, setSecondsLeft] = useState<number>(20);
   const [isLoadingRate, setIsLoadingRate] = useState(false);
   const [feePercent, setFeePercent] = useState<number>(TRANSACTION_FEE_PERCENTAGE);
   const isFetchingRef = useRef<boolean>(false);
   const transactionIdRef = useRef<string>(`MINO${Date.now().toString().slice(-6)}`);
+  const [wallets, setWallets] = useState<Wallet[]>([]);
+  const [user, setUser] = useState<any>(null);
+  const fetchUser = async () => {
+    const user = await getUser();
+    setUser(user);
+  };
 
+  useEffect(() => {
+    fetchUser();
+  }, []);
   // Sync selected TRC20 address from navigation params (supports default and selection)
   useFocusEffect(
     React.useCallback(() => {
@@ -80,6 +99,37 @@ const PaymentScreen = () => {
       setSelectedBank(`${DEFAULT_BANK.bankName} - ${DEFAULT_BANK.accountNumber}`);
     }
   }, []);
+
+  // Fetch TRC20 wallets to allow inline selection
+  useEffect(() => {
+    const fetchWallets = async () => {
+      try {
+        const res = await api.get('/client/wallet/data');
+        if (res?.data?.status) {
+          const list: Wallet[] = (res.data.data || []).map((w: any) => ({
+            id: w.id,
+            name: w.name,
+            address: w.address_wallet,
+            isDefault: w.is_default === 1,
+            createdAt: w.created_at,
+          }));
+          setWallets(list);
+
+          // If no selection yet → use default wallet
+          const def = list.find((x) => x.isDefault);
+          if (!selectedWalletId && def) {
+            setSelectedWalletId(String(def.id));
+            setSelectedReceiveTRC20(def.address);
+          }
+        }
+      } catch (e) {
+        // ignore; keep mock/default
+      }
+    };
+    if (paymentInfo.type === 'buy') {
+      fetchWallets();
+    }
+  }, [paymentInfo.type, selectedWalletId]);
 
   // Function to fetch rate/fee from backend API
   const fetchExchangeRate = async () => {
@@ -141,33 +191,41 @@ const PaymentScreen = () => {
 
   const handleConfirm = () => {
     if (paymentInfo.type === 'buy') {
-      if (!selectedReceiveTRC20) {
+      // Determine wallet ID: selected one or default
+      const walletId = selectedWalletId
+        ? parseInt(selectedWalletId, 10)
+        : (wallets.find(w => w.isDefault)?.id || undefined);
+      if (!walletId) {
         Alert.alert('Notification', 'Please select a TRC20 wallet to receive USDT');
         return;
       }
-      // Tạo transaction data cho DetailHistoryScreen
-      const transactionData = {
-        id: `MINO${Date.now().toString().slice(-6)}`,
-        type: paymentInfo.type,
-        amount: paymentInfo.amount,
-        usdt: (parseFloat(paymentInfo.amount) / currentRate).toFixed(2),
-        exchangeRate: currentRate.toLocaleString('vi-VN'),
-        status: 'pending' as const,
-        date: new Date().toLocaleDateString('vi-VN'),
-        time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-        transactionId: `MINO${Date.now().toString().slice(-6)}`,
-        fee: `${(parseFloat(paymentInfo.amount) * (feePercent / 100)).toLocaleString('vi-VN')} VND (${feePercent}%)`,
-        totalAmount: `${(parseFloat(paymentInfo.amount) + (parseFloat(paymentInfo.amount) * (feePercent / 100))).toLocaleString('vi-VN')} VND`,
-        transferInfo: {
-          bankName: 'BIDV',
-          accountNumber: '963336984884401',
-          accountName: 'BAOKIM CONG TY CO PHAN THUONG MAI DIEN TU BAO KIM',
-          transferContent: 'Lien ket vi Baokim',
-          amount: (parseFloat(paymentInfo.amount) + (parseFloat(paymentInfo.amount) * (feePercent / 100))).toLocaleString('vi-VN'),
-        },
-        receiveAddress: selectedReceiveTRC20,
-      };
-      navigation.navigate('DetailHistory', { transaction: transactionData });
+
+      const amountNum = parseFloat(String(paymentInfo.amount));
+      const usdtAmount = amountNum / currentRate;
+
+      // Call backend API to create BUY transaction
+      api.post('/client/create-transactions/vnd-usdt', {
+        email: user?.email ?? '',
+        amount_usdt: usdtAmount,
+        wallet_usdt_id: walletId,
+      })
+      .then((res) => {
+        if (res?.data?.status) {
+          console.log('res', res.data);
+          const idTx = res?.data?.data?.id_transaction;
+          if (idTx) {
+            (navigation as any).navigate('DetailHistory', { idTransaction: idTx, type: 'buy' });
+          } else {
+            Alert.alert('Success', res.data.message || 'Created buy transaction successfully.');
+          }
+        } else {
+          Alert.alert('Error', res?.data?.message || 'Failed to create transaction');
+        }
+      })
+      .catch((err) => {
+        console.log('Create buy tx error:', err);
+        Alert.alert('Error', err?.response?.data?.message || 'Create transaction failed');
+      });
     } else {
       if (!selectedBank) {
         Alert.alert('Notification', 'Please select a bank account to receive money');
@@ -353,22 +411,25 @@ const PaymentScreen = () => {
         {/* Wallet Selection for Buy USDT */}
         {paymentInfo.type === 'buy' && (
           <>
-            <Text style={styles.sectionTitle}>Select TRC20 Wallet to Receive USDT</Text>
-            <TouchableOpacity
-              style={styles.selectButton}
-              onPress={handleSelectReceiveTRC20}
-            >
-              <View style={styles.selectLeft}>
-                <Icon name="wallet" size={24} color="#7B68EE" />
-                <View style={styles.selectInfo}>
-                  <Text style={styles.selectTitle}>TRC20 Wallet</Text>
-                  <Text style={styles.selectDescription}>
-                    {selectedReceiveTRC20 || 'Select TRC20 wallet to receive USDT'}
-                  </Text>
-                </View>
-              </View>
-              <Icon name="chevron-right" size={24} color="#666" />
-            </TouchableOpacity>
+            <SelectCustom
+            label="Select TRC20 Wallet to Receive USDT"
+              value={selectedWalletId}
+              onChange={(val) => {
+                setSelectedWalletId(val);
+                const w = wallets.find((x) => String(x.id) === val);
+                if (w) setSelectedReceiveTRC20(w.address);
+              }}
+              options={wallets.map((w) => ({
+                label: w.name,
+                value: String(w.id),
+                subtitle: w.address,
+                searchText: `${w.name} ${w.address}`,
+              }))}
+              placeholder={selectedReceiveTRC20 ? selectedReceiveTRC20 : 'Select TRC20 wallet (default if none)'}
+              searchable
+              searchPlaceholder="Search wallet by name or address..."
+              containerStyle={{ marginBottom: 12 }}
+            />
 
             {selectedReceiveTRC20 ? (
               <View style={styles.walletCard}>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   Alert,
   Platform,
   Clipboard,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -17,6 +18,8 @@ import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import QRCode from '../component/QRCode';
+import api from '../utils/Api';
+import { getUser } from '../utils/TokenManager';
 
 type TransactionDetail = {
   id: string;
@@ -32,6 +35,8 @@ type TransactionDetail = {
   totalAmount: string;
   receiveAddress?: string;
   bankAccount?: string;
+  qrPayload?: string;
+  createdAt?: string;
   transferInfo?: {
     bankName: string;
     accountNumber: string;
@@ -44,18 +49,90 @@ type TransactionDetail = {
 const DetailHistoryScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const transaction = (route.params as any)?.transaction as TransactionDetail;
+  const params: any = route.params || {};
+  const transactionParam = params.transaction as TransactionDetail | undefined;
+  const idTransaction = params.idTransaction as number | undefined;
+  const typeParam = params.type as 'buy' | 'sell' | undefined;
+
+  const [transaction, setTransaction] = React.useState<TransactionDetail | undefined>(transactionParam);
+  const [loading, setLoading] = useState<boolean>(!!idTransaction && !transactionParam);
+  const [user, setUser] = useState<any>(null);
+  const fetchUser = async () => {
+    const user = await getUser();
+    setUser(user);
+  };
+
+  useEffect(() => {
+    fetchUser();
+    if (!idTransaction) {
+      setLoading(false);
+    }
+  }, []);
 
   // 5-minute validity timer
   const [secondsLeft, setSecondsLeft] = React.useState(300);
   const isExpired = secondsLeft <= 0;
 
   React.useEffect(() => {
-    const timer = setInterval(() => {
-      setSecondsLeft(prev => (prev > 0 ? prev - 1 : 0));
+    // Calculate remaining time based on created_at if available
+    const interval = setInterval(() => {
+      if (transaction?.createdAt) {
+        const created = new Date(transaction.createdAt).getTime();
+        const expiresAt = created + 5 * 60 * 1000;
+        const remainingMs = Math.max(0, expiresAt - Date.now());
+        setSecondsLeft(Math.floor(remainingMs / 1000));
+      } else {
+        // Fallback: decrement from current secondsLeft if createdAt not available
+        setSecondsLeft(prev => (prev > 0 ? prev - 1 : 0));
+      }
     }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+    return () => clearInterval(interval);
+  }, [transaction?.createdAt]);
+
+  React.useEffect(() => {
+    const fetchPending = async () => {
+      if (!idTransaction || transaction || !user?.email) return;
+      setLoading(true);
+      try {
+        const res = await api.post('/client/transaction-pending/vnd-usdt', {
+          email: user.email,
+          id_transaction: idTransaction,
+        });
+        if (res?.data?.status) {
+          console.log('res', res.data);
+          const d = res.data.data || {};
+          const mapped: TransactionDetail = {
+            id: String(idTransaction),
+            type: typeParam || 'buy',
+            amount: String(d.amount_vnd ?? ''),
+            usdt: String(d.amount_usd ?? ''),
+            exchangeRate: String(d.rate ?? ''),
+            status: 'pending',
+            date: new Date().toLocaleDateString('vi-VN'),
+            time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+            transactionId: d.order_code || '',
+            fee: `${(d.fee_vnd ?? 0).toLocaleString('vi-VN')} VND`,
+            totalAmount: `${(d.total_vnd ?? 0).toLocaleString('vi-VN')} VND`,
+            qrPayload: d.qr_code || undefined,
+            createdAt: d.created_at || undefined,
+            transferInfo: {
+              bankName: d.bank_name || '',
+              accountNumber: d.bank_number || '',
+              accountName: d.bank_account || '',
+              transferContent: d.qr_code ? (d.order_code || '') : (d.order_code || ''),
+              amount: (d.total_vnd ?? 0).toLocaleString('vi-VN'),
+            },
+          };
+          setTransaction(mapped);
+        }
+      } catch (err : any) {
+        console.log('fetch pending error', err.response);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPending();
+  }, [idTransaction, transaction, typeParam, user?.email]);
 
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60).toString().padStart(2, '0');
@@ -69,17 +146,24 @@ const DetailHistoryScreen = () => {
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => navigation.replace('MainTabs' as never, { screen: 'History' } as never)}
+            onPress={() => (navigation as any).navigate('MainTabs', { screen: 'History' })}
           >
             <Icon name="arrow-left" size={24} color="#000" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Transaction Detail</Text>
           <View style={styles.headerRight} />
         </View>
-        <View style={styles.errorContainer}>
-          <Icon name="alert-circle" size={48} color="#FF3B30" />
-          <Text style={styles.errorText}>Transaction not found</Text>
-        </View>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#4A90E2" />
+            <Text style={styles.loadingText}>Đang tải giao dịch...</Text>
+          </View>
+        ) : (
+          <View style={styles.errorContainer}>
+            <Icon name="alert-circle" size={48} color="#FF3B30" />
+            <Text style={styles.errorText}>Transaction not found</Text>
+          </View>
+        )}
       </SafeAreaView>
     );
   }
@@ -121,7 +205,7 @@ const DetailHistoryScreen = () => {
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
-          onPress={() => navigation.replace('MainTabs' as never, { screen: 'History' } as never)}
+          onPress={() => (navigation as any).navigate('MainTabs', { screen: 'History' })}
         >
           <Icon name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
@@ -226,19 +310,12 @@ const DetailHistoryScreen = () => {
           </Text>
           <View style={styles.qrContainer}>
             <QRCode
-              value={isBuy && transaction.transferInfo 
-                ? JSON.stringify({
-                    bankName: transaction.transferInfo.bankName,
-                    accountNumber: transaction.transferInfo.accountNumber,
-                    accountName: transaction.transferInfo.accountName,
-                    amount: transaction.transferInfo.amount.replace(/\./g, ''),
-                    transferContent: transaction.transferInfo.transferContent,
-                    currency: 'VND',
-                    fee: '0.5%'
-                  })
-                : transaction.receiveAddress || 'TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE'
+              value={isBuy
+                ? (transaction.qrPayload || '')
+                : (transaction.receiveAddress || 'TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE')
               }
               size={wp('70%')}
+              quietZone={12}
               showShare={!isExpired}
               showDownload={!isExpired}
             />
@@ -455,6 +532,17 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 16,
     textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: wp('3.8%'),
+    color: '#666',
   },
   content: {
     flex: 1,

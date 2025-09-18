@@ -261,7 +261,7 @@ const SelectCustom: React.FC<SelectCustomProps> = ({
             <View style={styles.modalHeader}>
               <View style={styles.grabber} />
               <View style={styles.modalTitleContainer}>
-                <Text style={styles.modalTitle}>{label || 'Chọn tùy chọn'}</Text>
+                <Text style={styles.modalTitle}>{label || 'Select'}</Text>
                 <TouchableOpacity
                   onPress={handleModalClose}
                   style={styles.closeButton}
