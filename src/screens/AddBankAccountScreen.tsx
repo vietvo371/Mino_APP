@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   SafeAreaView,
   TextInput,
   Switch,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
@@ -15,33 +17,147 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
+import api from '../utils/Api';
+import SelectCustom from '../component/SelectCustom';
 
-const BANKS = [
-  'Vietcombank',
-  'Techcombank',
-  'MB Bank',
-  'ACB',
-  'VPBank',
-  'BIDV',
-  // Add other banks
-];
+interface BankData {
+  id: number;
+  name: string;
+  code: string;
+  bin: string;
+  logo: string;
+  is_open: number;
+  created_at: string | null;
+  updated_at: string | null;
+}
 
 const AddBankAccountScreen = () => {
   const navigation = useNavigation();
-  const [selectedBank, setSelectedBank] = useState('');
+  const [banks, setBanks] = useState<BankData[]>([]);
+  const [selectedBankId, setSelectedBankId] = useState<string>('');
   const [accountNumber, setAccountNumber] = useState('');
   const [accountName, setAccountName] = useState('');
   const [isDefault, setIsDefault] = useState(false);
-  const [showBankList, setShowBankList] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [loadingBanks, setLoadingBanks] = useState(true);
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
 
-  const handleSave = () => {
-    // Validate and save bank account
-    if (!selectedBank || !accountNumber || !accountName) {
-      // Show error
+  // Fetch banks data from API
+  const fetchBanks = async () => {
+    try {
+      setLoadingBanks(true);
+      const response = await api.get('/client/bank/data-all');
+      console.log('Banks response:', response.data);
+
+      if (response.data.status) {
+        setBanks(response.data.data);
+      } else {
+        Alert.alert('Error', 'Failed to load banks');
+      }
+    } catch (error: any) {
+      console.log('Fetch banks error:', error);
+      Alert.alert('Error', 'Failed to load banks. Please try again.');
+    } finally {
+      setLoadingBanks(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBanks();
+  }, []);
+
+  const validateForm = () => {
+    const newErrors: {[key: string]: string} = {};
+    
+    if (!selectedBankId) {
+      newErrors.bank = 'Please select a bank';
+    }
+    
+    if (!accountNumber.trim()) {
+      newErrors.accountNumber = 'Account number is required';
+    } else if (!/^\d{8,20}$/.test(accountNumber.trim())) {
+      newErrors.accountNumber = 'Invalid account number format';
+    }
+    
+    if (!accountName.trim()) {
+      newErrors.accountName = 'Account holder name is required';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSave = async () => {
+    // Clear previous errors
+    setErrors({});
+    
+    // Validate form
+    if (!validateForm()) {
       return;
     }
-    // Save and navigate back
-    navigation.goBack();
+
+    setLoading(true);
+    
+    try {
+      const response = await api.post('/client/bank/create', {
+        id_bank: parseInt(selectedBankId),
+        name_ekyc: accountName.trim(),
+        bank_number: accountNumber.trim(),
+        is_default: isDefault ? 1 : 0
+      });
+
+      console.log('Create bank account response:', response.data);
+      
+      if (response.data.status) {
+        Alert.alert(
+          'Success', 
+          response.data.message || 'Thêm tài khoản ngân hàng thành công!',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.goBack()
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Error', response.data.message || 'Failed to create bank account');
+      }
+      
+    } catch (error: any) {
+      console.log('Create bank account error:', error);
+      
+      // Handle Laravel 422 validation errors
+      if (error.response?.status === 422) {
+        const validationErrors = error.response.data.errors || {};
+        const formattedErrors: {[key: string]: string} = {};
+        
+        // Format Laravel validation errors
+        Object.keys(validationErrors).forEach(key => {
+          if (Array.isArray(validationErrors[key])) {
+            formattedErrors[key] = validationErrors[key][0];
+          } else {
+            formattedErrors[key] = validationErrors[key];
+          }
+        });
+        
+        setErrors(formattedErrors);
+        
+        // Show first error in alert
+        const firstError = Object.values(formattedErrors)[0];
+        Alert.alert('Validation Error', firstError);
+      } else {
+        // Handle other errors
+        let errorMessage = 'Failed to create bank account. Please try again.';
+        if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        Alert.alert('Error', errorMessage);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -55,69 +171,74 @@ const AddBankAccountScreen = () => {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Add Bank Account</Text>
         <TouchableOpacity 
-          style={styles.saveButton}
+          style={[styles.saveButton, loading && styles.saveButtonDisabled]}
           onPress={handleSave}
+          disabled={loading}
         >
-          <Text style={styles.saveText}>Save</Text>
+          {loading ? (
+            <ActivityIndicator size="small" color="#4A90E2" />
+          ) : (
+            <Text style={styles.saveText}>Save</Text>
+          )}
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content}>
         {/* Bank Selection */}
-        <Text style={styles.label}>Bank</Text>
-        <TouchableOpacity 
-          style={styles.bankSelector}
-          onPress={() => setShowBankList(!showBankList)}
-        >
-          <Text style={selectedBank ? styles.selectedText : styles.placeholderText}>
-            {selectedBank || 'Select bank'}
-          </Text>
-          <Icon name="chevron-down" size={20} color="#666" />
-        </TouchableOpacity>
-
-        {showBankList && (
-          <View style={styles.bankList}>
-            {BANKS.map((bank) => (
-              <TouchableOpacity
-                key={bank}
-                style={styles.bankItem}
-                onPress={() => {
-                  setSelectedBank(bank);
-                  setShowBankList(false);
-                }}
-              >
-                <Text style={[
-                  styles.bankItemText,
-                  selectedBank === bank && styles.selectedBankText
-                ]}>
-                  {bank}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
+        <SelectCustom
+          label="Bank"
+          value={selectedBankId}
+          onChange={(value) => {
+            setSelectedBankId(value);
+            if (errors.bank) {
+              setErrors(prev => ({ ...prev, bank: '' }));
+            }
+          }}
+          options={banks.map(bank => ({
+            label: bank.name,
+            value: bank.id.toString()
+          }))}
+          placeholder="Select bank"
+          error={errors.bank}
+          required
+          searchable={true}
+          searchPlaceholder="Search banks..."
+          containerStyle={styles.selectContainer}
+        />
 
         {/* Account Number */}
         <Text style={styles.label}>Account Number</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, errors.accountNumber && styles.inputError]}
           value={accountNumber}
-          onChangeText={setAccountNumber}
+          onChangeText={(text) => {
+            setAccountNumber(text);
+            if (errors.accountNumber) {
+              setErrors(prev => ({ ...prev, accountNumber: '' }));
+            }
+          }}
           placeholder="Enter account number"
           keyboardType="numeric"
           placeholderTextColor="#999"
         />
+        {errors.accountNumber && <Text style={styles.errorText}>{errors.accountNumber}</Text>}
 
         {/* Account Name */}
         <Text style={styles.label}>Account Holder Name</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, errors.accountName && styles.inputError]}
           value={accountName}
-          onChangeText={setAccountName}
+          onChangeText={(text) => {
+            setAccountName(text);
+            if (errors.accountName) {
+              setErrors(prev => ({ ...prev, accountName: '' }));
+            }
+          }}
           placeholder="Enter account holder name"
           autoCapitalize="characters"
           placeholderTextColor="#999"
         />
+        {errors.accountName && <Text style={styles.errorText}>{errors.accountName}</Text>}
 
         {/* Default Account Toggle */}
         <View style={styles.defaultContainer}>
@@ -176,9 +297,15 @@ const styles = StyleSheet.create({
     color: '#4A90E2',
     fontWeight: '600',
   },
+  saveButtonDisabled: {
+    opacity: 0.6,
+  },
   content: {
     flex: 1,
     padding: 16,
+  },
+  selectContainer: {
+    marginBottom: 0,
   },
   label: {
     fontSize: wp('3.5%'),
@@ -186,45 +313,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 8,
     marginTop: 16,
-  },
-  bankSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 12,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E5E5EA',
-  },
-  placeholderText: {
-    color: '#999',
-    fontSize: wp('4%'),
-  },
-  selectedText: {
-    color: '#000',
-    fontSize: wp('4%'),
-  },
-  bankList: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E5E5EA',
-    marginTop: 8,
-    maxHeight: hp('30%'),
-  },
-  bankItem: {
-    padding: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
-  },
-  bankItemText: {
-    fontSize: wp('4%'),
-    color: '#000',
-  },
-  selectedBankText: {
-    color: '#4A90E2',
-    fontWeight: '600',
   },
   input: {
     padding: 12,
@@ -268,6 +356,16 @@ const styles = StyleSheet.create({
     fontSize: wp('3.5%'),
     color: '#666',
     marginLeft: 8,
+  },
+  inputError: {
+    borderColor: '#FF6B6B',
+    borderWidth: 1,
+  },
+  errorText: {
+    fontSize: wp('3%'),
+    color: '#FF6B6B',
+    marginTop: 4,
+    marginLeft: 4,
   },
 });
 

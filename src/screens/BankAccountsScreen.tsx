@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,51 +6,152 @@ import {
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
+import api from '../utils/Api';
+
+interface BankAccountData {
+  id: number;
+  id_bank: number;
+  name_ekyc: string;
+  bank_number: string;
+  is_default: number;
+  created_at: string;
+  updated_at: string;
+}
 
 type BankAccount = {
-  id: string;
+  id: number;
   bank: string;
+  bankId: number; // Add bankId to store actual bank ID
   accountNumber: string;
   accountName: string;
-  isDefault?: boolean;
+  isDefault: boolean;
+  createdAt: string;
 };
-
-const BANK_ACCOUNTS: BankAccount[] = [
-  {
-    id: '1',
-    bank: 'Vietcombank',
-    accountNumber: '1234567890',
-    accountName: 'NGUYEN VAN A',
-    isDefault: true,
-  },
-  {
-    id: '2',
-    bank: 'Techcombank',
-    accountNumber: '0987654321',
-    accountName: 'NGUYEN VAN A',
-  },
-];
 
 const BankAccountsScreen = () => {
   const navigation = useNavigation();
+  const [accounts, setAccounts] = useState<BankAccount[]>([]);
+  const [banks, setBanks] = useState<{[key: number]: string}>({});
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Fetch banks data to get bank names
+  const fetchBanks = async () => {
+    try {
+      const response = await api.get('/client/bank/data-all');
+      if (response.data.status) {
+        const bankData = response.data.data;
+        const bankMap: {[key: number]: string} = {};
+        bankData.forEach((bank: any) => {
+          bankMap[bank.id] = bank.name;
+        });
+        setBanks(bankMap);
+      }
+    } catch (error) {
+      console.log('Fetch banks error:', error);
+    }
+  };
+
+  // Fetch bank account data from API
+  const fetchBankAccounts = async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+
+      const response = await api.get('/client/bank/data');
+      console.log('Bank accounts response:', response.data);
+
+      if (response.data.status) {
+        const accountData: BankAccountData[] = response.data.data;
+        const formattedAccounts: BankAccount[] = accountData.map(account => ({
+          id: account.id,
+          bank: banks[account.id_bank] || `Bank ${account.id_bank}`, // Use actual bank name or fallback
+          bankId: account.id_bank,
+          accountNumber: account.bank_number,
+          accountName: account.name_ekyc,
+          isDefault: account.is_default === 1,
+          createdAt: account.created_at
+        }));
+        setAccounts(formattedAccounts);
+      } else {
+        Alert.alert('Error', 'Failed to load bank accounts');
+      }
+    } catch (error: any) {
+      console.log('Fetch bank accounts error:', error);
+      let errorMessage = 'Failed to load bank accounts. Please try again.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    const loadData = async () => {
+      await fetchBanks();
+      await fetchBankAccounts();
+    };
+    loadData();
+  }, []);
+
+  // Re-fetch accounts when banks data is loaded
+  useEffect(() => {
+    if (Object.keys(banks).length > 0) {
+      fetchBankAccounts();
+    }
+  }, [banks]);
+
+  // Refresh data when screen comes into focus (e.g., after adding new account)
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchBankAccounts();
+    }, [])
+  );
+
+  const onRefresh = () => {
+    fetchBankAccounts(true);
+  };
 
   const handleAddAccount = () => {
-    navigation.navigate('AddBankAccount');
+    navigation.navigate('AddBankAccount' as never);
   };
 
   const handleEditAccount = (account: BankAccount) => {
-    navigation.navigate('EditBankAccount', { account });
+    // Convert BankAccount to BankAccountData format for EditBankAccountScreen
+    const accountData: BankAccountData = {
+      id: account.id,
+      id_bank: account.bankId, // Use stored bankId
+      name_ekyc: account.accountName,
+      bank_number: account.accountNumber,
+      is_default: account.isDefault ? 1 : 0,
+      created_at: account.createdAt,
+      updated_at: account.createdAt // Use createdAt as fallback
+    };
+    
+    (navigation as any).navigate('EditBankAccount', { account: accountData });
   };
 
   const handleCopyAccount = (accountNumber: string) => {
     // Copy account number to clipboard
+    Alert.alert('Copied', 'Account number copied to clipboard');
   };
 
   return (
@@ -71,47 +172,79 @@ const BankAccountsScreen = () => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView 
+        style={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
         <Text style={styles.sectionTitle}>Account List</Text>
         
-        {BANK_ACCOUNTS.map((account) => (
-          <View key={account.id} style={styles.accountCard}>
-            <View style={styles.accountHeader}>
-              <Text style={styles.bankName}>{account.bank}</Text>
-              {account.isDefault && (
-                <View style={styles.defaultBadge}>
-                  <Text style={styles.defaultText}>Default</Text>
-                </View>
-              )}
-            </View>
-
-            <View style={styles.accountInfo}>
-              <View>
-                <Text style={styles.accountLabel}>Account Number</Text>
-                <Text style={styles.accountNumber}>{account.accountNumber}</Text>
-              </View>
-              <TouchableOpacity 
-                style={styles.copyButton}
-                onPress={() => handleCopyAccount(account.accountNumber)}
-              >
-                <Icon name="content-copy" size={20} color="#4A90E2" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.accountNameContainer}>
-              <Text style={styles.accountLabel}>Account Holder</Text>
-              <Text style={styles.accountName}>{account.accountName}</Text>
-            </View>
-
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#4A90E2" />
+            <Text style={styles.loadingText}>Loading bank accounts...</Text>
+          </View>
+        ) : accounts.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Icon name="bank-outline" size={64} color="#CCCCCC" />
+            <Text style={styles.emptyTitle}>No bank accounts</Text>
+            <Text style={styles.emptyDescription}>
+              Add your first bank account to start withdrawing funds
+            </Text>
             <TouchableOpacity 
-              style={styles.editButton}
-              onPress={() => handleEditAccount(account)}
+              style={styles.addFirstButton}
+              onPress={handleAddAccount}
             >
-              <Icon name="pencil" size={16} color="#666" />
-              <Text style={styles.editText}>Edit</Text>
+              <Icon name="plus" size={20} color="#FFFFFF" />
+              <Text style={styles.addFirstText}>Add Account</Text>
             </TouchableOpacity>
           </View>
-        ))}
+        ) : (
+          accounts.map((account) => (
+            <View key={account.id} style={styles.accountCard}>
+              <View style={styles.accountHeader}>
+                <Text style={styles.bankName}>{account.bank}</Text>
+                {account.isDefault && (
+                  <View style={styles.defaultBadge}>
+                    <Text style={styles.defaultText}>Default</Text>
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.accountInfo}>
+                <View>
+                  <Text style={styles.accountLabel}>Account Number</Text>
+                  <Text style={styles.accountNumber}>{account.accountNumber}</Text>
+                </View>
+                <TouchableOpacity 
+                  style={styles.copyButton}
+                  onPress={() => handleCopyAccount(account.accountNumber)}
+                >
+                  <Icon name="content-copy" size={20} color="#4A90E2" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.accountNameContainer}>
+                <Text style={styles.accountLabel}>Account Holder</Text>
+                <Text style={styles.accountName}>{account.accountName}</Text>
+              </View>
+
+              <View style={styles.accountFooter}>
+                <Text style={styles.createdDate}>
+                  Created: {new Date(account.createdAt).toLocaleDateString()}
+                </Text>
+                <TouchableOpacity 
+                  style={styles.editButton}
+                  onPress={() => handleEditAccount(account)}
+                >
+                  <Icon name="pencil" size={16} color="#666" />
+                  <Text style={styles.editText}>Edit</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -223,6 +356,60 @@ const styles = StyleSheet.create({
     fontSize: wp('3.5%'),
     color: '#666',
     marginLeft: 4,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: wp('4%'),
+    color: '#666',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyTitle: {
+    fontSize: wp('5%'),
+    fontWeight: '600',
+    color: '#000',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyDescription: {
+    fontSize: wp('4%'),
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
+    paddingHorizontal: 20,
+  },
+  addFirstButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#4A90E2',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  addFirstText: {
+    color: '#FFFFFF',
+    fontSize: wp('4%'),
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  accountFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  createdDate: {
+    fontSize: wp('3%'),
+    color: '#999',
   },
 });
 

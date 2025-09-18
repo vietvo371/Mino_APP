@@ -12,16 +12,15 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackScreen } from '../navigation/types';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
+import api from '../utils/Api';
 
 const { width } = Dimensions.get('window');
-
-import api from '../utils/Api';
 
 const MAX_VND_AMOUNT = 999999999999; // 1 tỷ VND
 const MAX_USDT_AMOUNT = 999999.99; // 1 triệu USDT
@@ -52,6 +51,19 @@ const formatNumber = (num: string | number) => {
   });
 };
 
+interface UserProfile {
+  full_name: string;
+  email: string;
+  number_phone: string;
+  address: string;
+  is_ekyc: number;
+  is_active: number;
+  is_open: number;
+  is_level: number;
+  is_active_mail: number;
+  is_active_phone: number;
+}
+
 const HomeScreen: StackScreen<'Home'> = () => {
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy');
@@ -60,6 +72,22 @@ const HomeScreen: StackScreen<'Home'> = () => {
   const [isSwapped, setIsSwapped] = useState(false); // true = nhập số muốn nhận, false = nhập số muốn đổi
   const [countdown, setCountdown] = useState(20); // Countdown 20 giây
   const [isLoadingRate, setIsLoadingRate] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+
+  // Function to fetch user profile
+  const fetchUserProfile = async () => {
+    try {
+      const response = await api.get('/client/profile');
+      if (response.data.status) {
+        setUserProfile(response.data.data);
+      }
+    } catch (error) {
+      console.log('Profile fetch error:', error);
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
 
   // Function to fetch rate from your backend API
   const fetchExchangeRate = async () => {
@@ -88,7 +116,7 @@ const HomeScreen: StackScreen<'Home'> = () => {
 
   // Effect để chạy countdown và fetch API
   useEffect(() => {
-    // Fetch ngay lập tức khi component mount
+    // Fetch rate ngay lập tức khi component mount
     fetchExchangeRate();
     
     // Countdown timer
@@ -106,6 +134,13 @@ const HomeScreen: StackScreen<'Home'> = () => {
     // Cleanup interval khi component unmount
     return () => clearInterval(countdownInterval);
   }, []);
+
+  // Refresh profile data when screen comes into focus (e.g., after verification)
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchUserProfile();
+    }, [])
+  );
 
   // Function to format amount with commas for display
   const formatAmountForDisplay = (amount: string) => {
@@ -249,9 +284,44 @@ const HomeScreen: StackScreen<'Home'> = () => {
     setAmount(''); // Clear amount when swapping
   };
 
+  // Check verification status
+  const checkVerificationStatus = () => {
+    if (!userProfile) return false;
+    
+    const isEkycVerified = userProfile.is_ekyc === 1;
+    const isEmailVerified = userProfile.is_active_mail === 1;
+    const isPhoneVerified = userProfile.is_active_phone === 1;
+    
+    return isEkycVerified && isEmailVerified && isPhoneVerified;
+  };
+
   const handleAction = () => {
     const cleanAmount = amount.replace(/,/g, '');
     if (!cleanAmount || parseFloat(cleanAmount) === 0) return;
+
+    // Check verification status before allowing transaction
+    if (!checkVerificationStatus()) {
+      const missingVerifications = [];
+      if (userProfile?.is_ekyc !== 1) missingVerifications.push('eKYC Identity Verification');
+      if (userProfile?.is_active_mail !== 1) missingVerifications.push('Email Verification');
+      if (userProfile?.is_active_phone !== 1) missingVerifications.push('Phone Verification');
+      
+      Alert.alert(
+        'Verification Required',
+        `To buy/sell USDT, you need to complete the following verifications:\n\n• ${missingVerifications.join('\n• ')}\n\nPlease complete all verifications in the Security section.`,
+        [
+          {
+            text: 'Go to Security',
+            onPress: () => navigation.navigate('Security' as never)
+          },
+          {
+            text: 'Cancel',
+            style: 'cancel'
+          }
+        ]
+      );
+      return;
+    }
 
     let finalAmount = cleanAmount;
     let finalType = activeTab;
@@ -411,17 +481,21 @@ const HomeScreen: StackScreen<'Home'> = () => {
           </View>
         </ScrollView>
 
+
         {/* Confirm Button - Outside ScrollView to stay fixed at bottom */}
         <TouchableOpacity 
           style={[
             styles.confirmButton,
-            (!amount || parseFloat(amount.replace(/,/g, '')) === 0) && styles.confirmButtonDisabled
+            (!amount || parseFloat(amount.replace(/,/g, '')) === 0 || !checkVerificationStatus()) && styles.confirmButtonDisabled
           ]}
           onPress={handleAction}
-          disabled={!amount || parseFloat(amount.replace(/,/g, '')) === 0}
+          disabled={!amount || parseFloat(amount.replace(/,/g, '')) === 0 || !checkVerificationStatus()}
         >
           <Text style={styles.confirmButtonText}>
-            {activeTab === 'buy' ? 'Buy USDT' : 'Sell USDT'}
+            {!checkVerificationStatus() 
+              ? 'Complete Verification Required' 
+              : (activeTab === 'buy' ? 'Buy USDT' : 'Sell USDT')
+            }
           </Text>
         </TouchableOpacity>
       </View>
@@ -598,6 +672,36 @@ const styles = StyleSheet.create({
     fontSize: wp("4%"),
     fontWeight: '600',
     textAlign: 'center',
+  },
+  verificationBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF3F3',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginHorizontal: 20,
+    marginBottom: 10,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF6B6B',
+  },
+  verificationText: {
+    flex: 1,
+    fontSize: wp("3.5%"),
+    color: '#FF6B6B',
+    marginLeft: 8,
+    fontWeight: '500',
+  },
+  verifyButton: {
+    backgroundColor: '#FF6B6B',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  verifyButtonText: {
+    color: '#FFFFFF',
+    fontSize: wp("3%"),
+    fontWeight: '600',
   },
 });
 

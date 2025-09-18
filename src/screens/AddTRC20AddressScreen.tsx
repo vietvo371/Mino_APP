@@ -9,6 +9,7 @@ import {
   TextInput,
   Switch,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
@@ -16,28 +17,103 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
+import api from '../utils/Api';
 
 const AddTRC20AddressScreen = () => {
   const navigation = useNavigation();
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [isDefault, setIsDefault] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<{[key: string]: string}>({});
 
-  const handleSave = () => {
-    // Validate
-    if (!name.trim() || !address.trim()) {
-      Alert.alert('Error', 'Please fill in all information');
+  const validateForm = () => {
+    const newErrors: {[key: string]: string} = {};
+    
+    if (!name.trim()) {
+      newErrors.name = 'Wallet name is required';
+    }
+    
+    if (!address.trim()) {
+      newErrors.address = 'TRC20 address is required';
+    } else if (!address.startsWith('T') || address.length !== 34) {
+      newErrors.address = 'Invalid TRC20 address format';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSave = async () => {
+    // Clear previous errors
+    setErrors({});
+    
+    // Validate form
+    if (!validateForm()) {
       return;
     }
 
-    // Validate TRC20 address format
-    if (!address.startsWith('T') || address.length !== 34) {
-      Alert.alert('Error', 'Invalid TRC20 address');
-      return;
-    }
+    setLoading(true);
+    
+    try {
+      const response = await api.post('/client/wallet/create', {
+        name: name.trim(),
+        address_wallet: address.trim(),
+        is_default: isDefault ? 1 : 0
+      });
 
-    // Save and navigate back
-    navigation.goBack();
+      console.log('Create wallet response:', response.data);
+      
+      if (response.data.status) {
+        Alert.alert(
+          'Success', 
+          response.data.message || 'Tạo ví thành công.',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.goBack()
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Error', response.data.message || 'Failed to create wallet');
+      }
+      
+    } catch (error: any) {
+      console.log('Create wallet error:', error);
+      
+      // Handle Laravel 422 validation errors
+      if (error.response?.status === 422) {
+        const validationErrors = error.response.data.errors || {};
+        const formattedErrors: {[key: string]: string} = {};
+        
+        // Format Laravel validation errors
+        Object.keys(validationErrors).forEach(key => {
+          if (Array.isArray(validationErrors[key])) {
+            formattedErrors[key] = validationErrors[key][0];
+          } else {
+            formattedErrors[key] = validationErrors[key];
+          }
+        });
+        
+        setErrors(formattedErrors);
+        
+        // Show first error in alert
+        const firstError = Object.values(formattedErrors)[0];
+        Alert.alert('Validation Error', firstError);
+      } else {
+        // Handle other errors
+        let errorMessage = 'Failed to create wallet. Please try again.';
+        if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        Alert.alert('Error', errorMessage);
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePaste = () => {
@@ -59,10 +135,15 @@ const AddTRC20AddressScreen = () => {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Add TRC20 Address</Text>
         <TouchableOpacity 
-          style={styles.saveButton}
+          style={[styles.saveButton, loading && styles.saveButtonDisabled]}
           onPress={handleSave}
+          disabled={loading}
         >
-          <Text style={styles.saveText}>Save</Text>
+          {loading ? (
+            <ActivityIndicator size="small" color="#4A90E2" />
+          ) : (
+            <Text style={styles.saveText}>Save</Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -70,20 +151,31 @@ const AddTRC20AddressScreen = () => {
         {/* Wallet Name */}
         <Text style={styles.label}>Wallet Name</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, errors.name && styles.inputError]}
           value={name}
-          onChangeText={setName}
+          onChangeText={(text) => {
+            setName(text);
+            if (errors.name) {
+              setErrors(prev => ({ ...prev, name: '' }));
+            }
+          }}
           placeholder="Enter wallet name (e.g. Main Wallet)"
           placeholderTextColor="#999"
         />
+        {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
 
         {/* TRC20 Address */}
         <Text style={styles.label}>TRC20 Address</Text>
-        <View style={styles.addressInputContainer}>
+        <View style={[styles.addressInputContainer, errors.address && styles.inputError]}>
           <TextInput
             style={styles.addressInput}
             value={address}
-            onChangeText={setAddress}
+            onChangeText={(text) => {
+              setAddress(text);
+              if (errors.address) {
+                setErrors(prev => ({ ...prev, address: '' }));
+              }
+            }}
             placeholder="Enter or paste TRC20 address"
             placeholderTextColor="#999"
             autoCapitalize="none"
@@ -103,6 +195,7 @@ const AddTRC20AddressScreen = () => {
             </TouchableOpacity>
           </View>
         </View>
+        {errors.address && <Text style={styles.errorText}>{errors.address}</Text>}
 
         {/* Default Address Toggle */}
         <View style={styles.defaultContainer}>
@@ -171,6 +264,9 @@ const styles = StyleSheet.create({
     fontSize: wp('4%'),
     color: '#4A90E2',
     fontWeight: '600',
+  },
+  saveButtonDisabled: {
+    opacity: 0.6,
   },
   content: {
     flex: 1,
@@ -264,6 +360,16 @@ const styles = StyleSheet.create({
     fontSize: wp('3.5%'),
     color: '#666',
     lineHeight: 24,
+  },
+  inputError: {
+    borderColor: '#FF6B6B',
+    borderWidth: 1,
+  },
+  errorText: {
+    fontSize: wp('3%'),
+    color: '#FF6B6B',
+    marginTop: 4,
+    marginLeft: 4,
   },
 });
 

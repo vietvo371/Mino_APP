@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   FlatList,
   SafeAreaView,
   ViewStyle,
+  TextInput,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../theme/colors';
@@ -26,6 +27,8 @@ interface SelectCustomProps {
   required?: boolean;
   placeholder?: string;
   containerStyle?: ViewStyle;
+  searchable?: boolean;
+  searchPlaceholder?: string;
 }
 
 const SelectCustom: React.FC<SelectCustomProps> = ({
@@ -37,14 +40,33 @@ const SelectCustom: React.FC<SelectCustomProps> = ({
   required = false,
   placeholder = 'Select an option',
   containerStyle,
+  searchable = false,
+  searchPlaceholder = 'Search...',
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const selectedOption = options.find(option => option.value === value);
+
+  // Filter options based on search query
+  const filteredOptions = useMemo(() => {
+    if (!searchable || !searchQuery.trim()) {
+      return options;
+    }
+    return options.filter(option =>
+      option.label.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [options, searchQuery, searchable]);
 
   const handleSelect = (option: SelectOption) => {
     onChange(option.value);
     setModalVisible(false);
+    setSearchQuery(''); // Clear search when selecting
+  };
+
+  const handleModalClose = () => {
+    setModalVisible(false);
+    setSearchQuery(''); // Clear search when closing modal
   };
 
   const renderOption = ({ item }: { item: SelectOption }) => (
@@ -93,22 +115,56 @@ const SelectCustom: React.FC<SelectCustomProps> = ({
         visible={modalVisible}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => setModalVisible(false)}>
+        onRequestClose={handleModalClose}>
         <View style={styles.modalContainer}>
           <SafeAreaView style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>{label || 'Select Option'}</Text>
               <TouchableOpacity
-                onPress={() => setModalVisible(false)}
+                onPress={handleModalClose}
                 style={styles.closeButton}>
                 <Icon name="close" size={24} color={theme.colors.text} />
               </TouchableOpacity>
             </View>
+            
+            {searchable && (
+              <View style={styles.searchContainer}>
+                <Icon name="magnify" size={20} color={theme.colors.textLight} style={styles.searchIcon} />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder={searchPlaceholder}
+                  placeholderTextColor={theme.colors.textLight}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  autoCorrect={false}
+                  autoCapitalize="none"
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() => setSearchQuery('')}
+                    style={styles.clearButton}>
+                    <Icon name="close-circle" size={20} color={theme.colors.textLight} />
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+            
             <FlatList
-              data={options}
+              data={filteredOptions}
               renderItem={renderOption}
               keyExtractor={item => item.value}
               ItemSeparatorComponent={() => <View style={styles.separator} />}
+              ListEmptyComponent={
+                searchQuery ? (
+                  <View style={styles.emptyContainer}>
+                    <Icon name="magnify" size={48} color={theme.colors.textLight} />
+                    <Text style={styles.emptyText}>No results found</Text>
+                    <Text style={styles.emptySubtext}>
+                      Try searching with different keywords
+                    </Text>
+                  </View>
+                ) : null
+              }
             />
           </SafeAreaView>
         </View>
@@ -122,8 +178,9 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.md,
   },
   label: {
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: theme.typography.fontFamily,
     fontSize: theme.typography.fontSize.sm,
+    fontWeight: '500',
     color: theme.colors.text,
     marginBottom: theme.spacing.xs,
   },
@@ -146,16 +203,18 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     flex: 1,
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: theme.typography.fontFamily,
     fontSize: theme.typography.fontSize.md,
+    fontWeight: '400',
     color: theme.colors.text,
   },
   placeholderText: {
     color: theme.colors.textLight,
   },
   errorText: {
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: theme.typography.fontFamily,
     fontSize: theme.typography.fontSize.sm,
+    fontWeight: '400',
     color: theme.colors.error,
     marginTop: theme.spacing.xs,
   },
@@ -179,8 +238,9 @@ const styles = StyleSheet.create({
     borderBottomColor: theme.colors.border,
   },
   modalTitle: {
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: theme.typography.fontFamily,
     fontSize: theme.typography.fontSize.lg,
+    fontWeight: '500',
     color: theme.colors.text,
   },
   closeButton: {
@@ -196,17 +256,65 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.secondary + '20',
   },
   optionText: {
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: theme.typography.fontFamily,
     fontSize: theme.typography.fontSize.md,
+    fontWeight: '400',
     color: theme.colors.text,
   },
   selectedOptionText: {
     color: theme.colors.primary,
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: theme.typography.fontFamily,
+    fontWeight: '500',
   },
   separator: {
     height: 1,
     backgroundColor: theme.colors.border,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.sm,
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  searchIcon: {
+    marginRight: theme.spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    height: 40,
+    fontFamily: theme.typography.fontFamily,
+    fontSize: theme.typography.fontSize.md,
+    fontWeight: '400',
+    color: theme.colors.text,
+  },
+  clearButton: {
+    padding: theme.spacing.xs,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: theme.spacing.xl,
+  },
+  emptyText: {
+    fontFamily: theme.typography.fontFamily,
+    fontSize: theme.typography.fontSize.lg,
+    fontWeight: '500',
+    color: theme.colors.text,
+    marginTop: theme.spacing.md,
+  },
+  emptySubtext: {
+    fontFamily: theme.typography.fontFamily,
+    fontSize: theme.typography.fontSize.sm,
+    fontWeight: '400',
+    color: theme.colors.textLight,
+    marginTop: theme.spacing.xs,
+    textAlign: 'center',
   },
 });
 

@@ -116,7 +116,7 @@ const PaymentScreen = () => {
         if (prev <= 1) {
           // time to refresh
           fetchExchangeRate();
-          return 20;
+          return 60;
         }
         return prev - 1;
       });

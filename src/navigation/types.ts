@@ -37,11 +37,13 @@ export type RootStackParamList = {
   AddTRC20Address: undefined; 
   EditBankAccount: {
     account: {
-      id: string;
-      bank: string;
-      accountNumber: string;
-      accountName: string;
-      isDefault?: boolean;
+      id: number;
+      id_bank: number;
+      name_ekyc: string;
+      bank_number: string;
+      is_default: number;
+      created_at: string;
+      updated_at: string;
     };
   };
   EditTRC20Address: {
