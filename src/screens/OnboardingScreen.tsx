@@ -202,10 +202,10 @@ const styles = StyleSheet.create({
   },
   paginationDotActive: {
     width: 24,
-    backgroundColor: theme.colors.primary,
+    backgroundColor: "#FFFF66",
   },
   button: {
-    backgroundColor: theme.colors.primary,
+    backgroundColor: "#FFFF66",
     paddingVertical: 16,
     paddingHorizontal: 40,
     borderRadius: theme.borderRadius.lg,

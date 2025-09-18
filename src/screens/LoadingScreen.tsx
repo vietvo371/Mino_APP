@@ -20,7 +20,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ navigation }) => {
     const checkFirstLaunch = async () => {
       try {
         // Đợi loading animation 1.5s
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        await new Promise((resolve: any) => setTimeout(resolve, 1500));
 
         const isFirstLaunch = await AsyncStorage.getItem('isFirstLaunch');
         if (isFirstLaunch === null) {
@@ -63,8 +63,8 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.white,
   },
   logo: {
-    width: 150,
-    height: 150,
+    width: 100,
+    height: 100,
     marginBottom: theme.spacing.xl,
   },
   spinner: {

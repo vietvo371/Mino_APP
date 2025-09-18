@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -18,10 +18,38 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
+import api from '../utils/Api';
+import LoadingOverlay from '../component/LoadingOverlay';
 
 const { width } = Dimensions.get('window');
 
-// Mock data for transaction history
+// Transaction interface based on API response
+interface Transaction {
+  id: number;
+  type: number;
+  address: string;
+  network: string;
+  detail_bank_id: string | null;
+  bank_account: string | null;
+  rate: number;
+  amount_usdt: number;
+  amount_vnd: number;
+  amount_vnd_real: number;
+  fee_percent: number;
+  fee_vnd: number;
+  transaction_hash: string | null;
+  note: string;
+  status: number;
+  bank_name: string | null;
+  bank_address: string | null;
+}
+
+interface TransactionHistoryResponse {
+  status: boolean;
+  data: Transaction[];
+}
+
+// Mock data for transaction history (fallback)
 const MOCK_TRANSACTIONS = {
   pending: [
     {
@@ -132,6 +160,52 @@ const HistoryScreen = () => {
   const [selectedEndDate, setSelectedEndDate] = useState('2025-09-13');
   const [selectedMonth, setSelectedMonth] = useState(9);
   const [selectedYear, setSelectedYear] = useState(2025);
+  
+  // API state management
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // API call to fetch transaction history
+  const fetchTransactionHistory = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      console.log('Fetching transaction history...');
+      
+      const response = await api.get<TransactionHistoryResponse>('/client/transactions/history');
+      
+      console.log('Transaction history response:', response.data);
+      
+      if (response.data.status === false) {
+        Alert.alert('Error', 'Failed to fetch transaction history');
+        return;
+      }
+      
+      setTransactions(response.data.data || []);
+      
+    } catch (error: any) {
+      console.log('Transaction history error:', error);
+      
+      let errorMessage = 'Failed to fetch transaction history. Please try again.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load transaction history on component mount
+  useEffect(() => {
+    fetchTransactionHistory();
+  }, []);
 
   const handleTimeFilterPress = (filterId: string) => {
     setSelectedTimeFilter(filterId);
@@ -140,32 +214,60 @@ const HistoryScreen = () => {
   const handleFilterConfirm = () => {
     // Handle data filtering here
     setShowFilterModal(false);
+    // Refresh data with new filters
+    fetchTransactionHistory();
   };
 
-  const renderTransaction = (transaction: any) => {
-    const isBuy = transaction.type === 'buy';
+  // Helper function to categorize transactions based on status
+  const categorizeTransactions = () => {
+    const pending = transactions.filter(t => t.status === 0); // pending
+    const success = transactions.filter(t => t.status === 1); // completed/success
+    const fail = transactions.filter(t => t.status === 2); // failed
+    
+    return { pending, success, fail };
+  };
+
+  const renderTransaction = (transaction: Transaction) => {
+    const isBuy = transaction.type === 1; // 1 = buy, 2 = sell (based on API response)
     const amount = isBuy 
-      ? `${transaction.usdt} USDT`
-      : `${parseInt(transaction.amount).toLocaleString('vi-VN')} VND`;
+      ? `${transaction.amount_usdt} USDT`
+      : `${transaction.amount_vnd.toLocaleString('vi-VN')} VND`;
     const exchangeAmount = isBuy
-      ? `${parseInt(transaction.amount).toLocaleString('vi-VN')} VND`
-      : `${transaction.usdt} USDT`;
+      ? `${transaction.amount_vnd.toLocaleString('vi-VN')} VND`
+      : `${transaction.amount_usdt} USDT`;
+    
+    // Format date from note or use current date
+    const formatDate = (note: string) => {
+      // Extract date from note if it follows pattern like "MIM0920315"
+      // For now, use current date
+      const now = new Date();
+      const date = now.getDate().toString().padStart(2, '0');
+      const month = (now.getMonth() + 1).toString().padStart(2, '0');
+      const year = now.getFullYear().toString().slice(-2);
+      const hours = now.getHours().toString().padStart(2, '0');
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      
+      return {
+        date: `${date}/${month}/${now.getFullYear()}`,
+        time: `${hours}:${minutes}`
+      };
+    };
+    
+    const { date, time } = formatDate(transaction.note);
 
     return (
       <TouchableOpacity
-        key={transaction.id}
+        key={transaction.note} // Use note as unique key since there's no id in API
         style={styles.transactionItem}
         onPress={() => {
-          // Chỉ cho phép pending transactions vào detail
-          if (transaction.status === 'pending') {
-            navigation.navigate('DetailHistory', { transaction });
-          } else {
-            Alert.alert(
-              'Transaction Detail',
-              'Only pending transactions can be viewed in detail.',
-              [{ text: 'OK' }]
-            );
-          }
+          // Determine transaction type for navigation
+          const transactionType = transaction.type === 1 ? 'buy' : 'sell';
+          
+          // Navigate to DetailHistory with idTransaction and type
+          (navigation as any).navigate('DetailHistory', { 
+            idTransaction: transaction.id, 
+            type: transactionType 
+          });
         }}
         activeOpacity={0.7}
       >
@@ -184,7 +286,7 @@ const HistoryScreen = () => {
                   {isBuy ? 'Buy USDT' : 'Sell USDT'}
                 </Text>
                 <Text style={styles.transactionDate}>
-                  {transaction.date} • {transaction.time}
+                  {date} • {time}
                 </Text>
               </View>
             </View>
@@ -192,19 +294,19 @@ const HistoryScreen = () => {
               <View style={[
                 styles.statusDot,
                 { 
-                  backgroundColor: transaction.status === 'completed' ? '#34C759' : 
-                                  transaction.status === 'failed' ? '#FF3B30' : '#FF9500' 
+                  backgroundColor: transaction.status === 1 ? '#34C759' : 
+                                  transaction.status === 2 ? '#FF3B30' : '#FF9500' 
                 }
               ]} />
               <Text style={[
                 styles.transactionStatus,
                 { 
-                  color: transaction.status === 'completed' ? '#34C759' : 
-                        transaction.status === 'failed' ? '#FF3B30' : '#FF9500' 
+                  color: transaction.status === 1 ? '#34C759' : 
+                        transaction.status === 2 ? '#FF3B30' : '#FF9500' 
                 }
               ]}>
-                {transaction.status === 'completed' ? 'Success' : 
-                 transaction.status === 'failed' ? 'Failed' : 'Pending'}
+                {transaction.status === 1 ? 'Success' : 
+                 transaction.status === 2 ? 'Failed' : 'Pending'}
               </Text>
             </View>
           </View>
@@ -223,7 +325,13 @@ const HistoryScreen = () => {
             <View style={styles.amountRow}>
               <Text style={styles.amountLabel}>Rate:</Text>
               <Text style={styles.exchangeRateValue}>
-                {transaction.exchangeRate} VND/USDT
+                {transaction.rate.toLocaleString('vi-VN')} VND/USDT
+              </Text>
+            </View>
+            <View style={styles.amountRow}>
+              <Text style={styles.amountLabel}>Fee:</Text>
+              <Text style={styles.exchangeRateValue}>
+                {transaction.fee_vnd.toLocaleString('vi-VN')} VND ({(transaction.fee_percent * 100).toFixed(2)}%)
               </Text>
             </View>
           </View>
@@ -233,19 +341,29 @@ const HistoryScreen = () => {
   };
 
   const getCurrentTransactions = () => {
-    return MOCK_TRANSACTIONS[activeTab];
+    const categorized = categorizeTransactions();
+    return categorized[activeTab] || [];
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Transaction History</Text>
-        <TouchableOpacity 
-          style={styles.filterButton}
-          onPress={() => setShowFilterModal(true)}
-        >
-          <Icon name="filter-variant" size={24} color="#000" />
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity 
+            style={styles.refreshButton}
+            onPress={fetchTransactionHistory}
+            disabled={loading}
+          >
+            <Icon name="refresh" size={24} color="#000" />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.filterButton}
+            onPress={() => setShowFilterModal(true)}
+          >
+            <Icon name="filter-variant" size={24} color="#000" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Tab Navigation */}
@@ -271,7 +389,7 @@ const HistoryScreen = () => {
               styles.tabBadgeText, 
               activeTab === 'pending' && [styles.tabBadgeTextActive, styles.tabBadgeTextPending]
             ]}>
-              {MOCK_TRANSACTIONS.pending.length}
+              {categorizeTransactions().pending.length}
             </Text>
           </View>
         </TouchableOpacity>
@@ -297,7 +415,7 @@ const HistoryScreen = () => {
               styles.tabBadgeText, 
               activeTab === 'success' && [styles.tabBadgeTextActive, styles.tabBadgeTextSuccess]
             ]}>
-              {MOCK_TRANSACTIONS.success.length}
+              {categorizeTransactions().success.length}
             </Text>
           </View>
         </TouchableOpacity>
@@ -323,7 +441,7 @@ const HistoryScreen = () => {
               styles.tabBadgeText, 
               activeTab === 'fail' && [styles.tabBadgeTextActive, styles.tabBadgeTextFail]
             ]}>
-              {MOCK_TRANSACTIONS.fail.length}
+              {categorizeTransactions().fail.length}
             </Text>
           </View>
         </TouchableOpacity>
@@ -462,6 +580,8 @@ const HistoryScreen = () => {
           </View>
         </View>
       </Modal>
+
+      <LoadingOverlay visible={loading} message="Loading transaction history..." />
     </SafeAreaView>
   );
 };
@@ -482,6 +602,13 @@ const styles = StyleSheet.create({
     fontSize: wp('6%'),
     fontWeight: '700',
     color: '#000',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  refreshButton: {
+    padding: 8,
   },
   filterButton: {
     padding: 8,
