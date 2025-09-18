@@ -21,14 +21,13 @@ import {
 
 const { width } = Dimensions.get('window');
 
-// API endpoint từ backend của bạn
-const RATE_API_URL = 'https://your-backend-api.com/api/exchange-rate';
+import api from '../utils/Api';
 
 const MAX_VND_AMOUNT = 999999999999; // 1 tỷ VND
 const MAX_USDT_AMOUNT = 999999.99; // 1 triệu USDT
 
 // Fallback rate nếu API fail
-const FALLBACK_RATE = 24500;
+const FALLBACK_RATE = 26450;
 
 const formatMoney = (amount: string | number) => {
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -57,7 +56,7 @@ const HomeScreen: StackScreen<'Home'> = () => {
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy');
   const [amount, setAmount] = useState('');
-  const [binanceRate, setBinanceRate] = useState(26389);
+  const [binanceRate, setBinanceRate] = useState(0);
   const [isSwapped, setIsSwapped] = useState(false); // true = nhập số muốn nhận, false = nhập số muốn đổi
   const [countdown, setCountdown] = useState(20); // Countdown 20 giây
   const [isLoadingRate, setIsLoadingRate] = useState(false);
@@ -67,15 +66,15 @@ const HomeScreen: StackScreen<'Home'> = () => {
     setIsLoadingRate(true);
     
     try {
-      const response = await fetch(RATE_API_URL);
-      const data = await response.json();
+      const response = await api.get('/client/exchange/rate');
+      const data = response.data;
       
-      // Giả sử API trả về format: { rate: 24500 } hoặc { usdt_vnd_rate: 24500 }
-      const rate = data.rate || data.usdt_vnd_rate || data.exchange_rate;
+      console.log('Exchange rate response:', data);
       
-      if (rate && !isNaN(parseFloat(rate))) {
-        setBinanceRate(parseFloat(rate));
-        console.log('Rate updated from API:', rate);
+      // API trả về format: { "rate": 26450 }
+      if (data.rate && !isNaN(parseFloat(data.rate))) {
+        setBinanceRate(parseFloat(data.rate));
+        console.log('Rate updated from API:', data.rate);
       } else {
         throw new Error('Invalid rate format');
       }

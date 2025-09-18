@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   Alert,
   Dimensions,
+  Vibration,
 } from 'react-native';
 import Animated, { FadeInDown, FadeInUp, SlideInDown } from 'react-native-reanimated';
 import { theme } from '../theme/colors';
@@ -43,13 +44,18 @@ const OTP_LENGTH = 6;
 
 const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, route }) => {
   const { signIn } = useAuth();
-  const { identifier, type, flow = 'login', registrationData } = route.params;
+  const { identifier, type, flow = 'login' } = route.params;
 
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [timer, setTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
   const [currentInputIndex, setCurrentInputIndex] = useState(0);
+  const [otpString, setOtpString] = useState('');
+  const [hasVerified, setHasVerified] = useState(false);
+  
+  // Refs for hidden TextInput
+  const hiddenTextInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     let interval: number;
@@ -67,8 +73,30 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
     };
   }, [timer, canResend]);
 
+  // Auto verify when OTP is complete
+  useEffect(() => {
+    const otpString = otp.join('');
+    if (otpString.length === OTP_LENGTH && !loading && !hasVerified) {
+      // Add small delay for better UX
+      const timer = setTimeout(() => {
+        handleVerifyOTP();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [otp, loading, hasVerified]);
+
   const handleNumberPress = (num: string) => {
     if (currentInputIndex >= OTP_LENGTH) return;
+
+    // Haptic feedback
+    if (Platform.OS === 'ios') {
+      Vibration.vibrate(10);
+    }
+
+    // Reset verification state when user starts typing
+    if (hasVerified) {
+      setHasVerified(false);
+    }
 
     const newOtp = [...otp];
     newOtp[currentInputIndex] = num;
@@ -77,13 +105,20 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
     // Move to next input
     if (currentInputIndex < OTP_LENGTH - 1) {
       setCurrentInputIndex(currentInputIndex + 1);
-    } else {
-      // If all digits entered, verify
-      setTimeout(() => handleVerifyOTP(), 300);
     }
   };
 
   const handleDelete = () => {
+    // Haptic feedback
+    if (Platform.OS === 'ios') {
+      Vibration.vibrate(10);
+    }
+
+    // Reset verification state when user deletes
+    if (hasVerified) {
+      setHasVerified(false);
+    }
+
     if (currentInputIndex > 0) {
       const newOtp = [...otp];
       newOtp[currentInputIndex - 1] = '';
@@ -97,6 +132,48 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
     }
   };
 
+  // Handle paste from clipboard
+  const handlePaste = (text: string) => {
+    // Remove non-numeric characters
+    const numericText = text.replace(/[^0-9]/g, '');
+    
+    if (numericText.length > 0) {
+      // Haptic feedback for paste
+      if (Platform.OS === 'ios') {
+        Vibration.vibrate(20);
+      }
+
+      // Reset verification state when user pastes
+      if (hasVerified) {
+        setHasVerified(false);
+      }
+
+      const newOtp = [...otp];
+      const startIndex = currentInputIndex;
+      
+      // Fill OTP with pasted digits
+      for (let i = 0; i < Math.min(numericText.length, OTP_LENGTH - startIndex); i++) {
+        newOtp[startIndex + i] = numericText[i];
+      }
+      
+      setOtp(newOtp);
+      
+      // Move cursor to the end or next empty position
+      const nextIndex = Math.min(startIndex + numericText.length, OTP_LENGTH - 1);
+      setCurrentInputIndex(nextIndex);
+    }
+  };
+
+  // Handle text input change (for copy-paste)
+  const handleTextChange = (text: string) => {
+    setOtpString(text);
+    
+    // If text is longer than current OTP, it might be a paste
+    if (text.length > otp.filter(d => d).length) {
+      handlePaste(text);
+    }
+  };
+
   const handleVerifyOTP = async () => {
     const otpString = otp.join('');
     if (otpString.length !== OTP_LENGTH) {
@@ -104,16 +181,43 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
       return;
     }
 
+    // Prevent multiple calls
+    if (hasVerified || loading) {
+      return;
+    }
+
+    setHasVerified(true);
     setLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Call the API directly like in RegisterScreen
+      console.log('OTP verification:', otpString);
+      console.log('OTP verification:', identifier);
+      const response = await api.post('/auth/verify-email', {
+        email: identifier,
+        otp: otpString,
+      });
       
-      if (flow === 'register') {
-        // Flow đăng ký: Xác thực OTP thành công → Chuyển về Login
+      console.log('OTP verification response:', response.data);
+      
+      if (response.data.status === false) {
         Alert.alert(
-          'Registration Successful!', 
-          'Your account has been created successfully. Please sign in with your credentials.',
+          'Verification Failed!', 
+          response.data.message,
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Reset verification state to allow retry
+                setHasVerified(false);
+                setOtp(['', '', '', '', '', '']);
+                setCurrentInputIndex(0);
+                setOtpString('');
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Verification Successful!', response.data.message,
           [
             {
               text: 'OK',
@@ -121,43 +225,78 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
             }
           ]
         );
-      } else {
-        // Flow đăng nhập: Xác thực OTP thành công → Chuyển về MainTabs
-        const mockUser = {
-          id: '1',
-          email: identifier,
-          name: 'User Name',
-          phone: type === 'phone' ? identifier : '',
-          isVerified: true,
-        };
-        
-        await signIn({
-          identifier: identifier,
-          type: type
-        });
-        navigation.replace('MainTabs');
       }
-    } catch (error) {
-      console.error('OTP verification error:', error);
-      Alert.alert('Verification Failed', 'Invalid OTP code. Please try again.');
+    } catch (error: any) {
+      console.log('OTP verification error:', error);
+      
+      // Handle different error types
+      let errorMessage = 'Invalid OTP code. Please try again.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.status === false) {
+        errorMessage = error.response.data.message || 'Xác thực email thất bại, vui lòng thử lại!';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert('Verification Failed', errorMessage, [
+        {
+          text: 'OK',
+          onPress: () => {
+            // Reset verification state to allow retry
+            setHasVerified(false);
+            setOtp(['', '', '', '', '', '']);
+            setCurrentInputIndex(0);
+            setOtpString('');
+          }
+        }
+      ]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleResendOTP = () => {
+  const handleResendOTP = async () => {
     if (!canResend) return;
 
-    // Simulate loading 1 second
+    // Haptic feedback
+    if (Platform.OS === 'ios') {
+      Vibration.vibrate(20);
+    }
+
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      // Call resend OTP API directly
+      console.log('Resend OTP:', identifier);
+      const response = await api.post('/auth/resend-otp', {
+        email: identifier,
+      });
+      
+      console.log('Resend OTP response:', response.data);
+      
       setTimer(60);
       setCanResend(false);
       setOtp(['', '', '', '', '', '']);
       setCurrentInputIndex(0);
+      setOtpString('');
+      setHasVerified(false);
       Alert.alert('Success', 'OTP code has been resent');
-    }, 1000);
+    } catch (error: any) {
+      console.log('Resend OTP error:', error);
+      
+      let errorMessage = 'Failed to resend OTP. Please try again.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.status === false) {
+        errorMessage = error.response.data.message || 'Failed to resend OTP. Please try again.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formatIdentifier = (id: string) => {
@@ -211,7 +350,25 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
             style={styles.otpDisplaySection}
             entering={FadeInDown.duration(800).delay(200).springify()}
           >
-            <View style={styles.otpContainer}>
+            {/* Hidden TextInput for copy-paste support */}
+            <TextInput
+              ref={hiddenTextInputRef}
+              style={styles.hiddenTextInput}
+              value={otpString}
+              onChangeText={handleTextChange}
+              keyboardType="number-pad"
+              maxLength={OTP_LENGTH}
+              autoFocus={false}
+              caretHidden={true}
+              contextMenuHidden={false}
+              selectTextOnFocus={true}
+            />
+            
+            <TouchableOpacity
+              style={styles.otpContainer}
+              onPress={() => hiddenTextInputRef.current?.focus()}
+              activeOpacity={1}
+            >
               {otp.map((digit, index) => {
                 const isActive = index === currentInputIndex;
                 const isFilled = Boolean(digit);
@@ -243,7 +400,7 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
                   </Animated.View>
                 );
               })}
-            </View>
+            </TouchableOpacity>
 
             {/* Progress Bar */}
             <View style={styles.progressContainer}>
@@ -261,16 +418,20 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
             {/* Resend Section */}
             <View style={styles.resendContainer}>
               {!canResend ? (
-                <Text style={styles.timerText}>
-                  Resend code after <Text style={styles.timer}>{timer}s</Text>
-                </Text>
+                <Animated.View entering={FadeInDown.duration(400).delay(600)}>
+                  <Text style={styles.timerText}>
+                    Resend code after <Text style={styles.timer}>{timer}s</Text>
+                  </Text>
+                </Animated.View>
               ) : (
-                <TouchableOpacity 
-                  onPress={handleResendOTP}
-                  style={styles.resendButton}
-                  activeOpacity={0.7}>
-                  <Text style={styles.resendButtonText}>Resend Code</Text>
-                </TouchableOpacity>
+                <Animated.View entering={FadeInDown.duration(400).delay(600)}>
+                  <TouchableOpacity 
+                    onPress={handleResendOTP}
+                    style={styles.resendButton}
+                    activeOpacity={0.7}>
+                    <Text style={styles.resendButtonText}>Resend Code</Text>
+                  </TouchableOpacity>
+                </Animated.View>
               )}
             </View>
           </Animated.View>
@@ -423,6 +584,15 @@ const styles = StyleSheet.create({
     }),
   },
 
+  // Hidden TextInput for copy-paste
+  hiddenTextInput: {
+    position: 'absolute',
+    left: -9999,
+    opacity: 0,
+    width: 1,
+    height: 1,
+  },
+
   // OTP Input Styles
   otpContainer: {
     flexDirection: 'row',
@@ -449,17 +619,29 @@ const styles = StyleSheet.create({
       ios: {
         shadowColor: theme.colors.primary,
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
       },
       android: {
-        elevation: 2,
+        elevation: 4,
       },
     }),
   },
   otpInputWrapperFilled: {
     borderColor: theme.colors.primary,
-    backgroundColor: theme.colors.primary + '10',
+    backgroundColor: theme.colors.primary + '15',
+    transform: [{ scale: 1.02 }],
+    ...Platform.select({
+      ios: {
+        shadowColor: theme.colors.primary,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
   otpInputText: {
     fontSize: wp('6%'),

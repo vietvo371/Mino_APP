@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Image,
   Platform,
   Alert,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -15,6 +16,8 @@ import { useNavigation } from '@react-navigation/native';
 import { theme } from '../theme/colors';
 import { StackScreen } from '../navigation/types';
 import { useAuth } from '../contexts/AuthContext';
+import { getUser, removeUser, removeToken } from '../utils/TokenManager';
+import api from '../utils/Api';
 
 type BankAccount = {
   bank: string;
@@ -74,14 +77,83 @@ const MENU_ITEMS = [
   },
 ];
 
+interface UserProfile {
+  full_name: string;
+  email: string;
+  number_phone: string;
+  address: string;
+  is_ekyc: number;
+  is_active_mail: number;
+  is_active_phone: number;
+  is_open: number;
+  is_level: number;
+}
+
 const ProfileScreen: StackScreen<'Profile'> = () => {
   const navigation = useNavigation();
-  const { signOut } = useAuth();
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Mock verification statuses (replace with real user data later)
-  const isEkycVerified = false;
-  const isEmailVerified = false;
-  const isPhoneVerified = false;
+  const fetchUserProfile = async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      console.log('Fetching user profile...');
+      
+      const response = await api.get('/client/profile');
+      console.log('Profile response:', response.data);
+      
+      if (response.data.status) {
+        setUser(response.data.data);
+      } else {
+        Alert.alert('Error', 'Failed to load profile data');
+      }
+    } catch (error: any) {
+      console.log('Profile fetch error:', error);
+      
+      let errorMessage = 'Failed to load profile. Please try again.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = () => {
+    fetchUserProfile(true);
+  };
+
+  const signOut = async () => {
+    try {
+      await api.post('/client/logout');
+      await removeUser();
+      await removeToken();
+      (navigation as any).replace('Login');
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
+
+  console.log('user', user);
+  
+  // Get verification statuses from API data
+  const isEkycVerified = user?.is_ekyc === 1;
+  const isEmailVerified = user?.is_active_mail === 1;
+  const isPhoneVerified = user?.is_active_phone === 1;
 
   const handleSignOut = () => {
     Alert.alert(
@@ -93,7 +165,6 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
           text: 'Sign Out',
           style: 'destructive',
           onPress: () => {
-            navigation.navigate('Login');
             signOut();
           },
         },
@@ -171,6 +242,17 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
     );
   };
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <Icon name="loading" size={40} color={theme.colors.primary} />
+          <Text style={styles.loadingText}>Loading profile...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.backgroundContainer}>
@@ -180,6 +262,14 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
         style={styles.content}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[theme.colors.primary]}
+            tintColor={theme.colors.primary}
+          />
+        }
       >
         {/* Profile Header */}
         <View style={styles.header}>
@@ -197,8 +287,9 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
           </View>
 
           <View style={styles.userInfo}>
-            <Text style={styles.name}>John Doe</Text>
-            <Text style={styles.email}>john.doe@example.com</Text>
+            <Text style={styles.name}>{user?.full_name || 'Loading...'}</Text>
+            <Text style={styles.email}>{user?.email || 'Loading...'}</Text>
+            <Text style={styles.phone}>{user?.number_phone || 'Loading...'}</Text>
             <View style={styles.badgesContainer}>
               <View style={[styles.badge, { backgroundColor: isEkycVerified ? '#34C75915' : '#E5E5EA' }]}>
                 <Icon name="shield-check" size={14} color={isEkycVerified ? '#34C759' : '#8E8E93'} />
@@ -351,6 +442,11 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   email: {
+    fontSize: 14,
+    color: '#8E8E93',
+    marginBottom: 4,
+  },
+  phone: {
     fontSize: 14,
     color: '#8E8E93',
     marginBottom: 8,
@@ -525,6 +621,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FF3B30',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#8E8E93',
+    marginTop: 16,
+    fontFamily: theme.typography.fontFamily,
   },
 });
 

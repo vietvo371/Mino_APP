@@ -9,17 +9,18 @@ import {
   SafeAreaView,
   Dimensions,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Animated, { FadeInDown, FadeInUp, SlideInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { theme } from '../theme/colors';
-import { useAuth } from '../contexts/AuthContext';
 import Header from '../component/Header';
 import InputCustom from '../component/InputCustom';
 import ButtonCustom from '../component/ButtonCustom';
 import LoadingOverlay from '../component/LoadingOverlay';
+import api from '../utils/Api';
 
 interface RegisterScreenProps {
   navigation: any;
@@ -29,16 +30,15 @@ const { width, height } = Dimensions.get('window');
 
 
 const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
-  const { signUp } = useAuth();
 
 
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
-    password: '',
-    password_confirmation: '',
+    name: 'Vo Viet',
+    email: 'vietvo371@gmail.com',
+    phone: '0708585120',
+    address: '123456@',
+    password: '123456',
+    re_password: '123456',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -51,11 +51,10 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
 
-    // Name validation
     if (!formData.name) {
-      newErrors.name = 'Name is required';
+      newErrors.full_name = 'Name is required';
     } else if (formData.name.length < 2) {
-      newErrors.name = 'Name must be at least 2 characters';
+      newErrors.full_name = 'Name must be at least 2 characters';
     }
 
     // Email validation
@@ -67,9 +66,9 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
 
     // Phone validation
     if (!formData.phone) {
-      newErrors.phone = 'Phone number is required';
+      newErrors.number_phone = 'Phone number is required';
     } else if (!/^[0-9+().\-\s]{7,15}$/.test(formData.phone)) {
-      newErrors.phone = 'Please enter a valid phone number';
+      newErrors.number_phone = 'Please enter a valid phone number';
     }
 
     // Password validation
@@ -80,57 +79,70 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
     }
 
     // Password confirmation
-    if (!formData.password_confirmation) {
-      newErrors.password_confirmation = 'Please confirm your password';
-    } else if (formData.password !== formData.password_confirmation) {
-      newErrors.password_confirmation = 'Passwords do not match';
+    if (!formData.re_password) {
+      newErrors.re_password = 'Please confirm your password';
+    } else if (formData.password !== formData.re_password) {
+      newErrors.re_password = 'Passwords do not match';
     }
-
+    // Password confirmation
+    if (!formData.address) {
+      newErrors.address = 'Please confirm your address';
+    } else if (formData.address !== formData.address) {
+      newErrors.address = 'Address do not match';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-
   const handleRegister = async () => {
     const isValid = validateForm();
     if (!isValid) {
       return;
     }
-
     setLoading(true);
     try {
-      const registrationData = {
+      const response = await api.post('/auth/register', {
         email: formData.email,
-        phone: formData.phone,
+        number_phone: formData.phone,
         full_name: formData.name,
-        date_of_birth: new Date().toISOString().split('T')[0], // Default to today
-        user_type: 'individual' as const,
-        address: formData.address || undefined,
+        address: formData.address || '',
         password: formData.password,
-        password_confirmation: formData.password_confirmation,
-      };
-      
-      // Giả lập đăng ký thành công và gửi OTP
-      await new Promise<void>(resolve => setTimeout(resolve, 1500)); // Simulate API call
-      
-      // Chuyển đến màn hình OTP verification với thông tin đăng ký
-      navigation.navigate('OTPVerification', {
-        identifier: formData.email,
-        type: 'email',
-        flow: 'register', // Đánh dấu đây là flow đăng ký
-        registrationData: registrationData
+        re_password: formData.re_password,
       });
+      if (response.data.status === false) {
+        Alert.alert('Registration Failed', response.data.message);
+        return;
+      }
+      Alert.alert('Registration Successful', response.data.message,
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.navigate('OTPVerification', {
+              identifier: formData.email,
+              type: 'email',
+              flow: 'register',
+            })
+          }
+        ]
+      );
     } catch (error: any) {
-      console.error('Registration error:', error);
-
-      if (error.errors) {
+      console.log('Registration error:', error);
+      if (error.response?.data?.errors) {
         const newErrors: Record<string, string> = {};
-        Object.keys(error.errors).forEach(field => {
-          newErrors[field] = error.errors[field][0];
+        Object.keys(error.response.data.errors).forEach(field => {
+          newErrors[field] = error.response.data.errors[field][0];
         });
         setErrors(newErrors);
-      } else {
+      } else if (error.response?.data?.message) {
+        setErrors({
+          email: error.response.data.message
+        });
+      } else if (error.message) {
         setErrors({
           email: error.message
+        });
+      } else {
+        setErrors({
+          email: 'Registration failed. Please try again.'
         });
       }
     } finally {
@@ -181,7 +193,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
           placeholder="Enter your full name"
           value={formData.name}
           onChangeText={value => updateFormData('name', value)}
-          error={errors.name}
+          error={errors.full_name}
           required
           leftIcon="account-outline"
           containerStyle={styles.input}
@@ -193,7 +205,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
           value={formData.phone}
           onChangeText={value => updateFormData('phone', value)}
           keyboardType="phone-pad"
-          error={errors.phone}
+          error={errors.number_phone}
           required
           leftIcon="phone-outline"
           containerStyle={styles.input}
@@ -233,14 +245,14 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
         {formData.password.length > 0 && (
           <View style={styles.passwordStrengthContainer}>
             <View style={styles.passwordStrengthBar}>
-              <View 
+              <View
                 style={[
                   styles.passwordStrengthFill,
-                  { 
+                  {
                     width: `${(passwordStrength / 6) * 100}%`,
                     backgroundColor: getPasswordStrengthText(passwordStrength).color
                   }
-                ]} 
+                ]}
               />
             </View>
             <Text style={[
@@ -255,10 +267,10 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
         <InputCustom
           label="Confirm Password"
           placeholder="Confirm your password"
-          value={formData.password_confirmation}
-          onChangeText={value => updateFormData('password_confirmation', value)}
+          value={formData.re_password}
+          onChangeText={value => updateFormData('re_password', value)}
           secureTextEntry={!showConfirmPassword}
-          error={errors.password_confirmation}
+          error={errors.re_password}
           required
           leftIcon="lock-check-outline"
           rightIcon={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
@@ -272,6 +284,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
           value={formData.address}
           onChangeText={value => updateFormData('address', value)}
           error={errors.address}
+          required
           leftIcon="map-marker-outline"
           containerStyle={styles.input}
         />
@@ -304,7 +317,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
           >
             <Icon name="arrow-left" size={24} color={theme.colors.text} />
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={styles.headerIconButton}
             onPress={() => navigation.navigate('Help')}
@@ -372,7 +385,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <LoadingOverlay visible={loading} message="Creating your account and sending verification code..." />
+      <LoadingOverlay visible={loading} message="Sending code OTP..." />
     </SafeAreaView>
   );
 };
@@ -548,7 +561,7 @@ const styles = StyleSheet.create({
   },
   loginLinkText: {
     color: theme.colors.primary,
-    fontFamily: theme.typography.fontFamily, 
+    fontFamily: theme.typography.fontFamily,
   },
   securityBadge: {
     flexDirection: 'row',

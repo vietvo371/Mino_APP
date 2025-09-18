@@ -4,15 +4,32 @@ import api from "./Api";
 import Toast from "react-native-toast-message";
 
 export const saveToken = async (token: string) => {
-    await AsyncStorage.setItem('token', token);
+    try {
+        await AsyncStorage.setItem('token', token);
+        console.log('Token saved successfully');
+    } catch (error) {
+        console.error('Error saving token:', error);
+        throw error;
+    }
 }
 
 export const getToken = async () => {
-    return await AsyncStorage.getItem('token');
+    try {
+        return await AsyncStorage.getItem('token');
+    } catch (error) {
+        console.error('Error getting token:', error);
+        return null;
+    }
 }
 
 export const removeToken = async () => {
-    await AsyncStorage.removeItem('token');
+    try {
+        await AsyncStorage.removeItem('token');
+        console.log('Token removed successfully');
+    } catch (error) {
+        console.error('Error removing token:', error);
+        throw error;
+    }
 }
 
 export const checkToken = async (navigation: NavigationProp<any>) => {
@@ -21,12 +38,15 @@ export const checkToken = async (navigation: NavigationProp<any>) => {
         if (token) {
             const res = await api.get('/check-login');
             if (res.data?.status) {
+                // Update token if a new one is provided
                 const newToken = res.data?.token ?? res.data?.data?.token;
-                if (newToken && newToken !== null) {
+                if (newToken && newToken !== token) {
                     await saveToken(newToken);
                 }
                 return true;
             } else {
+                // Token is invalid, clear it and redirect to login
+                await removeToken();
                 navigation.dispatch(
                     CommonActions.reset({
                         index: 0,
@@ -42,6 +62,9 @@ export const checkToken = async (navigation: NavigationProp<any>) => {
         }
         return false;
     } catch (error) {
+        console.error('Token check error:', error);
+        // Clear token on error and redirect to login
+        await removeToken();
         navigation.dispatch(
             CommonActions.reset({
                 index: 0,
@@ -53,5 +76,32 @@ export const checkToken = async (navigation: NavigationProp<any>) => {
             type: 'error',
         });
         return false;
+    }
+}
+export const saveUser = async (user: any) => {
+    try {
+        await AsyncStorage.setItem('user', JSON.stringify(user));
+        console.log('User saved successfully');
+    } catch (error) {
+        console.error('Error saving user:', error);
+        throw error;
+    }
+}
+export const getUser = async () => {
+    try {
+        const user = await AsyncStorage.getItem('user');
+        return JSON.parse(user || '{}');
+    } catch (error) {
+        console.error('Error getting user:', error);
+        return null;
+    }
+}
+export const removeUser = async () => {
+    try {
+        await AsyncStorage.removeItem('user');
+        console.log('User removed successfully');
+    } catch (error) {
+        console.error('Error removing user:', error);
+        throw error;
     }
 }

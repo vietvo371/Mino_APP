@@ -110,7 +110,7 @@ const PaymentScreen = () => {
 
   // 20s countdown and auto-refresh
   useEffect(() => {
-    setSecondsLeft(20);
+    setSecondsLeft(60);
     const timer = setInterval(() => {
       setSecondsLeft((prev) => {
         if (prev <= 1) {

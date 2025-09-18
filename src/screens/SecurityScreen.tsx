@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,44 +7,113 @@ import {
   TouchableOpacity,
   Switch,
   Platform,
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { theme } from '../theme/colors';
+import api from '../utils/Api';
+
+interface UserProfile {
+  full_name: string;
+  email: string;
+  number_phone: string;
+  address: string;
+  is_ekyc: number;
+  is_active: number;
+  is_open: number;
+  is_level: number;
+  is_active_mail: number;
+  is_active_phone: number;
+}
 
 const SecurityScreen = () => {
   const navigation = useNavigation();
-  const [biometricEnabled, setBiometricEnabled] = React.useState(true);
-  const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
+  const [biometricEnabled, setBiometricEnabled] = useState(true);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  // Verification items (hub)
+  // Fetch user profile
+  const fetchUserProfile = async (isRefresh = false) => {
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      
+      const response = await api.get('/client/profile');
+      if (response.data.status) {
+        setUser(response.data.data);
+      }
+    } catch (error: any) {
+      console.log('Profile fetch error:', error);
+      Alert.alert('Error', 'Failed to load profile data');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
+
+  // Refresh data when screen comes into focus (e.g., after phone verification)
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchUserProfile();
+    }, [])
+  );
+
+  const onRefresh = () => {
+    fetchUserProfile(true);
+  };
+
+  // Get verification statuses
+  const isEkycVerified = user?.is_ekyc === 1;
+  const isEmailVerified = user?.is_active_mail === 1;
+  const isPhoneVerified = user?.is_active_phone === 1;
+  
+  // Calculate verification progress
+  const verificationCount = [isEkycVerified, isEmailVerified, isPhoneVerified].filter(Boolean).length;
+  const verificationProgress = (verificationCount / 3) * 100;
+
+  // Verification items (hub) with dynamic status
   const VERIFICATION_ITEMS = [
     {
       id: 'ekyc',
       title: 'Identity Verification (eKYC)',
-      description: 'Verify your identity to unlock all features',
+      description: isEkycVerified ? 'Identity verified successfully' : 'Verify your identity to unlock all features',
       icon: 'shield-check',
-      iconColor: '#7B68EE',
-      iconBg: '#7B68EE15',
+      iconColor: isEkycVerified ? '#34C759' : '#7B68EE',
+      iconBg: isEkycVerified ? '#34C75915' : '#7B68EE15',
+      status: isEkycVerified ? 'verified' : 'pending',
       onPress: () => navigation.navigate('EkycIntro' as never),
     },
     {
       id: 'email',
       title: 'Email Verification',
-      description: 'Confirm your email address',
+      description: isEmailVerified ? 'Email verified successfully' : 'Confirm your email address',
       icon: 'email',
-      iconColor: '#4A90E2',
-      iconBg: '#4A90E215',
+      iconColor: isEmailVerified ? '#34C759' : '#4A90E2',
+      iconBg: isEmailVerified ? '#34C75915' : '#4A90E215',
+      status: isEmailVerified ? 'verified' : 'pending',
       onPress: () => navigation.navigate('EmailVerification' as never),
     },
     {
       id: 'phone',
       title: 'Phone Verification',
-      description: 'Secure your account with phone verification',
+      description: isPhoneVerified ? 'Phone verified successfully' : 'Secure your account with phone verification',
       icon: 'phone',
-      iconColor: '#34C759',
-      iconBg: '#34C75915',
+      iconColor: isPhoneVerified ? '#34C759' : '#34C759',
+      iconBg: isPhoneVerified ? '#34C75915' : '#34C75915',
+      status: isPhoneVerified ? 'verified' : 'pending',
       onPress: () => navigation.navigate('PhoneVerification' as never),
     },
   ];
@@ -70,6 +139,27 @@ const SecurityScreen = () => {
     // },
   ];
 
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+          >
+            <Icon name="arrow-left" size={24} color="#1C1C1E" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Security</Text>
+          <View style={styles.headerRight} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#4A90E2" />
+          <Text style={styles.loadingText}>Loading security settings...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -83,7 +173,34 @@ const SecurityScreen = () => {
         <View style={styles.headerRight} />
       </View>
 
-      <ScrollView style={styles.content}>
+      <ScrollView 
+        style={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {/* Verification Status Card */}
+        <View style={styles.statusCard}>
+          <View style={styles.statusHeader}>
+            <Icon name="shield-check" size={20} color="#34C759" />
+            <Text style={styles.statusTitle}>Security Status</Text>
+          </View>
+          <Text style={styles.statusText}>
+            {verificationCount} of 3 verifications completed
+          </Text>
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <View 
+                style={[
+                  styles.progressFill, 
+                  { width: `${verificationProgress}%` }
+                ]} 
+              />
+            </View>
+            <Text style={styles.progressText}>{Math.round(verificationProgress)}%</Text>
+          </View>
+        </View>
+
         {/* Verification Hub */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Verifications</Text>
@@ -102,7 +219,15 @@ const SecurityScreen = () => {
                   <Text style={styles.optionTitle}>{item.title}</Text>
                   <Text style={styles.optionDescription}>{item.description}</Text>
                 </View>
-                <Icon name="chevron-right" size={24} color="#8E8E93" />
+                <View style={styles.optionRight}>
+                  {item.status === 'verified' && (
+                    <View style={styles.verifiedTag}>
+                      <Icon name="check" size={16} color="#34C759" />
+                      <Text style={styles.verifiedText}>Verified</Text>
+                    </View>
+                  )}
+                  <Icon name="chevron-right" size={24} color="#8E8E93" />
+                </View>
               </TouchableOpacity>
             ))}
           </View>
@@ -178,7 +303,9 @@ const SecurityScreen = () => {
               </View>
               <View style={styles.optionInfo}>
                 <Text style={styles.optionTitle}>Current Device</Text>
-                <Text style={styles.optionDescription}>iPhone 12 Pro • iOS 15.5</Text>
+                <Text style={styles.optionDescription}>
+                  {Platform.OS === 'ios' ? 'iPhone' : 'Android'} • {Platform.OS === 'ios' ? 'iOS' : 'Android'} {Platform.Version}
+                </Text>
               </View>
               <View style={styles.activeTag}>
                 <Text style={styles.activeText}>Active</Text>
@@ -222,6 +349,17 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#8E8E93',
+  },
   statusCard: {
     backgroundColor: '#34C75910',
     borderRadius: 12,
@@ -242,6 +380,30 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 14,
     color: '#8E8E93',
+    marginBottom: 12,
+  },
+  progressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  progressBar: {
+    flex: 1,
+    height: 6,
+    backgroundColor: '#E5E5EA',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#34C759',
+    borderRadius: 3,
+  },
+  progressText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#34C759',
+    minWidth: 30,
   },
   section: {
     marginBottom: 24,
@@ -295,6 +457,25 @@ const styles = StyleSheet.create({
   optionDescription: {
     fontSize: 14,
     color: '#8E8E93',
+  },
+  optionRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  verifiedTag: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#34C75915',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
+  },
+  verifiedText: {
+    fontSize: 12,
+    color: '#34C759',
+    fontWeight: '500',
   },
   activeTag: {
     backgroundColor: '#34C75915',

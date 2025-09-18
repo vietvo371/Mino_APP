@@ -22,6 +22,7 @@ import InputCustom from '../component/InputCustom';
 import ButtonCustom from '../component/ButtonCustom';
 import LoadingOverlay from '../component/LoadingOverlay';
 import api from '../utils/Api';
+import { saveToken, saveUser } from '../utils/TokenManager';
 import LanguageSelector from '../components/LanguageSelector';
 import CountryCodePicker from '../components/CountryCodePicker';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
@@ -86,29 +87,45 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
 
     setLoading(true);
     try {
-      // Giả lập API call đăng nhập
-      await new Promise<void>(resolve => setTimeout(resolve, 1500));
+      console.log('Login attempt:', identifier);
+      console.log('Login type:', isPhoneNumber ? 'phone' : 'email');
       
-      // Giả lập đăng nhập thành công
-      const mockUser = {
-        id: '1',
-        email: identifier,
-        name: 'User Name',
-        phone: isPhoneNumber ? identifier : '',
-        isVerified: true,
-      };
+      // Call the API directly like in RegisterScreen
+      const response = await api.post('/auth/login', {
+        username: identifier,
+        password: password,
+        type: isPhoneNumber ? 'phone' : 'email'
+      });
+      console.log('Login response:', response.data);
+      if (response.data.status === false) {
+        Alert.alert('Login Failed', response.data.message);
+        return;
+      }
+      // Login successful - navigate to MainTabs
+      await saveUser(response.data.data);
+      await saveToken(response.data.token);
+
+
+
+      navigation.navigate('MainTabs');
       
-      // // Lưu thông tin user vào context
-      // await signIn({
-      //   identifier: identifier,
-      //   type: isPhoneNumber ? 'phone' : 'email'
-      // });
+    } catch (error: any) {
+      console.log('Login error:', error);
       
-      // Chuyển trực tiếp đến MainTabs (Home)
-      navigation.replace('MainTabs');
-    } catch (error) {
-      console.error('Login error:', error);
-      Alert.alert('Login Failed', 'Invalid credentials. Please try again.');
+      // Handle different types of errors
+      let errorMessage = 'Login failed. Please try again.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.errors) {
+        // Handle validation errors from API
+        const errors = error.response.data.errors;
+        const firstError = Object.values(errors)[0];
+        errorMessage = Array.isArray(firstError) ? firstError[0] : firstError;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert('Login Failed', errorMessage);
     } finally {
       setLoading(false);
     }

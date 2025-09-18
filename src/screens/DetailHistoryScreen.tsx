@@ -46,6 +46,23 @@ const DetailHistoryScreen = () => {
   const route = useRoute();
   const transaction = (route.params as any)?.transaction as TransactionDetail;
 
+  // 5-minute validity timer
+  const [secondsLeft, setSecondsLeft] = React.useState(300);
+  const isExpired = secondsLeft <= 0;
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setSecondsLeft(prev => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatTime = (s: number) => {
+    const m = Math.floor(s / 60).toString().padStart(2, '0');
+    const ss = Math.floor(s % 60).toString().padStart(2, '0');
+    return `${m}:${ss}`;
+  };
+
   if (!transaction) {
     return (
       <SafeAreaView style={styles.container}>
@@ -113,6 +130,13 @@ const DetailHistoryScreen = () => {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Validity Banner (5 minutes) */}
+        <View style={[styles.validityBar, { backgroundColor: isExpired ? '#FFEBEE' : '#FFF4E6', borderColor: isExpired ? '#FF3B30' : '#FF9500' }]}>
+          <Icon name={isExpired ? 'timer-off' : 'timer'} size={18} color={isExpired ? '#FF3B30' : '#FF9500'} />
+          <Text style={[styles.validityText, { color: isExpired ? '#FF3B30' : '#FF9500' }]}>
+            {isExpired ? 'This transaction has expired.' : `This transaction is valid for 5 minutes. Time left: ${formatTime(secondsLeft)}`}
+          </Text>
+        </View>
         {/* Transaction Status Card */}
         <View style={styles.statusCard}>
           <View style={styles.statusHeader}>
@@ -196,7 +220,7 @@ const DetailHistoryScreen = () => {
         </View>
 
         {/* QR Code Section - For All Transactions */}
-        <View style={styles.qrCard}>
+        <View style={[styles.qrCard, isExpired && { opacity: 0.5 }]}>
           <Text style={styles.qrCardTitle}>
             {isBuy ? 'Payment QR Code' : 'TRC20 Wallet QR Code'}
           </Text>
@@ -215,17 +239,16 @@ const DetailHistoryScreen = () => {
                 : transaction.receiveAddress || 'TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE'
               }
               size={wp('70%')}
-              showShare={true}
-              showDownload={true}
+              showShare={!isExpired}
+              showDownload={!isExpired}
             />
           </View>
           <View style={styles.qrInfo}>
-            <Icon name="qrcode-scan" size={18} color="#666" />
+            <Icon name={isExpired ? 'alert' : 'qrcode-scan'} size={18} color={isExpired ? '#FF3B30' : '#666'} />
             <Text style={styles.qrInfoText}>
-              {isBuy 
-                ? 'Scan QR code with banking app to make payment' 
-                : 'Scan QR code to send USDT from your wallet'
-              }
+              {isExpired 
+                ? 'This QR code is no longer valid. Please create a new transaction.'
+                : (isBuy ? 'Scan QR code with banking app to make payment' : 'Scan QR code to send USDT from your wallet')}
             </Text>
           </View>
         </View>
@@ -366,7 +389,7 @@ const DetailHistoryScreen = () => {
                     </View>
                   </View>
 
-                  <Text style={styles.walletNote}>
+                <Text style={styles.walletNote}>
                     Send {transaction.usdt} USDT to this address to complete the transaction
                   </Text>
                 </View>
@@ -623,6 +646,20 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginBottom: 20,
+  },
+  validityBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 12,
+  },
+  validityText: {
+    flex: 1,
+    fontSize: wp('3.5%'),
+    fontWeight: '600',
   },
   noteText: {
     flex: 1,

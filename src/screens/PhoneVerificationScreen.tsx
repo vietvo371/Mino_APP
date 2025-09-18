@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,32 +8,116 @@ import {
   SafeAreaView,
   Alert,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
+import api from '../utils/Api';
 
 const PhoneVerificationScreen = () => {
   const navigation = useNavigation();
-  const [phone, setPhone] = React.useState('');
-  const [code, setCode] = React.useState('');
-  const [isCodeSent, setIsCodeSent] = React.useState(false);
+  const [phone, setPhone] = useState('');
+  const [code, setCode] = useState('');
+  const [isCodeSent, setIsCodeSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [countdown, setCountdown] = useState(0);
 
-  const handleSendCode = () => {
+  const handleSendCode = async () => {
     if (!phone || phone.length < 8) {
-      Alert.alert('Phone', 'Please enter a valid phone number');
+      Alert.alert('Lỗi', 'Vui lòng nhập số điện thoại hợp lệ');
       return;
     }
-    setIsCodeSent(true);
-    Alert.alert('Phone', 'An OTP has been sent to your phone');
+
+    setLoading(true);
+    try {
+      const response = await api.post('/client/send-otp-phone', {
+        email: phone, // API expects phone number in 'email' field
+        type: 'phone'
+      });
+
+      console.log('Send OTP response:', response.data);
+      
+      if (response.data.status) {
+        setIsCodeSent(true);
+        setCountdown(60); // 60 seconds countdown
+        startCountdown();
+        Alert.alert('Thành công', response.data.message || 'Gửi mã OTP về số điện thoại thành công!');
+      } else {
+        Alert.alert('Lỗi', response.data.message || 'Không thể gửi OTP');
+      }
+    } catch (error: any) {
+      console.log('Send OTP error:', error);
+      let errorMessage = 'Không thể gửi OTP. Vui lòng thử lại.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      Alert.alert('Lỗi', errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleVerify = () => {
+  const startCountdown = () => {
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const handleVerify = async () => {
     if (!code || code.length < 4) {
-      Alert.alert('Verification', 'Please enter the OTP code');
+      Alert.alert('Lỗi', 'Vui lòng nhập mã OTP');
       return;
     }
-    Alert.alert('Success', 'Your phone number has been verified');
-    navigation.goBack();
+
+    setVerifying(true);
+    try {
+      const response = await api.post('/client/verify-phone', {
+        number_phone: phone,
+        otp: code
+      });
+
+      console.log('Verify OTP response:', response.data);
+      
+      if (response.data.status) {
+        Alert.alert('Thành công', 'Số điện thoại đã được xác thực thành công!', [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Replace to SecurityScreen to refresh verification status
+              (navigation as any).replace('Security');
+            }
+          }
+        ]);
+      } else {
+        Alert.alert('Lỗi', response.data.message || 'Mã OTP không đúng. Vui lòng thử lại.');
+      }
+      
+    } catch (error: any) {
+      console.log('Verify OTP error:', error);
+      let errorMessage = 'Mã OTP không đúng. Vui lòng thử lại.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      Alert.alert('Lỗi', errorMessage);
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleResendCode = () => {
+    if (countdown > 0) return;
+    handleSendCode();
   };
 
   return (
@@ -64,27 +148,59 @@ const PhoneVerificationScreen = () => {
                 placeholderTextColor="#8E8E93"
               />
             </View>
-            <TouchableOpacity style={styles.primaryButton} onPress={handleSendCode}>
-              <Text style={styles.primaryButtonText}>Send OTP</Text>
+            <TouchableOpacity 
+              style={[styles.primaryButton, loading && styles.disabledButton]} 
+              onPress={handleSendCode}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.primaryButtonText}>Gửi OTP</Text>
+              )}
             </TouchableOpacity>
           </View>
 
           {isCodeSent && (
             <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>OTP Code</Text>
+              <View style={styles.otpHeader}>
+                <Text style={styles.inputLabel}>Mã OTP</Text>
+                <Text style={styles.otpInfo}>
+                  Đã gửi mã OTP đến {phone}
+                </Text>
+              </View>
               <View style={styles.inputWrapper}>
                 <Icon name="shield-key" size={20} color="#7B68EE" />
                 <TextInput
                   value={code}
                   onChangeText={setCode}
-                  placeholder="Enter the OTP"
+                  placeholder="Nhập mã OTP"
                   keyboardType="number-pad"
                   style={styles.textInput}
                   placeholderTextColor="#8E8E93"
+                  maxLength={6}
                 />
               </View>
-              <TouchableOpacity style={[styles.primaryButton, styles.verifyButton]} onPress={handleVerify}>
-                <Text style={styles.primaryButtonText}>Verify Phone</Text>
+              <TouchableOpacity 
+                style={[styles.primaryButton, styles.verifyButton, verifying && styles.disabledButton]} 
+                onPress={handleVerify}
+                disabled={verifying}
+              >
+                {verifying ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.primaryButtonText}>Xác thực</Text>
+                )}
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.resendButton} 
+                onPress={handleResendCode}
+                disabled={countdown > 0}
+              >
+                <Text style={[styles.resendText, countdown > 0 && styles.disabledText]}>
+                  {countdown > 0 ? `Gửi lại sau ${countdown}s` : 'Gửi lại mã OTP'}
+                </Text>
               </TouchableOpacity>
             </View>
           )}
@@ -122,7 +238,13 @@ const styles = StyleSheet.create({
   textInput: { flex: 1, color: '#000', fontSize: 16 },
   primaryButton: { marginTop: 12, backgroundColor: '#4A90E2', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
   verifyButton: { backgroundColor: '#7B68EE' },
+  disabledButton: { backgroundColor: '#8E8E93', opacity: 0.6 },
   primaryButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
+  otpHeader: { marginBottom: 8 },
+  otpInfo: { fontSize: 12, color: '#8E8E93', marginTop: 2 },
+  resendButton: { marginTop: 12, alignItems: 'center' },
+  resendText: { fontSize: 14, color: '#4A90E2', fontWeight: '500' },
+  disabledText: { color: '#8E8E93' },
 });
 
 export default PhoneVerificationScreen;
