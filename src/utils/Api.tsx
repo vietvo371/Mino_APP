@@ -39,8 +39,8 @@ export interface UserProfile {
 
 
 const baseUrl = Platform.select({
-  ios: 'https://mimobb.dzfullstackmid.io.vn/api',
-  android: 'https://mimobb.dzfullstackmid.io.vn/api',
+  ios: 'https://mimo.dragonlab.vn/api',
+  android: 'https://mimo.dragonlab.vn/api',
 });
 
 const api = axios.create({

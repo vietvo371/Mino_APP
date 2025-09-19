@@ -47,6 +47,8 @@
 	<string>App needs camera access for scanning QR codes and taking photos</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>App needs location access to get your current position</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>App uses your location for features that work in the background and when the app is open.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>App needs photo library access to save images</string>
 	<key>NSPhotoLibraryUsageDescription</key>
@@ -92,5 +94,7 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
 </dict>
 </plist>
