@@ -148,6 +148,14 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
     fetchUserProfile();
   }, []);
 
+  // Reload profile whenever this screen gains focus
+  useEffect(() => {
+    const unsubscribe = (navigation as any).addListener('focus', () => {
+      fetchUserProfile();
+    });
+    return unsubscribe;
+  }, [navigation]);
+
   console.log('user', user);
   
   // Get verification statuses from API data
@@ -289,7 +297,7 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
           <View style={styles.userInfo}>
             <Text style={styles.name}>{user?.full_name || 'Loading...'}</Text>
             <Text style={styles.email}>{user?.email || 'Loading...'}</Text>
-            <View style={styles.badgesContainer}>
+            <TouchableOpacity style={styles.badgesContainer} activeOpacity={0.7} onPress={() => (navigation as any).navigate('Security')}>
               <View style={[styles.badge, { backgroundColor: isEkycVerified ? '#34C75915' : '#E5E5EA' }]}>
                 <Icon name="shield-check" size={14} color={isEkycVerified ? '#34C759' : '#8E8E93'} />
                 <Text style={[styles.badgeText, { color: isEkycVerified ? '#34C759' : '#8E8E93' }]}>eKYC</Text>
@@ -302,7 +310,7 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
                 <Icon name="phone-check" size={14} color={isPhoneVerified ? '#34C759' : '#8E8E93'} />
                 <Text style={[styles.badgeText, { color: isPhoneVerified ? '#34C759' : '#8E8E93' }]}>Phone</Text>
               </View>
-            </View>
+            </TouchableOpacity>
           </View>
         </View>
 

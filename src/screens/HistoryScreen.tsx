@@ -73,11 +73,13 @@ const HistoryScreen = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [needsVerification, setNeedsVerification] = useState(false);
 
   // API call to fetch transaction history
   const fetchTransactionHistory = async () => {
     setLoading(true);
     setError(null);
+    setNeedsVerification(false);
     
     try {
       console.log('Fetching transaction history...');
@@ -87,7 +89,7 @@ const HistoryScreen = () => {
       console.log('Transaction history response:', response.data);
       
       if (response.data.status === false) {
-        Alert.alert('Error', 'Failed to fetch transaction history');
+        setNeedsVerification(true);
         return;
       }
       
@@ -114,6 +116,14 @@ const HistoryScreen = () => {
   useEffect(() => {
     fetchTransactionHistory();
   }, []);
+
+  // Reload history whenever this screen gains focus
+  useEffect(() => {
+    const unsubscribe = (navigation as any).addListener('focus', () => {
+      fetchTransactionHistory();
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   // Format createdAt timestamp to Vietnamese format
   const formatCreatedAt = (createdAt: string) => {
@@ -270,6 +280,88 @@ const HistoryScreen = () => {
     return categorized[activeTab] || [];
   };
 
+  const renderEmptyState = () => {
+    const counts = categorizeTransactions();
+    const isPending = activeTab === 'pending';
+    const isSuccess = activeTab === 'success';
+    const isFail = activeTab === 'fail';
+
+    let title = 'No transactions';
+    let description = 'There are no transactions to display.';
+    let iconName = 'information-outline';
+    let iconColor = '#999999';
+    let bgColor = '#F2F2F7';
+
+    if (isPending) {
+      title = 'No pending transactions';
+      description = 'Pending transactions will appear here.';
+      iconName = 'clock-outline';
+      iconColor = '#FF9500';
+      bgColor = '#FFF4E6';
+    } else if (isSuccess) {
+      title = 'No successful transactions';
+      description = 'Successful transactions will appear here.';
+      iconName = 'check-circle-outline';
+      iconColor = '#34C759';
+      bgColor = '#E8F5E8';
+    } else if (isFail) {
+      title = 'No failed transactions';
+      description = 'Failed transactions will appear here.';
+      iconName = 'close-circle-outline';
+      iconColor = '#FF3B30';
+      bgColor = '#FFEBEE';
+    }
+
+    // Only show when the active tab has zero items
+    if (getCurrentTransactions().length > 0) return null;
+
+    return (
+      <View style={styles.emptyContainer}>
+        <View style={[styles.emptyIconContainer, { backgroundColor: bgColor }]}>
+          <Icon name={iconName} size={48} color={iconColor} />
+        </View>
+        <Text style={styles.emptyTitle}>{title}</Text>
+        <Text style={styles.emptyDescription}>{description}</Text>
+      </View>
+    );
+  };
+
+  // Render verification required view
+  const renderVerificationRequired = () => (
+    <View style={styles.verificationContainer}>
+      <View style={styles.verificationIconContainer}>
+        <Icon name="shield-check" size={64} color="#FF9500" />
+      </View>
+      <Text style={styles.verificationTitle}>Xác thực cần thiết</Text>
+      <Text style={styles.verificationDescription}>
+        Để xem lịch sử giao dịch, bạn cần hoàn thành xác thực:
+      </Text>
+      <View style={styles.verificationList}>
+        <View style={styles.verificationItem}>
+          <Icon name="check-circle" size={20} color="#34C759" />
+          <Text style={styles.verificationItemText}>Xác thực eKYC</Text>
+        </View>
+        <View style={styles.verificationItem}>
+          <Icon name="check-circle" size={20} color="#34C759" />
+          <Text style={styles.verificationItemText}>Xác thực email</Text>
+        </View>
+        <View style={styles.verificationItem}>
+          <Icon name="check-circle" size={20} color="#34C759" />
+          <Text style={styles.verificationItemText}>Xác thực số điện thoại</Text>
+        </View>
+      </View>
+      <TouchableOpacity 
+        style={styles.verificationButton}
+        onPress={() => {
+          // Navigate to verification screen or profile
+          (navigation as any).navigate('Profile');
+        }}
+      >
+        <Text style={styles.verificationButtonText}>Đi đến xác thực</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -291,96 +383,107 @@ const HistoryScreen = () => {
         </View>
       </View>
 
-      {/* Tab Navigation */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[
-            styles.tabButton, 
-            activeTab === 'pending' && [styles.tabButtonActive, styles.tabButtonPending]
-          ]}
-          onPress={() => setActiveTab('pending')}
-        >
-          <Text style={[
-            styles.tabText, 
-            activeTab === 'pending' && [styles.tabTextActive, styles.tabTextPending]
-          ]}>
-            Pending
-          </Text>
-          <View style={[
-            styles.tabBadge, 
-            activeTab === 'pending' && [styles.tabBadgeActive, styles.tabBadgePending]
-          ]}>
-            <Text style={[
-              styles.tabBadgeText, 
-              activeTab === 'pending' && [styles.tabBadgeTextActive, styles.tabBadgeTextPending]
-            ]}>
-              {categorizeTransactions().pending.length}
-            </Text>
-          </View>
-        </TouchableOpacity>
+      {/* Show verification required view if needed */}
+      {needsVerification ? (
+        renderVerificationRequired()
+      ) : (
+        <>
+          {/* Tab Navigation */}
+          <View style={styles.tabContainer}>
+            <TouchableOpacity
+              style={[
+                styles.tabButton, 
+                activeTab === 'pending' && [styles.tabButtonActive, styles.tabButtonPending]
+              ]}
+              onPress={() => setActiveTab('pending')}
+            >
+              <Text style={[
+                styles.tabText, 
+                activeTab === 'pending' && [styles.tabTextActive, styles.tabTextPending]
+              ]}>
+                Pending
+              </Text>
+              <View style={[
+                styles.tabBadge, 
+                activeTab === 'pending' && [styles.tabBadgeActive, styles.tabBadgePending]
+              ]}>
+                <Text style={[
+                  styles.tabBadgeText, 
+                  activeTab === 'pending' && [styles.tabBadgeTextActive, styles.tabBadgeTextPending]
+                ]}>
+                  {categorizeTransactions().pending.length}
+                </Text>
+              </View>
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[
-            styles.tabButton, 
-            activeTab === 'success' && [styles.tabButtonActive, styles.tabButtonSuccess]
-          ]}
-          onPress={() => setActiveTab('success')}
-        >
-          <Text style={[
-            styles.tabText, 
-            activeTab === 'success' && [styles.tabTextActive, styles.tabTextSuccess]
-          ]}>
-            Success
-          </Text>
-          <View style={[
-            styles.tabBadge, 
-            activeTab === 'success' && [styles.tabBadgeActive, styles.tabBadgeSuccess]
-          ]}>
-            <Text style={[
-              styles.tabBadgeText, 
-              activeTab === 'success' && [styles.tabBadgeTextActive, styles.tabBadgeTextSuccess]
-            ]}>
-              {categorizeTransactions().success.length}
-            </Text>
-          </View>
-        </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.tabButton, 
+                activeTab === 'success' && [styles.tabButtonActive, styles.tabButtonSuccess]
+              ]}
+              onPress={() => setActiveTab('success')}
+            >
+              <Text style={[
+                styles.tabText, 
+                activeTab === 'success' && [styles.tabTextActive, styles.tabTextSuccess]
+              ]}>
+                Success
+              </Text>
+              <View style={[
+                styles.tabBadge, 
+                activeTab === 'success' && [styles.tabBadgeActive, styles.tabBadgeSuccess]
+              ]}>
+                <Text style={[
+                  styles.tabBadgeText, 
+                  activeTab === 'success' && [styles.tabBadgeTextActive, styles.tabBadgeTextSuccess]
+                ]}>
+                  {categorizeTransactions().success.length}
+                </Text>
+              </View>
+            </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[
-            styles.tabButton, 
-            activeTab === 'fail' && [styles.tabButtonActive, styles.tabButtonFail]
-          ]}
-          onPress={() => setActiveTab('fail')}
-        >
-          <Text style={[
-            styles.tabText, 
-            activeTab === 'fail' && [styles.tabTextActive, styles.tabTextFail]
-          ]}>
-            Failed
-          </Text>
-          <View style={[
-            styles.tabBadge, 
-            activeTab === 'fail' && [styles.tabBadgeActive, styles.tabBadgeFail]
-          ]}>
-            <Text style={[
-              styles.tabBadgeText, 
-              activeTab === 'fail' && [styles.tabBadgeTextActive, styles.tabBadgeTextFail]
-            ]}>
-              {categorizeTransactions().fail.length}
-            </Text>
+            <TouchableOpacity
+              style={[
+                styles.tabButton, 
+                activeTab === 'fail' && [styles.tabButtonActive, styles.tabButtonFail]
+              ]}
+              onPress={() => setActiveTab('fail')}
+            >
+              <Text style={[
+                styles.tabText, 
+                activeTab === 'fail' && [styles.tabTextActive, styles.tabTextFail]
+              ]}>
+                Failed
+              </Text>
+              <View style={[
+                styles.tabBadge, 
+                activeTab === 'fail' && [styles.tabBadgeActive, styles.tabBadgeFail]
+              ]}>
+                <Text style={[
+                  styles.tabBadgeText, 
+                  activeTab === 'fail' && [styles.tabBadgeTextActive, styles.tabBadgeTextFail]
+                ]}>
+                  {categorizeTransactions().fail.length}
+                </Text>
+              </View>
+            </TouchableOpacity>
           </View>
-        </TouchableOpacity>
-      </View>
 
-      <ScrollView
-        style={styles.content}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        <View style={styles.transactionList}>
-          {getCurrentTransactions().map((transaction, index) => renderTransaction(transaction, index))}
-        </View>
-      </ScrollView>
+          <ScrollView
+            style={styles.content}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+          >
+            {getCurrentTransactions().length === 0 ? (
+              renderEmptyState()
+            ) : (
+              <View style={styles.transactionList}>
+                {getCurrentTransactions().map((transaction, index) => renderTransaction(transaction, index))}
+              </View>
+            )}
+          </ScrollView>
+        </>
+      )}
 
       {/* Filter Modal */}
       <Modal
@@ -884,6 +987,95 @@ const styles = StyleSheet.create({
     fontSize: wp('4%'),
     color: '#FFFFFF',
     fontWeight: '500',
+  },
+  // Verification Error View Styles
+  verificationContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+    paddingVertical: 60,
+  },
+  verificationIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#FFF4E6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  verificationTitle: {
+    fontSize: wp('6%'),
+    fontWeight: '700',
+    color: '#000',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  verificationDescription: {
+    fontSize: wp('4%'),
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 32,
+  },
+  verificationList: {
+    width: '100%',
+    marginBottom: 40,
+  },
+  verificationItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#F8F8F8',
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  verificationItemText: {
+    fontSize: wp('4%'),
+    color: '#000',
+    marginLeft: 12,
+    fontWeight: '500',
+  },
+  verificationButton: {
+    backgroundColor: '#FF9500',
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    minWidth: 200,
+    alignItems: 'center',
+  },
+  verificationButtonText: {
+    fontSize: wp('4.5%'),
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  // Empty states
+  emptyContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  emptyIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  emptyTitle: {
+    fontSize: wp('5%'),
+    fontWeight: '700',
+    color: '#000',
+    marginBottom: 6,
+  },
+  emptyDescription: {
+    fontSize: wp('3.8%'),
+    color: '#666',
+    textAlign: 'center',
+    paddingHorizontal: 24,
   },
 });
 

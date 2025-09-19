@@ -77,7 +77,7 @@ const PaymentScreen = () => {
   const [isLoadingRate, setIsLoadingRate] = useState(false);
   const [feePercent, setFeePercent] = useState<number>(TRANSACTION_FEE_PERCENTAGE);
   const isFetchingRef = useRef<boolean>(false);
-  const transactionIdRef = useRef<string>(`MINO${Date.now().toString().slice(-6)}`);
+  const transactionIdRef = useRef<string>(`MIMO${Date.now().toString().slice(-6)}`);
   const [wallets, setWallets] = useState<Wallet[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [banks, setBanks] = useState<{ [key: number]: { name: string; code: string; logo: string; } }>({});
@@ -119,6 +119,19 @@ const PaymentScreen = () => {
   useEffect(() => {
     initializeData();
   }, []);
+
+  // Refresh selectable data when screen gains focus (wallets/banks)
+  useFocusEffect(
+    React.useCallback(() => {
+      if (paymentInfo.type === 'buy') {
+        fetchWallets();
+      } else if (paymentInfo.type === 'sell') {
+        fetchBanks();
+        fetchBankAccounts();
+      }
+      return () => {};
+    }, [paymentInfo.type])
+  );
   // Sync selected TRC20 address from navigation params (supports default and selection)
   useFocusEffect(
     React.useCallback(() => {
@@ -148,6 +161,7 @@ const PaymentScreen = () => {
   const fetchWallets = async () => {
     try {
       const res = await api.get('/client/wallet/data');
+      console.log('Wallet data response:', res.data);
       if (res?.data?.status) {
         const list: Wallet[] = (res.data.data || []).map((w: any) => ({
           id: w.id,
@@ -191,6 +205,7 @@ const PaymentScreen = () => {
   const fetchBankAccounts = async () => {
     try {
       const res = await api.get('/client/bank/data');
+      console.log('Bank accounts response:', res.data);
       if (res?.data?.status) {
         const list: BankAccount[] = (res.data.data || []).map((b: any) => {
           const bankMeta = banks[b.id_bank];
@@ -485,113 +500,151 @@ const PaymentScreen = () => {
         {/* Wallet Selection for Buy USDT */}
         {paymentInfo.type === 'buy' && (
           <>
-            <SelectCustom
-              label="Select TRC20 Wallet to Receive USDT"
-              value={selectedWalletId}
-              onChange={(val) => {
-                setSelectedWalletId(val);
-                const w = wallets.find((x) => String(x.id) === val);
-                if (w) setSelectedReceiveTRC20(w.address);
-              }}
-              options={wallets.map((w) => ({
-                label: w.name,
-                value: String(w.id),
-                subtitle: w.address,
-                searchText: `${w.name} ${w.address}`,
-              }))}
-              placeholder={selectedReceiveTRC20 ? selectedReceiveTRC20 : 'Select TRC20 wallet (default if none)'}
-              searchable
-              searchPlaceholder="Search wallet by name or address..."
-              containerStyle={{ marginBottom: 12 }}
-            />
-
-            {selectedReceiveTRC20 ? (
-              <View style={styles.walletCard}>
-                <View style={styles.walletHeader}>
-                  <Icon name="wallet" size={20} color="#7B68EE" />
-                  <Text style={styles.walletTitle}>Receive USDT Address</Text>
-                </View>
-                <View style={styles.walletAddressContainer}>
-                  <Text style={styles.walletAddress}>{selectedReceiveTRC20}</Text>
-                  <TouchableOpacity
-                    style={styles.copyButton}
-                    onPress={() => copyToClipboard(selectedReceiveTRC20, 'Wallet address copied')}
-                  >
-                    <Icon name="content-copy" size={16} color="#4A90E2" />
-                  </TouchableOpacity>
-                </View>
-                <Text style={styles.walletNote}>
-                  USDT will be received at this address after your payment is confirmed.
+            {wallets.length === 0 ? (
+              <View style={styles.emptyWalletContainer}>
+                <Icon name="wallet-outline" size={48} color="#CCCCCC" />
+                <Text style={styles.emptyWalletTitle}>Chưa tạo ví TRC20</Text>
+                <Text style={styles.emptyWalletDescription}>
+                  Bạn cần thêm địa chỉ ví TRC20 để nhận USDT
                 </Text>
+                <TouchableOpacity 
+                  style={styles.addWalletButton}
+                  onPress={() => (navigation as any).navigate('AddTRC20Address')}
+                >
+                  <Icon name="plus" size={20} color="#FFFFFF" />
+                  <Text style={styles.addWalletText}>Thêm ví TRC20</Text>
+                </TouchableOpacity>
               </View>
-            ) : null}
+            ) : (
+              <>
+                <SelectCustom
+                  label="Select TRC20 Wallet to Receive USDT"
+                  value={selectedWalletId}
+                  onChange={(val) => {
+                    setSelectedWalletId(val);
+                    const w = wallets.find((x) => String(x.id) === val);
+                    if (w) setSelectedReceiveTRC20(w.address);
+                  }}
+                  options={wallets.map((w) => ({
+                    label: w.name,
+                    value: String(w.id),
+                    subtitle: w.address,
+                    searchText: `${w.name} ${w.address}`,
+                  }))}
+                  placeholder={selectedReceiveTRC20 ? selectedReceiveTRC20 : 'Select TRC20 wallet (default if none)'}
+                  searchable
+                  searchPlaceholder="Search wallet by name or address..."
+                  containerStyle={{ marginBottom: 12 }}
+                />
+
+                {selectedReceiveTRC20 ? (
+                  <View style={styles.walletCard}>
+                    <View style={styles.walletHeader}>
+                      <Icon name="wallet" size={20} color="#7B68EE" />
+                      <Text style={styles.walletTitle}>Receive USDT Address</Text>
+                    </View>
+                    <View style={styles.walletAddressContainer}>
+                      <Text style={styles.walletAddress}>{selectedReceiveTRC20}</Text>
+                      <TouchableOpacity
+                        style={styles.copyButton}
+                        onPress={() => copyToClipboard(selectedReceiveTRC20, 'Wallet address copied')}
+                      >
+                        <Icon name="content-copy" size={16} color="#4A90E2" />
+                      </TouchableOpacity>
+                    </View>
+                    <Text style={styles.walletNote}>
+                      USDT will be received at this address after your payment is confirmed.
+                    </Text>
+                  </View>
+                ) : null}
+              </>
+            )}
           </>
         )}
 
         {/* Bank Account Selection for Sell USDT */}
         {paymentInfo.type === 'sell' && (
           <>
-            <SelectCustom
-              label="Select Bank Account to Receive Money"
-              value={selectedBankId}
-              onChange={(val) => {
-                setSelectedBankId(val);
-                const b = bankAccounts.find((x) => String(x.id) === val);
-                if (b) setSelectedBank(`${b.bank} - ${b.accountNumber}`);
-              }}
-              options={bankAccounts.map((b) => ({
-                label: b.bank,
-                value: String(b.id),
-                iconUrl: b.logo,
-                subtitle: `${b.accountNumber} - ${b.accountName}`,
-                searchText: `${b.bank} ${b.accountNumber} ${b.accountName}`,
-              }))}
-              placeholder={selectedBank ? selectedBank : 'Select bank account (default if none)'}
-              searchable
-              searchPlaceholder="Search bank account by name or number..."
-              containerStyle={{ marginBottom: 12 }}
-            />
+            {bankAccounts.length === 0 ? (
+              <View style={styles.emptyWalletContainer}>
+                <Icon name="bank-outline" size={48} color="#CCCCCC" />
+                <Text style={styles.emptyWalletTitle}>Chưa thêm tài khoản ngân hàng</Text>
+                <Text style={styles.emptyWalletDescription}>
+                  Bạn cần thêm tài khoản ngân hàng để nhận tiền VND
+                </Text>
+                <TouchableOpacity 
+                  style={styles.addWalletButton}
+                  onPress={() => (navigation as any).navigate('AddBankAccount')}
+                >
+                  <Icon name="plus" size={20} color="#FFFFFF" />
+                  <Text style={styles.addWalletText}>Thêm tài khoản ngân hàng</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <>
+                <SelectCustom
+                  label="Select Bank Account to Receive Money"
+                  value={selectedBankId}
+                  onChange={(val) => {
+                    setSelectedBankId(val);
+                    const b = bankAccounts.find((x) => String(x.id) === val);
+                    if (b) setSelectedBank(`${b.bank} - ${b.accountNumber}`);
+                  }}
+                  options={bankAccounts.map((b) => ({
+                    label: b.bank,
+                    value: String(b.id),
+                    iconUrl: b.logo,
+                    subtitle: `${b.accountNumber} - ${b.accountName}`,
+                    searchText: `${b.bank} ${b.accountNumber} ${b.accountName}`,
+                  }))}
+                  placeholder={selectedBank ? selectedBank : 'Select bank account (default if none)'}
+                  searchable
+                  searchPlaceholder="Search bank account by name or number..."
+                  containerStyle={{ marginBottom: 12 }}
+                />
 
-            {selectedBank ? (
-              <View style={styles.walletCard}>
-                <View style={styles.walletHeader}>
-                  {(() => {
-                    const selectedBankAccount = bankAccounts.find(b => String(b.id) === selectedBankId);
-                    return selectedBankAccount?.logo ? (
-                      <View style={styles.bankLogoContainer}>
-                        <Image
-                          source={{ uri: selectedBankAccount.logo }}
-                          style={styles.bankLogo}
-                          resizeMode="contain"
-                        />
+                {selectedBank ? (
+                  <View style={styles.walletCard}>
+                    <View style={styles.walletHeader}>
+                      {(() => {
+                        const selectedBankAccount = bankAccounts.find(b => String(b.id) === selectedBankId);
+                        return selectedBankAccount?.logo ? (
+                          <View style={styles.bankLogoContainer}>
+                            <Image
+                              source={{ uri: selectedBankAccount.logo }}
+                              style={styles.bankLogo}
+                              resizeMode="contain"
+                            />
+                          </View>
+                        ) : (
+                          <Icon name="bank" size={20} color="#4A90E2" />
+                        );
+                      })()}
+                      <Text style={styles.walletTitle}>Receive Bank Account</Text>
+                    </View>
+                    <View style={styles.walletAddressContainer}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={[styles.walletAddress, { fontFamily: undefined }] }>
+                          {selectedBank}
+                        </Text>
+                        <Text style={{ color: '#666', marginTop: 4 }}>
+                          {bankAccounts.find(b => String(b.id) === selectedBankId)?.accountName || DEFAULT_BANK.accountName}
+                        </Text>
                       </View>
-                    ) : (
-                      <Icon name="bank" size={20} color="#4A90E2" />
-                    );
-                  })()}
-                  <Text style={styles.walletTitle}>Receive Bank Account</Text>
-                </View>
-                <View style={styles.walletAddressContainer}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.walletAddress, { fontFamily: undefined }]}>
-                      {selectedBank}
-                    </Text>
-                    <Text style={{ color: '#666', marginTop: 4 }}>
-                      {bankAccounts.find(b => String(b.id) === selectedBankId)?.accountName || DEFAULT_BANK.accountName}
+                      <TouchableOpacity
+                        style={styles.copyButton}
+                        onPress={() => copyToClipboard(selectedBank, 'Bank info copied')}
+                      >
+                        <Icon name="content-copy" size={16} color="#4A90E2" />
+                      </TouchableOpacity>
+                    </View>
+                    <Text style={styles.walletNote}>
+                      Money will be transferred to this bank account after your USDT is confirmed.
                     </Text>
                   </View>
-                  <TouchableOpacity
-                    style={styles.copyButton}
-                    onPress={() => copyToClipboard(selectedBank, 'Bank info copied')}
-                  >
-                    <Icon name="content-copy" size={16} color="#4A90E2" />
-                  </TouchableOpacity>
-                </View>
-                <Text style={styles.walletNote}>
-                  Money will be transferred to this bank account after your USDT is confirmed.
-                </Text>
-              </View>
-            ) : null}
+                ) : null}
+              </>
+            )}
           </>
         )}
 
@@ -964,6 +1017,99 @@ const styles = StyleSheet.create({
     fontSize: wp('4%'),
     color: '#666',
     textAlign: 'center',
+  },
+  // Wallet Selection Styles
+  walletSelectionContainer: {
+    marginBottom: 16,
+  },
+  emptyWalletContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  emptyWalletTitle: {
+    fontSize: wp('5%'),
+    fontWeight: '600',
+    color: '#000',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyWalletDescription: {
+    fontSize: wp('4%'),
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  addWalletButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#4A90E2',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  addWalletText: {
+    color: '#FFFFFF',
+    fontSize: wp('4%'),
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  walletList: {
+    gap: 8,
+  },
+  walletItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+  },
+  walletItemSelected: {
+    borderColor: '#4A90E2',
+    backgroundColor: '#F0F8FF',
+  },
+  walletItemContent: {
+    flex: 1,
+  },
+  walletItemHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  walletItemName: {
+    fontSize: wp('4%'),
+    fontWeight: '600',
+    color: '#000',
+    marginLeft: 8,
+  },
+  walletItemAddress: {
+    fontSize: wp('3.5%'),
+    color: '#666',
+    fontFamily: 'monospace',
+  },
+  defaultBadge: {
+    backgroundColor: '#4A90E215',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  defaultText: {
+    fontSize: wp('3%'),
+    color: '#4A90E2',
+    fontWeight: '500',
+  },
+  changeWalletButton: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  changeWalletText: {
+    fontSize: wp('3.5%'),
+    color: '#4A90E2',
+    fontWeight: '500',
   },
 });
 

@@ -42,6 +42,17 @@ const AddBankAccountScreen = () => {
   const [loadingBanks, setLoadingBanks] = useState(true);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
 
+  // Convert to uppercase without diacritics
+  const toUpperNoDiacritics = (value: string) => {
+    if (!value) return '';
+    const stripped = value
+      .normalize('NFD')
+      .replace(/\p{Diacritic}+/gu, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D');
+    return stripped.toUpperCase();
+  };
+
   // Fetch banks data from API
   const fetchBanks = async () => {
     try {
@@ -52,7 +63,7 @@ const AddBankAccountScreen = () => {
       if (response.data.status) {
         setBanks(response.data.data);
       } else {
-        Alert.alert('Error', 'Failed to load banks');
+        Alert.alert('', 'Failed to load banks');
       }
     } catch (error: any) {
       console.log('Fetch banks error:', error);
@@ -64,6 +75,21 @@ const AddBankAccountScreen = () => {
 
   useEffect(() => {
     fetchBanks();
+  }, []);
+
+  // Prefill account holder name from profile and disable editing
+  useEffect(() => {
+    const fetchProfileName = async () => {
+      try {
+        const response = await api.get('/client/profile');
+        if (response.data?.status && response.data?.data?.full_name) {
+          setAccountName(toUpperNoDiacritics(response.data.data.full_name));
+        }
+      } catch (e) {
+        // silent fail
+      }
+    };
+    fetchProfileName();
   }, []);
 
   const validateForm = () => {
@@ -120,7 +146,7 @@ const AddBankAccountScreen = () => {
           ]
         );
       } else {
-        Alert.alert('Error', response.data.message || 'Failed to create bank account');
+        Alert.alert('', response.data.message || 'Failed to create bank account');
       }
       
     } catch (error: any) {
@@ -232,7 +258,7 @@ const AddBankAccountScreen = () => {
           style={[styles.input, errors.accountName && styles.inputError]}
           value={accountName}
           onChangeText={(text) => {
-            setAccountName(text);
+            setAccountName(toUpperNoDiacritics(text));
             if (errors.accountName) {
               setErrors(prev => ({ ...prev, accountName: '' }));
             }
@@ -240,6 +266,8 @@ const AddBankAccountScreen = () => {
           placeholder="Enter account holder name"
           autoCapitalize="characters"
           placeholderTextColor="#999"
+          editable={false}
+          selectTextOnFocus={false}
         />
         {errors.accountName && <Text style={styles.errorText}>{errors.accountName}</Text>}
 

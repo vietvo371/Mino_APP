@@ -61,7 +61,6 @@ const App = () => {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <AuthProvider>
         <SafeAreaProvider>
           <StatusBar
             barStyle={isDarkMode ? 'light-content' : 'dark-content'}
@@ -71,7 +70,6 @@ const App = () => {
             <MainNavigator />
           </NavigationContainer>
         </SafeAreaProvider>
-      </AuthProvider>
     </GestureHandlerRootView>
   );
 };

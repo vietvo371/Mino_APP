@@ -1,5 +1,5 @@
 import axios from "axios";
-import { Platform } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import { deriveDashboardStats, deriveRecentBatches, mockUsers } from './mockData';
 import { getToken, saveToken } from "./TokenManager";
 
@@ -71,9 +71,14 @@ api.interceptors.response.use(
   (response) => {
     return response;
   },
-  (error) => {
-
-    return Promise.reject(error);
+  (error: any) => {
+    if (error.response?.status === 422) {
+      return Promise.reject(error);
+    }
+    else {
+      console.log('error', error.response?.data);
+      Alert.alert('Error', error.response?.data?.message);
+    }
   }
 );
 

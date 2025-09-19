@@ -213,9 +213,9 @@ const DepositScreen: StackScreen<'Deposit'> = () => {
 
                   <View style={styles.bankInfoItem}>
                     <Text style={styles.bankInfoLabel}>Account Name</Text>
-                    <Text style={styles.bankInfoValue}>MINO WALLET JSC</Text>
+                    <Text style={styles.bankInfoValue}>MIMO WALLET JSC</Text>
                     <TouchableOpacity
-                      onPress={() => handleCopy('MINO WALLET JSC')}
+                      onPress={() => handleCopy('MIMO WALLET JSC')}
                       style={styles.copyButton}
                     >
                       <Icon name="content-copy" size={20} color={theme.colors.primary} />
@@ -224,9 +224,9 @@ const DepositScreen: StackScreen<'Deposit'> = () => {
 
                   <View style={styles.bankInfoItem}>
                     <Text style={styles.bankInfoLabel}>Transfer Content</Text>
-                    <Text style={styles.bankInfoValue}>MINO123456</Text>
+                    <Text style={styles.bankInfoValue}>MIMO123456</Text>
                     <TouchableOpacity
-                      onPress={() => handleCopy('MINO123456')}
+                      onPress={() => handleCopy('MIMO123456')}
                       style={styles.copyButton}
                     >
                       <Icon name="content-copy" size={20} color={theme.colors.primary} />

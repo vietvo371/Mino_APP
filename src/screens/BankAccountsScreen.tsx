@@ -46,6 +46,7 @@ const BankAccountsScreen = () => {
   const [banks, setBanks] = useState<{[key: number]: { name: string; code: string; }}>({});
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [needsVerification, setNeedsVerification] = useState(false);
 
   // Fetch banks data to get bank names
   const fetchBanks = async () => {
@@ -91,8 +92,9 @@ const BankAccountsScreen = () => {
           };
         });
         setAccounts(formattedAccounts);
+        setNeedsVerification(false);
       } else {
-        Alert.alert('Error', 'Failed to load bank accounts');
+        setNeedsVerification(true);
       }
     } catch (error: any) {
       console.log('Fetch bank accounts error:', error);
@@ -159,6 +161,24 @@ const BankAccountsScreen = () => {
     Alert.alert('Copied', 'Account number copied to clipboard');
   };
 
+  const renderVerificationRequired = () => (
+    <View style={styles.verificationContainer}>
+      <View style={styles.verificationIconContainer}>
+        <Icon name="shield-check" size={64} color="#FF9500" />
+      </View>
+      <Text style={styles.verificationTitle}>Xác thực cần thiết</Text>
+      <Text style={styles.verificationDescription}>
+        Vui lòng hoàn thành xác thực eKYC, email và số điện thoại trước khi quản lý tài khoản ngân hàng.
+      </Text>
+      <TouchableOpacity 
+        style={styles.verificationButton}
+        onPress={() => (navigation as any).navigate('Security')}
+      >
+        <Text style={styles.verificationButtonText}>Đi đến xác thực</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -177,6 +197,9 @@ const BankAccountsScreen = () => {
         </TouchableOpacity>
       </View>
 
+      {needsVerification ? (
+        renderVerificationRequired()
+      ) : (
       <ScrollView 
         style={styles.content}
         refreshControl={
@@ -251,6 +274,7 @@ const BankAccountsScreen = () => {
           ))
         )}
       </ScrollView>
+      )}
     </SafeAreaView>
   );
 };
@@ -259,6 +283,50 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  // Verification styles
+  verificationContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+    paddingVertical: 60,
+  },
+  verificationIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#FFF4E6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  verificationTitle: {
+    fontSize: wp('6%'),
+    fontWeight: '700',
+    color: '#000',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  verificationDescription: {
+    fontSize: wp('4%'),
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 32,
+  },
+  verificationButton: {
+    backgroundColor: '#FF9500',
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    minWidth: 200,
+    alignItems: 'center',
+  },
+  verificationButtonText: {
+    fontSize: wp('4.5%'),
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
   header: {
     flexDirection: 'row',

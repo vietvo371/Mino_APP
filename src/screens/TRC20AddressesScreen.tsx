@@ -41,6 +41,7 @@ const TRC20AddressesScreen = () => {
   const [addresses, setAddresses] = useState<TRC20Address[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [needsVerification, setNeedsVerification] = useState(false);
 
   // Fetch wallet data from API
   const fetchWalletData = async (isRefresh = false) => {
@@ -64,8 +65,9 @@ const TRC20AddressesScreen = () => {
           createdAt: wallet.created_at
         }));
         setAddresses(formattedAddresses);
+        setNeedsVerification(false);
       } else {
-        Alert.alert('Error', 'Failed to load wallet data');
+        setNeedsVerification(true);
       }
     } catch (error: any) {
       console.log('Fetch wallet data error:', error);
@@ -111,6 +113,24 @@ const TRC20AddressesScreen = () => {
     Alert.alert('Copied', 'Address copied to clipboard');
   };
 
+  const renderVerificationRequired = () => (
+    <View style={styles.verificationContainer}>
+      <View style={styles.verificationIconContainer}>
+        <Icon name="shield-check" size={64} color="#FF9500" />
+      </View>
+      <Text style={styles.verificationTitle}>Xác thực cần thiết</Text>
+      <Text style={styles.verificationDescription}>
+        Vui lòng hoàn thành xác thực eKYC, email và số điện thoại trước khi quản lý địa chỉ TRC20.
+      </Text>
+      <TouchableOpacity 
+        style={styles.verificationButton}
+        onPress={() => (navigation as any).navigate('Security')}
+      >
+        <Text style={styles.verificationButtonText}>Đi đến xác thực</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -129,6 +149,9 @@ const TRC20AddressesScreen = () => {
         </TouchableOpacity>
       </View>
 
+      {needsVerification ? (
+        renderVerificationRequired()
+      ) : (
       <ScrollView 
         style={styles.content}
         refreshControl={
@@ -205,6 +228,7 @@ const TRC20AddressesScreen = () => {
           </Text>
         </View>
       </ScrollView>
+      )}
     </SafeAreaView>
   );
 };
@@ -213,6 +237,50 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  // Verification styles
+  verificationContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+    paddingVertical: 60,
+  },
+  verificationIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#FFF4E6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  verificationTitle: {
+    fontSize: wp('6%'),
+    fontWeight: '700',
+    color: '#000',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  verificationDescription: {
+    fontSize: wp('4%'),
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 32,
+  },
+  verificationButton: {
+    backgroundColor: '#FF9500',
+    paddingVertical: 16,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    minWidth: 200,
+    alignItems: 'center',
+  },
+  verificationButtonText: {
+    fontSize: wp('4.5%'),
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
   header: {
     flexDirection: 'row',

@@ -101,12 +101,11 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         Alert.alert('Login Failed', response.data.message);
         return;
       }
+      console.log('Login successful:', response.data.data); 
+      console.log('Login token:', response.data.token);
       // Login successful - navigate to MainTabs
       await saveUser(response.data.data);
       await saveToken(response.data.token);
-
-
-
       navigation.navigate('MainTabs');
       
     } catch (error: any) {
@@ -204,7 +203,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               style={styles.title}
               entering={FadeInDown.duration(800).delay(400).springify()}
             >
-              MINO
+              MIMO
             </Animated.Text>
           </Animated.View>
 
@@ -216,7 +215,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             <View style={styles.formHeader}>
               <Text style={styles.formTitle}>Sign In</Text>
               <Text style={styles.formSubtitle}>
-                Enter your credentials to access your MINO account
+                Enter your credentials to access your MIMO account
               </Text>
             </View>
 
@@ -333,7 +332,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               </TouchableOpacity>
 
               {/* Social Login */}
-              <View style={styles.socialContainer}>
+              {/* <View style={styles.socialContainer}>
                 <TouchableOpacity
                   style={[styles.socialButton, styles.googleButton]}
                   onPress={() => handleSocialLogin('Google')}
@@ -359,7 +358,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                     <Icon name="apple" size={24} color="#000000" />
                   </TouchableOpacity>
                 )}
-              </View>
+              </View> */}
             </View>
           </Animated.View>
 
@@ -493,7 +492,7 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: theme.typography.fontFamily,
     fontSize: 36,
-    color: theme.colors.primary,
+    color: "#f0b90b",
     marginBottom: theme.spacing.sm,
   },
   subtitle: {

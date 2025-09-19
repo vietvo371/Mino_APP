@@ -14,7 +14,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 const onboardingData = [
   {
     id: 1,
-    title: 'Welcome to MINO',
+    title: 'Welcome to MIMO',
     description: 'Your trusted digital wallet for secure and seamless transactions.',
     image: require('../assets/images/started/welcome.jpg'),
   },

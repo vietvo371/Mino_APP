@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -23,16 +23,30 @@ const PhoneVerificationScreen = () => {
   const [verifying, setVerifying] = useState(false);
   const [countdown, setCountdown] = useState(0);
 
-  const handleSendCode = async () => {
-    if (!phone || phone.length < 8) {
-      Alert.alert('Lỗi', 'Vui lòng nhập số điện thoại hợp lệ');
-      return;
-    }
+  // Prefill phone from profile and disable editing
+  useEffect(() => {
+    const fetchProfilePhone = async () => {
+      try {
+        const response = await api.get('/client/profile');
+        if (response.data?.status && response.data?.data?.number_phone) {
+          setPhone(response.data.data.number_phone);
+        }
+      } catch (e) {
+        // silent fail; user can still proceed
+      }
+    };
 
+    const unsubscribe = (navigation as any).addListener('focus', fetchProfilePhone);
+    fetchProfilePhone();
+    return unsubscribe;
+  }, [navigation]);
+
+  const handleSendCode = async () => {
+   
     setLoading(true);
     try {
       const response = await api.post('/client/send-otp-phone', {
-        email: phone, // API expects phone number in 'email' field
+        number_phone: phone, // API expects phone number in 'email' field
         type: 'phone'
       });
 
@@ -93,7 +107,7 @@ const PhoneVerificationScreen = () => {
             text: 'OK',
             onPress: () => {
               // Replace to SecurityScreen to refresh verification status
-              (navigation as any).replace('Security');
+              (navigation as any).goBack();
             }
           }
         ]);
@@ -146,6 +160,8 @@ const PhoneVerificationScreen = () => {
                 keyboardType="phone-pad"
                 style={styles.textInput}
                 placeholderTextColor="#8E8E93"
+                editable={false}
+                selectTextOnFocus={false}
               />
             </View>
             <TouchableOpacity 
@@ -156,7 +172,7 @@ const PhoneVerificationScreen = () => {
               {loading ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                <Text style={styles.primaryButtonText}>Gửi OTP</Text>
+                <Text style={styles.primaryButtonText}>Send OTP</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -164,9 +180,9 @@ const PhoneVerificationScreen = () => {
           {isCodeSent && (
             <View style={styles.inputGroup}>
               <View style={styles.otpHeader}>
-                <Text style={styles.inputLabel}>Mã OTP</Text>
+                <Text style={styles.inputLabel}>OTP</Text>
                 <Text style={styles.otpInfo}>
-                  Đã gửi mã OTP đến {phone}
+                  OTP has been sent to {phone}
                 </Text>
               </View>
               <View style={styles.inputWrapper}>
@@ -174,7 +190,7 @@ const PhoneVerificationScreen = () => {
                 <TextInput
                   value={code}
                   onChangeText={setCode}
-                  placeholder="Nhập mã OTP"
+                  placeholder="Enter OTP"
                   keyboardType="number-pad"
                   style={styles.textInput}
                   placeholderTextColor="#8E8E93"
@@ -189,7 +205,7 @@ const PhoneVerificationScreen = () => {
                 {verifying ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.primaryButtonText}>Xác thực</Text>
+                  <Text style={styles.primaryButtonText}>Verify</Text>
                 )}
               </TouchableOpacity>
               
@@ -199,7 +215,7 @@ const PhoneVerificationScreen = () => {
                 disabled={countdown > 0}
               >
                 <Text style={[styles.resendText, countdown > 0 && styles.disabledText]}>
-                  {countdown > 0 ? `Gửi lại sau ${countdown}s` : 'Gửi lại mã OTP'}
+                  {countdown > 0 ? `Resend after ${countdown}s` : 'Resend OTP'}
                 </Text>
               </TouchableOpacity>
             </View>

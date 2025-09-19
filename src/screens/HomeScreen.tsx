@@ -114,26 +114,27 @@ const HomeScreen: StackScreen<'Home'> = () => {
     }
   };
 
-  // Effect để chạy countdown và fetch API
-  useEffect(() => {
-    // Fetch rate ngay lập tức khi component mount
-    fetchExchangeRate();
-    
-    // Countdown timer
-    const countdownInterval = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          // Khi countdown về 0, fetch API và reset về 20
-          fetchExchangeRate();
-          return 20;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+  // Chỉ poll mỗi 20s khi màn hình đang focus
+  useFocusEffect(
+    React.useCallback(() => {
+      // Reset countdown và fetch ngay khi focus
+      setCountdown(20);
+      fetchExchangeRate();
 
-    // Cleanup interval khi component unmount
-    return () => clearInterval(countdownInterval);
-  }, []);
+      const countdownInterval = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            fetchExchangeRate();
+            return 20;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      // Cleanup khi màn hình mất focus
+      return () => clearInterval(countdownInterval);
+    }, [])
+  );
 
   // Refresh profile data when screen comes into focus (e.g., after verification)
   useFocusEffect(
@@ -422,7 +423,7 @@ const HomeScreen: StackScreen<'Home'> = () => {
                   )}
                 </Text>
                 <TouchableOpacity style={styles.swapButton} onPress={handleSwap}>
-                  <Icon name="swap-horizontal" size={20} color="#666" />
+                  <Icon style={{ color: "black" }} name="swap-horizontal" size={20} color="#666" />
                 </TouchableOpacity>
               </View>
               <View style={styles.rateContainer}>
@@ -588,7 +589,7 @@ const styles = StyleSheet.create({
   swapButton: {
     padding: 8,
     borderRadius: 20,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#f1d37e',
     marginLeft: 10,
   },
   rateContainer: {

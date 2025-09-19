@@ -33,12 +33,12 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
 
 
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
-    password: '',
-    re_password: '',
+    name: 'Vu Tuan Anh',
+    email: 'vu.tuananh@dragonlab.vn',
+    phone: '0909090909',
+    address: '123456',
+    password: '12345678',
+    re_password: '12345678',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -125,7 +125,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
         ]
       );
     } catch (error: any) {
-      console.log('Registration error:', error);
+      console.log('Registration error:', error.response);
       if (error.response?.data?.errors) {
         const newErrors: Record<string, string> = {};
         Object.keys(error.response.data.errors).forEach(field => {
@@ -345,7 +345,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
               style={styles.welcomeText}
               entering={FadeInDown.duration(800).delay(200).springify()}
             >
-              Join MINO Trading
+              Join MIMO Trading
             </Animated.Text>
 
             <Animated.Text
@@ -459,14 +459,14 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     fontSize: theme.typography.fontSize.md,
-    color: theme.colors.textLight,
+    color: theme.colors.textLight,  
     fontFamily: theme.typography.fontFamily,
     marginBottom: theme.spacing.xs,
   },
   title: {
     fontFamily: theme.typography.fontFamily,
     fontSize: 36,
-    color: theme.colors.primary,
+    color: "#f0b90b",
     marginBottom: theme.spacing.sm,
   },
   subtitle: {

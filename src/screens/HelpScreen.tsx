@@ -51,7 +51,7 @@ const CONTACT_METHODS = [
   {
     id: 'email',
     title: 'Email',
-    description: 'support@mino.com',
+    description: 'support@mimo.com',
     icon: 'email',
   },
   {
