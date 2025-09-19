@@ -102,8 +102,7 @@ const TRC20AddressesScreen = () => {
   };
 
   const handleEditAddress = (address: TRC20Address) => {
-    // TODO: Implement edit functionality
-    Alert.alert('Edit', 'Edit functionality coming soon');
+    navigation.navigate('EditTRC20Address', { address } as never);
   };
 
   const handleCopyAddress = (address: string) => {

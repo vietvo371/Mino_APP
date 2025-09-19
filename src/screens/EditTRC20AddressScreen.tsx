@@ -9,6 +9,7 @@ import {
   TextInput,
   Switch,
   Alert,
+  Clipboard,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -16,6 +17,8 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
+import api from '../utils/Api';
+import { getUser } from '../utils/TokenManager';
 
 type TRC20Address = {
   id: string;
@@ -31,36 +34,124 @@ const EditTRC20AddressScreen = () => {
 
   const [name, setName] = useState(addressData?.name || '');
   const [isDefault, setIsDefault] = useState(addressData?.isDefault || false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim()) {
       Alert.alert('Error', 'Please enter wallet name');
       return;
     }
-    // Save changes and navigate back
-    navigation.goBack();
+
+    if (!addressData?.id) {
+      Alert.alert('Error', 'Invalid wallet data');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const user = await getUser();
+      if (!user?.email) {
+        Alert.alert('Error', 'User not authenticated');
+        return;
+      }
+
+      const response = await api.post('/client/wallet/update', {
+        id: parseInt(addressData.id),
+        name: name.trim(),
+        address_wallet: addressData.address,
+        is_default: isDefault ? 1 : 0,
+        email: user?.email,
+      });
+
+      if (response?.data?.status) {
+        Alert.alert('Success', 'Wallet updated successfully', [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Navigate back and refresh the list
+              (navigation as any).navigate('TRC20Addresses');
+            },
+          },
+        ]);
+      } else {
+        Alert.alert('Error', response?.data?.message || 'Failed to update wallet');
+      }
+    } catch (error: any) {
+      console.log('Update wallet error:', error.response);
+      Alert.alert(
+        'Error',
+        error?.response?.data?.message || 'Failed to update wallet. Please try again.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDelete = () => {
     Alert.alert(
       'Delete Address',
-      'Are you sure you want to delete this TRC20 address?',
+      'Are you sure you want to delete this TRC20 address? This action cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            // Delete address and navigate back
-            navigation.goBack();
+          onPress: async () => {
+            await deleteWallet();
           },
         },
       ]
     );
   };
 
+  const deleteWallet = async () => {
+    if (!addressData?.id) {
+      Alert.alert('Error', 'Invalid wallet data');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const user = await getUser();
+      if (!user?.email) {
+        Alert.alert('Error', 'User not authenticated');
+        return;
+      }
+      console.log('user', user?.email);
+      console.log('addressData', addressData.id);
+      const response = await api.post('/client/wallet/delete', {
+          id: parseInt(addressData.id),
+          email: user?.email,
+      });
+
+      if (response?.data?.status) {
+        Alert.alert('Success', 'Wallet deleted successfully', [
+          {
+            text: 'OK',
+            onPress: () => {
+             navigation.goBack();
+            },
+          },
+        ]);
+      } else {
+        Alert.alert('Error', response?.data?.message || 'Failed to delete wallet');
+      }
+    } catch (error: any) {
+      console.log('Delete wallet error:', error.response);
+      Alert.alert(
+        'Error',
+        error?.response?.data?.message || 'Failed to delete wallet. Please try again.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleCopy = () => {
-    // Copy address to clipboard
+    if (addressData?.address) {
+      Clipboard.setString(addressData.address);
+      Alert.alert('Copied', 'Wallet address copied to clipboard');
+    }
   };
 
   return (
@@ -74,10 +165,15 @@ const EditTRC20AddressScreen = () => {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit Address</Text>
         <TouchableOpacity 
-          style={styles.saveButton}
+          style={[styles.saveButton, isLoading && styles.saveButtonDisabled]}
           onPress={handleSave}
+          disabled={isLoading}
         >
-          <Text style={styles.saveText}>Save</Text>
+          {isLoading ? (
+            <Icon name="loading" size={16} color="#4A90E2" />
+          ) : (
+            <Text style={styles.saveText}>Save</Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -122,10 +218,15 @@ const EditTRC20AddressScreen = () => {
 
         {/* Delete Button */}
         <TouchableOpacity
-          style={styles.deleteButton}
+          style={[styles.deleteButton, isLoading && styles.deleteButtonDisabled]}
           onPress={handleDelete}
+          disabled={isLoading}
         >
-          <Icon name="trash-can-outline" size={20} color="#FF3B30" />
+          {isLoading ? (
+            <Icon name="loading" size={20} color="#FF3B30" />
+          ) : (
+            <Icon name="trash-can-outline" size={20} color="#FF3B30" />
+          )}
           <Text style={styles.deleteText}>Delete this address</Text>
         </TouchableOpacity>
 
@@ -169,6 +270,9 @@ const styles = StyleSheet.create({
     fontSize: wp('4%'),
     color: '#4A90E2',
     fontWeight: '600',
+  },
+  saveButtonDisabled: {
+    opacity: 0.5,
   },
   content: {
     flex: 1,
@@ -246,6 +350,9 @@ const styles = StyleSheet.create({
     color: '#FF3B30',
     fontWeight: '600',
     marginLeft: 8,
+  },
+  deleteButtonDisabled: {
+    opacity: 0.5,
   },
   infoBox: {
     flexDirection: 'row',

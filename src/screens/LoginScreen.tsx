@@ -35,8 +35,8 @@ const { width, height } = Dimensions.get('window');
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const { signIn } = useAuth();
-  const [identifier, setIdentifier] = useState('vietvo371@gmail.com');
-  const [password, setPassword] = useState('123456');
+  const [identifier, setIdentifier] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ identifier?: string, password?: string }>({});
   const [isPhoneNumber, setIsPhoneNumber] = useState(false);

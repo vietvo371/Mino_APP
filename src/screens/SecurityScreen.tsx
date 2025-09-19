@@ -16,6 +16,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { theme } from '../theme/colors';
 import api from '../utils/Api';
+import { getUser } from '../utils/TokenManager';
 
 interface UserProfile {
   full_name: string;
@@ -46,7 +47,7 @@ const SecurityScreen = () => {
       } else {
         setLoading(true);
       }
-      
+
       const response = await api.get('/client/profile');
       if (response.data.status) {
         setUser(response.data.data);
@@ -79,10 +80,40 @@ const SecurityScreen = () => {
   const isEkycVerified = user?.is_ekyc === 1;
   const isEmailVerified = user?.is_active_mail === 1;
   const isPhoneVerified = user?.is_active_phone === 1;
-  
+
   // Calculate verification progress
   const verificationCount = [isEkycVerified, isEmailVerified, isPhoneVerified].filter(Boolean).length;
   const verificationProgress = (verificationCount / 3) * 100;
+
+
+
+  const handlVerifiEKycExample = async () => {
+    try {
+      const response = await api.post('/client/verify-ekyc', {
+        "number_phone": "0708585120",
+        "otp": "119069"
+      });
+      if (response?.data?.status) {
+        Alert.alert('Success', 'Verify eKYC example successfully', [
+          {
+            text: 'OK',
+            // onPress: () => {
+            //   navigation.goBack();
+            // },
+          },
+        ]);
+      } else {
+        Alert.alert('Error', response?.data?.message || 'Failed to verify eKYC example');
+      }
+    } catch (error: any) {
+      console.log('Verify eKYC example error:', error.response);
+      Alert.alert(
+        'Error',
+        error?.response?.data?.message || 'Failed to verify eKYC example. Please try again.'
+      );
+    }
+  };
+
 
   // Verification items (hub) with dynamic status
   const VERIFICATION_ITEMS = [
@@ -94,7 +125,9 @@ const SecurityScreen = () => {
       iconColor: isEkycVerified ? '#34C759' : '#7B68EE',
       iconBg: isEkycVerified ? '#34C75915' : '#7B68EE15',
       status: isEkycVerified ? 'verified' : 'pending',
-      onPress: () => navigation.navigate('EkycIntro' as never),
+      // onPress: () => navigation.navigate('EkycIntro' as never),
+      onPress: () => handlVerifiEKycExample(),
+
     },
     {
       id: 'email',
@@ -123,7 +156,7 @@ const SecurityScreen = () => {
       id: 'password',
       title: 'Change Password',
       icon: 'lock',
-      onPress: () => {},
+      onPress: () => { },
     },
     // {
     //   id: 'pin',
@@ -173,7 +206,7 @@ const SecurityScreen = () => {
         <View style={styles.headerRight} />
       </View>
 
-      <ScrollView 
+      <ScrollView
         style={styles.content}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -190,11 +223,11 @@ const SecurityScreen = () => {
           </Text>
           <View style={styles.progressContainer}>
             <View style={styles.progressBar}>
-              <View 
+              <View
                 style={[
-                  styles.progressFill, 
+                  styles.progressFill,
                   { width: `${verificationProgress}%` }
-                ]} 
+                ]}
               />
             </View>
             <Text style={styles.progressText}>{Math.round(verificationProgress)}%</Text>

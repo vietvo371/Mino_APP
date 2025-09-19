@@ -9,6 +9,7 @@ import {
   Alert,
   Platform,
   Clipboard,
+  Image,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
@@ -51,12 +52,24 @@ type Wallet = {
   createdAt: string;
 };
 
+type BankAccount = {
+  id: number;
+  bank: string;
+  code: string;
+  logo: string;
+  bankId: number;
+  accountNumber: string;
+  accountName: string;
+  isDefault: boolean;
+  createdAt: string;
+};
+
 const PaymentScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const paymentInfo = (route.params as any)?.paymentInfo as PaymentInfo;
   const [selectedBank, setSelectedBank] = useState('');
-  const [selectedTRC20, setSelectedTRC20] = useState('');
+  const [selectedBankId, setSelectedBankId] = useState<string>('');
   const [selectedReceiveTRC20, setSelectedReceiveTRC20] = useState('');
   const [selectedWalletId, setSelectedWalletId] = useState<string>('');
   const [currentRate, setCurrentRate] = useState<number>(paymentInfo.rate || FALLBACK_RATE);
@@ -66,14 +79,45 @@ const PaymentScreen = () => {
   const isFetchingRef = useRef<boolean>(false);
   const transactionIdRef = useRef<string>(`MINO${Date.now().toString().slice(-6)}`);
   const [wallets, setWallets] = useState<Wallet[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
+  const [banks, setBanks] = useState<{ [key: number]: { name: string; code: string; logo: string; } }>({});
   const [user, setUser] = useState<any>(null);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const fetchUser = async () => {
     const user = await getUser();
     setUser(user);
   };
 
+  // Initialize all required data
+  const initializeData = async () => {
+    setIsInitialLoading(true);
+    try {
+      // Fetch user data
+      await fetchUser();
+      
+      // Fetch exchange rate
+      await fetchExchangeRate();
+      
+      // Fetch wallets for buy USDT
+      if (paymentInfo.type === 'buy') {
+        await fetchWallets();
+      }
+      
+      // Fetch banks and bank accounts for sell USDT
+      if (paymentInfo.type === 'sell') {
+        await fetchBanks();
+        await fetchBankAccounts();
+      }
+      
+    } catch (error) {
+      console.log('Error initializing data:', error);
+    } finally {
+      setIsInitialLoading(false);
+    }
+  };
+
   useEffect(() => {
-    fetchUser();
+    initializeData();
   }, []);
   // Sync selected TRC20 address from navigation params (supports default and selection)
   useFocusEffect(
@@ -86,7 +130,7 @@ const PaymentScreen = () => {
       } else if (!selectedReceiveTRC20 && defaultAddr && typeof defaultAddr === 'string') {
         setSelectedReceiveTRC20(defaultAddr.trim());
       }
-      return () => {};
+      return () => { };
     }, [route.params, selectedReceiveTRC20])
   );
 
@@ -101,42 +145,86 @@ const PaymentScreen = () => {
   }, []);
 
   // Fetch TRC20 wallets to allow inline selection
-  useEffect(() => {
-    const fetchWallets = async () => {
-      try {
-        const res = await api.get('/client/wallet/data');
-        if (res?.data?.status) {
-          const list: Wallet[] = (res.data.data || []).map((w: any) => ({
-            id: w.id,
-            name: w.name,
-            address: w.address_wallet,
-            isDefault: w.is_default === 1,
-            createdAt: w.created_at,
-          }));
-          setWallets(list);
+  const fetchWallets = async () => {
+    try {
+      const res = await api.get('/client/wallet/data');
+      if (res?.data?.status) {
+        const list: Wallet[] = (res.data.data || []).map((w: any) => ({
+          id: w.id,
+          name: w.name,
+          address: w.address_wallet,
+          isDefault: w.is_default === 1,
+          createdAt: w.created_at,
+        }));
+        setWallets(list);
 
-          // If no selection yet → use default wallet
-          const def = list.find((x) => x.isDefault);
-          if (!selectedWalletId && def) {
-            setSelectedWalletId(String(def.id));
-            setSelectedReceiveTRC20(def.address);
-          }
+        // If no selection yet → use default wallet
+        const def = list.find((x) => x.isDefault);
+        if (!selectedWalletId && def) {
+          setSelectedWalletId(String(def.id));
+          setSelectedReceiveTRC20(def.address);
         }
-      } catch (e) {
-        // ignore; keep mock/default
       }
-    };
-    if (paymentInfo.type === 'buy') {
-      fetchWallets();
+    } catch (e) {
+      // ignore; keep mock/default
     }
-  }, [paymentInfo.type, selectedWalletId]);
+  };
+
+  // Fetch banks data to get bank names and logos
+  const fetchBanks = async () => {
+    try {
+      const response = await api.get('/client/bank/data-all');
+      if (response.data.status) {
+        const bankData = response.data.data;
+        const bankMap: { [key: number]: { name: string; code: string; logo: string; } } = {};
+        bankData.forEach((bank: any) => {
+          bankMap[bank.id] = { name: bank.name, code: bank.code, logo: bank.logo };
+        });
+        setBanks(bankMap);
+      }
+    } catch (error) {
+      console.log('Fetch banks error:', error);
+    }
+  };
+
+  // Fetch bank accounts for sell USDT
+  const fetchBankAccounts = async () => {
+    try {
+      const res = await api.get('/client/bank/data');
+      if (res?.data?.status) {
+        const list: BankAccount[] = (res.data.data || []).map((b: any) => {
+          const bankMeta = banks[b.id_bank];
+          return {
+            id: b.id,
+            bank: b.bank_name || (bankMeta ? bankMeta.name : `Bank ${b.id_bank}`),
+            code: bankMeta ? bankMeta.code : '',
+            logo: bankMeta ? bankMeta.logo : '',
+            bankId: b.id_bank,
+            accountNumber: b.bank_number,
+            accountName: b.name_ekyc,
+            isDefault: b.is_default === 1,
+            createdAt: b.created_at,
+          };
+        });
+        setBankAccounts(list);
+
+        // If no selection yet → use default bank account
+        const def = list.find((x) => x.isDefault);
+        if (!selectedBankId && def) {
+          setSelectedBankId(String(def.id));
+          setSelectedBank(`${def.bank} - ${def.accountNumber}`);
+        }
+      }
+    } catch (e) {
+    }
+  };
 
   // Function to fetch rate/fee from backend API
   const fetchExchangeRate = async () => {
     if (isFetchingRef.current) return;
     isFetchingRef.current = true;
     setIsLoadingRate(true);
-    
+
     try {
       const res = await api.get('/client/exchange/rate');
       const data: any = res.data || {};
@@ -159,39 +247,27 @@ const PaymentScreen = () => {
     }
   };
 
-  // 60s countdown and auto-refresh
+  // 60s countdown and auto-refresh (only after initial loading)
   useEffect(() => {
-    setSecondsLeft(60);
-    // Fetch ngay lần đầu vào màn hình
-    fetchExchangeRate();
-    const timer = setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev <= 1) {
-          // time to refresh
-          fetchExchangeRate();
-          return 60;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+    if (!isInitialLoading) {
+      setSecondsLeft(60);
+      const timer = setInterval(() => {
+        setSecondsLeft((prev) => {
+          if (prev <= 1) {
+            // time to refresh
+            fetchExchangeRate();
+            return 60;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [isInitialLoading]);
 
-  const handleSelectBank = () => {
-    navigation.navigate('BankAccounts');
-  };
-
-  const handleSelectTRC20 = () => {
-    navigation.navigate('TRC20Addresses');
-  };
-
-  const handleSelectReceiveTRC20 = () => {
-    navigation.navigate('TRC20Addresses');
-  };
 
   const handleConfirm = () => {
     if (paymentInfo.type === 'buy') {
-      // Determine wallet ID: selected one or default
       const walletId = selectedWalletId
         ? parseInt(selectedWalletId, 10)
         : (wallets.find(w => w.isDefault)?.id || undefined);
@@ -203,51 +279,62 @@ const PaymentScreen = () => {
       const amountNum = parseFloat(String(paymentInfo.amount));
       const usdtAmount = amountNum / currentRate;
 
-      // Call backend API to create BUY transaction
       api.post('/client/create-transactions/vnd-usdt', {
         email: user?.email ?? '',
         amount_usdt: usdtAmount,
         wallet_usdt_id: walletId,
       })
-      .then((res) => {
-        if (res?.data?.status) {
-          console.log('res', res.data);
-          const idTx = res?.data?.data?.id_transaction;
-          if (idTx) {
-            (navigation as any).navigate('DetailHistory', { idTransaction: idTx, type: 'buy' });
+        .then((res) => {
+          if (res?.data?.status) {
+            console.log('res', res.data);
+            const idTx = res?.data?.data?.id_transaction;
+            if (idTx) {
+              (navigation as any).navigate('DetailHistory', { idTransaction: idTx, type: 'buy' });
+            } else {
+              Alert.alert('Success', res.data.message || 'Created buy transaction successfully.');
+            }
           } else {
-            Alert.alert('Success', res.data.message || 'Created buy transaction successfully.');
+            Alert.alert('Error', res?.data?.message || 'Failed to create transaction');
           }
-        } else {
-          Alert.alert('Error', res?.data?.message || 'Failed to create transaction');
-        }
-      })
-      .catch((err) => {
-        console.log('Create buy tx error:', err);
-        Alert.alert('Error', err?.response?.data?.message || 'Create transaction failed');
-      });
+        })
+        .catch((err) => {
+          console.log('Create buy tx error:', err);
+          Alert.alert('Error', err?.response?.data?.message || 'Create transaction failed');
+        });
     } else {
-      if (!selectedBank) {
+      // Determine bank account ID: selected one or default
+      const bankAccountId = selectedBankId
+        ? parseInt(selectedBankId, 10)
+        : (bankAccounts.find(b => b.isDefault)?.id || undefined);
+      if (!bankAccountId) {
         Alert.alert('Notification', 'Please select a bank account to receive money');
         return;
       }
-      // Tạo transaction data cho DetailHistoryScreen
-      const transactionData = {
-        id: `MINO${Date.now().toString().slice(-6)}`,
-        type: paymentInfo.type,
-        amount: paymentInfo.amount,
-        usdt: paymentInfo.amount,
-        exchangeRate: currentRate.toLocaleString('vi-VN'),
-        status: 'pending' as const,
-        date: new Date().toLocaleDateString('vi-VN'),
-        time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-        transactionId: `MINO${Date.now().toString().slice(-6)}`,
-        fee: `${(parseFloat(paymentInfo.amount) * currentRate * (feePercent / 100)).toLocaleString('vi-VN')} VND (${feePercent}%)`,
-        totalAmount: `${((parseFloat(paymentInfo.amount) * currentRate) - (parseFloat(paymentInfo.amount) * currentRate * (feePercent / 100))).toLocaleString('vi-VN')} VND`,
-        receiveAddress: 'TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE',
-        bankAccount: selectedBank,
-      };
-      navigation.navigate('DetailHistory', { transaction: transactionData });
+
+      const amountNum = parseFloat(String(paymentInfo.amount));
+      api.post('/client/create-transactions/usdt-vnd', {
+        email: user?.email ?? '',
+        amount_usdt: amountNum,
+        detail_bank_id: bankAccountId,
+      })
+        .then((res) => {
+          if (res?.data?.status) {
+            console.log('Sell USDT response:', res.data);
+            const idTx = res?.data?.data?.id_transaction;
+            console.log('idTx', idTx);
+            if (idTx) {
+              (navigation as any).navigate('DetailHistory', { idTransaction: idTx, type: 'sell' });
+            } else {
+              Alert.alert('Success', res.data.message || 'Created sell transaction successfully.');
+            }
+          } else {
+            Alert.alert('Error', res?.data?.message || 'Failed to create transaction');
+          }
+        })
+        .catch((err) => {
+          console.log('Create sell tx error:', err);
+          Alert.alert('Error', err?.response?.data?.message || 'Create transaction failed');
+        });
     }
   };
 
@@ -296,47 +383,34 @@ const PaymentScreen = () => {
     }
   };
 
-  const generateQRData = () => {
-    const transactionInfo = getTransactionInfo();
-
-    if (paymentInfo.type === 'buy') {
-      const amountNum = parseFloat(paymentInfo.amount);
-      const feeAmount = amountNum * (feePercent / 100);
-      const totalAmount = amountNum + feeAmount;
-      
-      const qrData = {
-        bankName: transactionInfo.transferInfo?.bankName || 'Vietcombank',
-        accountNumber: transactionInfo.transferInfo?.accountNumber || '1234567890',
-        accountName: transactionInfo.transferInfo?.accountName || 'MINO EXCHANGE',
-        amount: totalAmount.toLocaleString('vi-VN').replace(/\./g, ''),
-        transferContent: transactionInfo.transferInfo?.transferContent || 'MINO TXN',
-        currency: 'VND',
-        fee: `${feePercent}%`
-      };
-
-      return JSON.stringify(qrData);
-    } else {
-      const amountNum = parseFloat(paymentInfo.amount);
-      const paymentData = {
-        merchant: "Mino Exchange",
-        transactionId: transactionIdRef.current,
-        type: paymentInfo.type,
-        amount: paymentInfo.amount,
-        currency: 'USDT',
-        rate: currentRate,
-        timestamp: new Date().toISOString(),
-        status: "pending",
-        totalAmount: `${(amountNum * currentRate).toLocaleString('vi-VN')} VND`,
-        receiveAmount: `${((amountNum * currentRate) * (1 - feePercent / 100)).toLocaleString('vi-VN')} VND`,
-        fee: `${feePercent}%`,
-        paymentMethod: 'crypto_transfer'
-      };
-
-      return JSON.stringify(paymentData);
-    }
-  };
+  
 
   const transactionInfo = getTransactionInfo();
+
+  // Show loading screen while initializing data
+  if (isInitialLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Icon name="arrow-left" size={24} color="#000" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>
+            {paymentInfo.type === 'buy' ? 'Buy USDT' : 'Sell USDT'}
+          </Text>
+          <View style={styles.headerRight} />
+        </View>
+        
+        <View style={styles.loadingContainer}>
+          <Icon name="loading" size={48} color="#4A90E2" />
+          <Text style={styles.loadingText}>Đang tải thông tin giao dịch...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -412,7 +486,7 @@ const PaymentScreen = () => {
         {paymentInfo.type === 'buy' && (
           <>
             <SelectCustom
-            label="Select TRC20 Wallet to Receive USDT"
+              label="Select TRC20 Wallet to Receive USDT"
               value={selectedWalletId}
               onChange={(val) => {
                 setSelectedWalletId(val);
@@ -454,49 +528,70 @@ const PaymentScreen = () => {
           </>
         )}
 
-        {/* Wallet Selection for Sell USDT */}
+        {/* Bank Account Selection for Sell USDT */}
         {paymentInfo.type === 'sell' && (
           <>
-            <Text style={styles.sectionTitle}>Select Bank Account to Receive Money</Text>
-            <TouchableOpacity
-              style={styles.selectButton}
-              onPress={handleSelectBank}
-            >
-              <View style={styles.selectLeft}>
-                <Icon name="bank" size={24} color="#4A90E2" />
-                <View style={styles.selectInfo}>
-                  <Text style={styles.selectTitle}>Bank Account</Text>
-                  <Text style={styles.selectDescription}>
-                    {selectedBank || `${DEFAULT_BANK.bankName} - ${DEFAULT_BANK.accountNumber}`}
-                  </Text>
-                </View>
-              </View>
-              <Icon name="chevron-right" size={24} color="#666" />
-            </TouchableOpacity>
+            <SelectCustom
+              label="Select Bank Account to Receive Money"
+              value={selectedBankId}
+              onChange={(val) => {
+                setSelectedBankId(val);
+                const b = bankAccounts.find((x) => String(x.id) === val);
+                if (b) setSelectedBank(`${b.bank} - ${b.accountNumber}`);
+              }}
+              options={bankAccounts.map((b) => ({
+                label: b.bank,
+                value: String(b.id),
+                iconUrl: b.logo,
+                subtitle: `${b.accountNumber} - ${b.accountName}`,
+                searchText: `${b.bank} ${b.accountNumber} ${b.accountName}`,
+              }))}
+              placeholder={selectedBank ? selectedBank : 'Select bank account (default if none)'}
+              searchable
+              searchPlaceholder="Search bank account by name or number..."
+              containerStyle={{ marginBottom: 12 }}
+            />
 
-            {/* Preview selected/default bank info */}
-            <View style={styles.walletCard}>
-              <View style={styles.walletHeader}>
-                <Icon name="bank" size={20} color="#4A90E2" />
-                <Text style={styles.walletTitle}>Receive Bank Account</Text>
-              </View>
-              <View style={styles.walletAddressContainer}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.walletAddress, { fontFamily: undefined }]}>
-                    {selectedBank || `${DEFAULT_BANK.bankName} - ${DEFAULT_BANK.accountNumber}`}
-                  </Text>
-                  <Text style={{ color: '#666', marginTop: 4 }}>
-                    {DEFAULT_BANK.accountName}
-                  </Text>
+            {selectedBank ? (
+              <View style={styles.walletCard}>
+                <View style={styles.walletHeader}>
+                  {(() => {
+                    const selectedBankAccount = bankAccounts.find(b => String(b.id) === selectedBankId);
+                    return selectedBankAccount?.logo ? (
+                      <View style={styles.bankLogoContainer}>
+                        <Image
+                          source={{ uri: selectedBankAccount.logo }}
+                          style={styles.bankLogo}
+                          resizeMode="contain"
+                        />
+                      </View>
+                    ) : (
+                      <Icon name="bank" size={20} color="#4A90E2" />
+                    );
+                  })()}
+                  <Text style={styles.walletTitle}>Receive Bank Account</Text>
                 </View>
-                <TouchableOpacity
-                  style={styles.copyButton}
-                  onPress={() => copyToClipboard(selectedBank || `${DEFAULT_BANK.bankName} - ${DEFAULT_BANK.accountNumber}`, 'Bank info copied')}
-                >
-                  <Icon name="content-copy" size={16} color="#4A90E2" />
-                </TouchableOpacity>
+                <View style={styles.walletAddressContainer}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.walletAddress, { fontFamily: undefined }]}>
+                      {selectedBank}
+                    </Text>
+                    <Text style={{ color: '#666', marginTop: 4 }}>
+                      {bankAccounts.find(b => String(b.id) === selectedBankId)?.accountName || DEFAULT_BANK.accountName}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.copyButton}
+                    onPress={() => copyToClipboard(selectedBank, 'Bank info copied')}
+                  >
+                    <Icon name="content-copy" size={16} color="#4A90E2" />
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.walletNote}>
+                  Money will be transferred to this bank account after your USDT is confirmed.
+                </Text>
               </View>
-            </View>
+            ) : null}
           </>
         )}
 
@@ -516,10 +611,10 @@ const PaymentScreen = () => {
         <TouchableOpacity
           style={[
             styles.confirmButton,
-            ((paymentInfo.type === 'buy' && !selectedReceiveTRC20) || (paymentInfo.type === 'sell' && !selectedBank)) && styles.confirmButtonDisabled
+            ((paymentInfo.type === 'buy' && !selectedReceiveTRC20) || (paymentInfo.type === 'sell' && !selectedBankId)) && styles.confirmButtonDisabled
           ]}
           onPress={handleConfirm}
-          disabled={(paymentInfo.type === 'buy' && !selectedReceiveTRC20) || (paymentInfo.type === 'sell' && !selectedBank)}
+          disabled={(paymentInfo.type === 'buy' && !selectedReceiveTRC20) || (paymentInfo.type === 'sell' && !selectedBankId)}
         >
           <Text style={styles.confirmButtonText}>Confirm Transaction</Text>
         </TouchableOpacity>
@@ -844,6 +939,31 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: wp('4%'),
     fontWeight: '600',
+  },
+  bankLogoContainer: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    overflow: 'hidden',
+    backgroundColor: '#F8F8F8',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bankLogo: {
+    width: 20,
+    height: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: wp('4%'),
+    color: '#666',
+    textAlign: 'center',
   },
 });
 

@@ -135,10 +135,10 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
 
   const signOut = async () => {
     try {
-      await api.post('/client/logout');
-      await removeUser();
       await removeToken();
+      await removeUser();
       (navigation as any).replace('Login');
+      await api.get('/client/logout');
     } catch (error) {
       console.error('Sign out error:', error);
     }
@@ -289,7 +289,6 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
           <View style={styles.userInfo}>
             <Text style={styles.name}>{user?.full_name || 'Loading...'}</Text>
             <Text style={styles.email}>{user?.email || 'Loading...'}</Text>
-            <Text style={styles.phone}>{user?.number_phone || 'Loading...'}</Text>
             <View style={styles.badgesContainer}>
               <View style={[styles.badge, { backgroundColor: isEkycVerified ? '#34C75915' : '#E5E5EA' }]}>
                 <Icon name="shield-check" size={14} color={isEkycVerified ? '#34C759' : '#8E8E93'} />

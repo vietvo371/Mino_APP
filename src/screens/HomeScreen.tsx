@@ -449,7 +449,7 @@ const HomeScreen: StackScreen<'Home'> = () => {
                 : ['10', '50', '100', '500']
               ).map((amount, index) => (
                 <TouchableOpacity
-                  key={index}
+                  key={`quick-${activeTab}-${index}`}
                   style={styles.quickAmountButton}
                   onPress={() => handleShortcutPress(amount)}
                 >
@@ -464,7 +464,7 @@ const HomeScreen: StackScreen<'Home'> = () => {
             <View style={styles.numberPad}>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, ',', 0].map((num, index) => (
                 <TouchableOpacity
-                  key={index}
+                  key={`numpad-${activeTab}-${index}`}
                   style={styles.numberButton}
                   onPress={() => handleNumberPress(num.toString())}
                 >

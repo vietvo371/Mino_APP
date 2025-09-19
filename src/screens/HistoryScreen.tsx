@@ -42,6 +42,7 @@ interface Transaction {
   status: number;
   bank_name: string | null;
   bank_address: string | null;
+  created_at: string;
 }
 
 interface TransactionHistoryResponse {
@@ -49,100 +50,7 @@ interface TransactionHistoryResponse {
   data: Transaction[];
 }
 
-// Mock data for transaction history (fallback)
-const MOCK_TRANSACTIONS = {
-  pending: [
-    {
-      id: '1',
-      type: 'buy',
-      amount: '1000000',
-      usdt: '40.82',
-      exchangeRate: '24,500',
-      status: 'pending',
-      date: '13/03/2024',
-      time: '15:30',
-      transactionId: 'MINO123456',
-      fee: '5,000 VND (0.5%)',
-      totalAmount: '1,005,000 VND',
-      transferInfo: {
-        bankName: 'BIDV',
-        accountNumber: '963336984884401',
-        accountName: 'BAOKIM CONG TY CO PHAN THUONG MAI DIEN TU BAO KIM',
-        transferContent: 'Lien ket vi Baokim',
-        amount: '1,005,000',
-      },
-    },
-    {
-      id: '2',
-      type: 'sell',
-      amount: '2450000',
-      usdt: '100',
-      exchangeRate: '24,500',
-      status: 'pending',
-      date: '13/03/2024',
-      time: '14:20',
-      transactionId: 'MINO123457',
-      fee: '12,250 VND (0.5%)',
-      totalAmount: '2,437,750 VND',
-      receiveAddress: 'TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE',
-      bankAccount: 'Vietcombank - 1234567890',
-    },
-  ],
-  success: [
-    {
-      id: '3',
-      type: 'buy',
-      amount: '12250000',
-      usdt: '500',
-      exchangeRate: '24,500',
-      status: 'completed',
-      date: '12/03/2024',
-      time: '18:45',
-    },
-    {
-      id: '4',
-      type: 'sell',
-      amount: '4900000',
-      usdt: '200',
-      exchangeRate: '24,500',
-      status: 'completed',
-      date: '12/03/2024',
-      time: '10:15',
-    },
-    {
-      id: '5',
-      type: 'buy',
-      amount: '5000000',
-      usdt: '204.08',
-      exchangeRate: '24,500',
-      status: 'completed',
-      date: '11/03/2024',
-      time: '16:20',
-    },
-  ],
-  fail: [
-    {
-      id: '6',
-      type: 'sell',
-      amount: '1000000',
-      usdt: '40.82',
-      exchangeRate: '24,500',
-      status: 'failed',
-      date: '10/03/2024',
-      time: '09:15',
-    },
-    {
-      id: '7',
-      type: 'buy',
-      amount: '2500000',
-      usdt: '102.04',
-      exchangeRate: '24,500',
-      status: 'failed',
-      date: '09/03/2024',
-      time: '11:30',
-    },
-  ],
-};
+
 
 const TIME_FILTERS = [
   { id: '1d', label: '1 Day' },
@@ -207,6 +115,31 @@ const HistoryScreen = () => {
     fetchTransactionHistory();
   }, []);
 
+  // Format createdAt timestamp to Vietnamese format
+  const formatCreatedAt = (createdAt: string) => {
+    try {
+      const date = new Date(createdAt);
+      const dateStr = date.toLocaleDateString('vi-VN');
+      const timeStr = date.toLocaleTimeString('vi-VN', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      });
+      return {
+        date: dateStr,
+        time: timeStr
+      };
+    } catch (error) {
+      console.error('Error formatting createdAt:', error);
+      // fallback to current date/time
+      const now = new Date();
+      return {
+        date: now.toLocaleDateString('vi-VN'),
+        time: now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+      };
+    }
+  };
+
   const handleTimeFilterPress = (filterId: string) => {
     setSelectedTimeFilter(filterId);
   };
@@ -227,37 +160,29 @@ const HistoryScreen = () => {
     return { pending, success, fail };
   };
 
-  const renderTransaction = (transaction: Transaction) => {
+  const renderTransaction = (transaction: Transaction, index: number) => {
     const isBuy = transaction.type === 1; // 1 = buy, 2 = sell (based on API response)
-    const amount = isBuy 
-      ? `${transaction.amount_usdt} USDT`
-      : `${transaction.amount_vnd.toLocaleString('vi-VN')} VND`;
-    const exchangeAmount = isBuy
-      ? `${transaction.amount_vnd.toLocaleString('vi-VN')} VND`
-      : `${transaction.amount_usdt} USDT`;
     
-    // Format date from note or use current date
-    const formatDate = (note: string) => {
-      // Extract date from note if it follows pattern like "MIM0920315"
-      // For now, use current date
-      const now = new Date();
-      const date = now.getDate().toString().padStart(2, '0');
-      const month = (now.getMonth() + 1).toString().padStart(2, '0');
-      const year = now.getFullYear().toString().slice(-2);
-      const hours = now.getHours().toString().padStart(2, '0');
-      const minutes = now.getMinutes().toString().padStart(2, '0');
-      
-      return {
-        date: `${date}/${month}/${now.getFullYear()}`,
-        time: `${hours}:${minutes}`
-      };
-    };
+    // Format amounts based on transaction type (matching DetailHistoryScreen logic)
+    let amount, exchangeAmount;
+    if (isBuy) {
+      // Buy USDT: amount = VND to pay, exchangeAmount = USDT to receive
+      amount = `${transaction.amount_vnd_real.toLocaleString('vi-VN')} VND`;
+      exchangeAmount = `${transaction.amount_usdt} USDT`;
+    } else {
+      // Sell USDT: amount = VND to receive, exchangeAmount = USDT to sell  
+      amount = `${transaction.amount_vnd_real.toLocaleString('vi-VN')} VND`;
+      exchangeAmount = `${transaction.amount_usdt} USDT`;
+    }
     
-    const { date, time } = formatDate(transaction.note);
+    // Use createdAt for date/time display
+    const { date, time } = transaction.created_at 
+      ? formatCreatedAt(transaction.created_at)
+      : formatCreatedAt(new Date().toISOString()); // fallback if no created_at
 
     return (
       <TouchableOpacity
-        key={transaction.note} // Use note as unique key since there's no id in API
+        key={`${transaction.note}-${transaction.id}-${index}`} // Use note + id + index for unique key
         style={styles.transactionItem}
         onPress={() => {
           // Determine transaction type for navigation
@@ -313,25 +238,25 @@ const HistoryScreen = () => {
 
           <View style={styles.amountContainer}>
             <View style={styles.amountRow}>
-              <Text style={styles.amountLabel}>Amount:</Text>
+              <Text style={styles.amountLabel}>{isBuy ? 'Total to Pay:' : 'Total to Receive:'}</Text>
               <Text style={[styles.amountValue, { color: isBuy ? '#4A90E2' : '#7B68EE' }]}>
                 {amount}
               </Text>
             </View>
             <View style={styles.amountRow}>
-              <Text style={styles.amountLabel}>Exchange:</Text>
+              <Text style={styles.amountLabel}>{isBuy ? 'USDT to Receive:' : 'USDT to Sell:'}</Text>
               <Text style={styles.exchangeValue}>{exchangeAmount}</Text>
             </View>
             <View style={styles.amountRow}>
-              <Text style={styles.amountLabel}>Rate:</Text>
+              <Text style={styles.amountLabel}>Exchange Rate:</Text>
               <Text style={styles.exchangeRateValue}>
-                {transaction.rate.toLocaleString('vi-VN')} VND/USDT
+                {transaction.rate ? transaction.rate.toLocaleString('vi-VN') : '0'} VND/USDT
               </Text>
             </View>
             <View style={styles.amountRow}>
-              <Text style={styles.amountLabel}>Fee:</Text>
+              <Text style={styles.amountLabel}>Transaction Fee:</Text>
               <Text style={styles.exchangeRateValue}>
-                {transaction.fee_vnd.toLocaleString('vi-VN')} VND ({(transaction.fee_percent * 100).toFixed(2)}%)
+                {transaction.fee_vnd ? transaction.fee_vnd.toLocaleString('vi-VN') : '0'} VND ({transaction.fee_percent ? (transaction.fee_percent * 100).toFixed(2) : '0'}%)
               </Text>
             </View>
           </View>
@@ -453,7 +378,7 @@ const HistoryScreen = () => {
         contentContainerStyle={styles.scrollContent}
       >
         <View style={styles.transactionList}>
-          {getCurrentTransactions().map(renderTransaction)}
+          {getCurrentTransactions().map((transaction, index) => renderTransaction(transaction, index))}
         </View>
       </ScrollView>
 

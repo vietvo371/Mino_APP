@@ -20,6 +20,7 @@ import {
 } from 'react-native-responsive-screen';
 import api from '../utils/Api';
 import SelectCustom from '../component/SelectCustom';
+import { getUser } from '../utils/TokenManager';
 
 interface BankData {
   id: number;
@@ -113,12 +114,18 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
     setLoading(true);
     
     try {
+      const user = await getUser();
+      if (!user?.email) {
+        Alert.alert('Error', 'User not authenticated');
+        return;
+      }
       const response = await api.post('/client/bank/update', {
         id: account.id,
         id_bank: parseInt(selectedBankId),
         name_ekyc: accountName.trim(),
         bank_number: accountNumber.trim(),
-        is_default: isDefault ? 1 : 0
+        is_default: isDefault ? 1 : 0,
+        email: user?.email,
       });
 
       console.log('Update bank account response:', response.data);
@@ -139,7 +146,7 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
       }
       
     } catch (error: any) {
-      console.log('Update bank account error:', error);
+      console.log('Update bank account error:', error.response);
       
       // Handle Laravel 422 validation errors
       if (error.response?.status === 422) {
@@ -170,6 +177,66 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
         }
         Alert.alert('Error', errorMessage);
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete Bank Account',
+      'Are you sure you want to delete this bank account? This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            await deleteBankAccount();
+          },
+        },
+      ]
+    );
+  };
+
+  const deleteBankAccount = async () => {
+    if (!account?.id) {
+      Alert.alert('Error', 'Invalid bank account data');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const user = await getUser();
+      if (!user?.email) {
+        Alert.alert('Error', 'User not authenticated');
+        return;
+      }
+      const response = await api.post('/client/bank/delete', {
+        id: account.id,
+        email: user?.email,
+      });
+
+      console.log('Delete bank account response:', response.data);
+
+      if (response?.data?.status) {
+        Alert.alert('Success', 'Bank account deleted successfully', [
+          {
+            text: 'OK',
+            onPress: () => {
+              navigation.goBack();
+            },
+          },
+        ]);
+      } else {
+        Alert.alert('Error', response?.data?.message || 'Failed to delete bank account');
+      }
+    } catch (error: any) {
+      console.log('Delete bank account error:', error.response);
+      Alert.alert(
+        'Error',
+        error?.response?.data?.message || 'Failed to delete bank account. Please try again.'
+      );
     } finally {
       setLoading(false);
     }
@@ -273,6 +340,20 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
             thumbColor="#FFFFFF"
           />
         </View>
+
+        {/* Delete Button */}
+        <TouchableOpacity
+          style={[styles.deleteButton, loading && styles.deleteButtonDisabled]}
+          onPress={handleDelete}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator size="small" color="#FF3B30" />
+          ) : (
+            <Icon name="trash-can-outline" size={20} color="#FF3B30" />
+          )}
+          <Text style={styles.deleteText}>Delete this bank account</Text>
+        </TouchableOpacity>
 
         <View style={styles.infoBox}>
           <Icon name="information" size={20} color="#666" />
@@ -384,6 +465,24 @@ const styles = StyleSheet.create({
     color: '#FF6B6B',
     marginTop: 4,
     marginLeft: 4,
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    backgroundColor: '#FFEBEE',
+    borderRadius: 12,
+    marginTop: 24,
+  },
+  deleteButtonDisabled: {
+    opacity: 0.5,
+  },
+  deleteText: {
+    fontSize: wp('4%'),
+    color: '#FF3B30',
+    fontWeight: '600',
+    marginLeft: 8,
   },
 });
 

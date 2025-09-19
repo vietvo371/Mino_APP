@@ -109,7 +109,7 @@ const TradeScreen = () => {
       <View style={styles.shortcutContainer}>
         {shortcutAmounts.map((item, index) => (
           <TouchableOpacity
-            key={index}
+            key={`shortcut-${item.value}-${index}`}
             style={styles.shortcutButton}
             onPress={() => handleShortcutPress(item.value)}
           >
@@ -122,7 +122,7 @@ const TradeScreen = () => {
       <View style={styles.numberPad}>
         {[1, 2, 3, 4, 5, 6, 7, 8, 9, '.', 0].map((num, index) => (
           <TouchableOpacity
-            key={index}
+            key={`numpad-${num}-${index}`}
             style={styles.numberButton}
             onPress={() => handleNumberPress(num.toString())}
           >

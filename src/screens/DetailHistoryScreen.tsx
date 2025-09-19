@@ -94,36 +94,70 @@ const DetailHistoryScreen = () => {
       if (!idTransaction || transaction || !user?.email) return;
       setLoading(true);
       try {
-        const res = await api.post('/client/transaction-pending/vnd-usdt', {
+        // Determine API endpoint based on transaction type
+        const endpoint = typeParam === 'sell' 
+          ? '/client/transaction-pending/usdt-vnd' 
+          : '/client/transaction-pending/vnd-usdt';
+        
+        const res = await api.post(endpoint, {
           email: user.email,
           id_transaction: idTransaction,
         });
         if (res?.data?.status) {
           console.log('res', res.data);
           const d = res.data.data || {};
-          const mapped: TransactionDetail = {
-            id: String(idTransaction),
-            type: typeParam || 'buy',
-            amount: String(d.amount_vnd ?? ''),
-            usdt: String(d.amount_usd ?? ''),
-            exchangeRate: String(d.rate ?? ''),
-            status: 'pending',
-            date: new Date().toLocaleDateString('vi-VN'),
-            time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-            transactionId: d.order_code || '',
-            fee: `${(d.fee_vnd ?? 0).toLocaleString('vi-VN')} VND`,
-            totalAmount: `${(d.total_vnd ?? 0).toLocaleString('vi-VN')} VND`,
-            qrPayload: d.qr_code || undefined,
-            createdAt: d.created_at || undefined,
-            transferInfo: {
-              bankName: d.bank_name || '',
-              accountNumber: d.bank_number || '',
-              accountName: d.bank_account || '',
-              transferContent: d.qr_code ? (d.order_code || '') : (d.order_code || ''),
-              amount: (d.total_vnd ?? 0).toLocaleString('vi-VN'),
-            },
-          };
-          setTransaction(mapped);
+          
+          if (typeParam === 'sell') {
+            // Sell USDT mapping
+            const mapped: TransactionDetail = {
+              id: String(idTransaction),
+              type: 'sell',
+              amount: parseFloat(String(d.amount_vnd ?? '')).toLocaleString('vi-VN'), // USDT amount to sell
+              usdt: String(d.amount_usd ?? ''), // USDT amount to sell
+              exchangeRate: parseFloat(String(d.rate ?? '')).toLocaleString('vi-VN'),
+              status: 'pending',
+              date: d.created_at ? new Date(d.created_at).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN'),
+              time: d.created_at ? new Date(d.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+              transactionId: d.order_code || '',
+              fee: `${(d.fee_vnd ?? 0).toLocaleString('vi-VN')} VND`,
+              totalAmount: `${(d.total_vnd ?? 0).toLocaleString('vi-VN')} VND`, // Amount to receive
+              receiveAddress: d.address_wallet || undefined, // TRC20 wallet to send USDT to
+              createdAt: d.created_at || undefined,
+              transferInfo: {
+                bankName: d.bank_name || '',
+                accountNumber: d.bank_number || '',
+                accountName: d.bank_account || '',
+                transferContent: d.order_code || '',
+                amount: (d.total_vnd ?? 0).toLocaleString('vi-VN'), // Amount to receive
+              },
+            };
+            setTransaction(mapped);
+          } else {
+            // Buy USDT mapping (existing)
+            const mapped: TransactionDetail = {
+              id: String(idTransaction),
+              type: 'buy',
+              amount: parseFloat(String(d.amount_vnd ?? '')).toLocaleString('vi-VN'),
+              usdt: String(d.amount_usd ?? ''),
+              exchangeRate: parseFloat(String(d.rate ?? '')).toLocaleString('vi-VN'),
+              status: 'pending',
+              date: d.created_at ? new Date(d.created_at).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN'),
+              time: d.created_at ? new Date(d.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+              transactionId: d.order_code || '',
+              fee: `${(d.fee_vnd ?? 0).toLocaleString('vi-VN')} VND`,
+              totalAmount: `${(d.total_vnd ?? 0).toLocaleString('vi-VN')} VND`,
+              qrPayload: d.qr_code || undefined,
+              createdAt: d.created_at || undefined,
+              transferInfo: {
+                bankName: d.bank_name || '',
+                accountNumber: d.bank_number || '',
+                accountName: d.bank_account || '',
+                transferContent: d.qr_code ? (d.order_code || '') : (d.order_code || ''),
+                amount: (d.total_vnd ?? 0).toLocaleString('vi-VN'),
+              },
+            };
+            setTransaction(mapped);
+          }
         }
       } catch (err : any) {
         console.log('fetch pending error', err.response);
@@ -138,6 +172,23 @@ const DetailHistoryScreen = () => {
     const m = Math.floor(s / 60).toString().padStart(2, '0');
     const ss = Math.floor(s % 60).toString().padStart(2, '0');
     return `${m}:${ss}`;
+  };
+
+  // Format createdAt timestamp to Vietnamese format
+  const formatCreatedAt = (createdAt: string) => {
+    try {
+      const date = new Date(createdAt);
+      const dateStr = date.toLocaleDateString('vi-VN');
+      const timeStr = date.toLocaleTimeString('vi-VN', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      });
+      return `${dateStr} • ${timeStr}`;
+    } catch (error) {
+      console.error('Error formatting createdAt:', error);
+      return createdAt; // fallback to original string
+    }
   };
 
   if (!transaction) {
@@ -200,7 +251,8 @@ const DetailHistoryScreen = () => {
     Alert.alert('Copied', message);
   };
 
-  return (
+  // Render Buy USDT Transaction
+  const renderBuyTransaction = () => (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity
@@ -209,7 +261,7 @@ const DetailHistoryScreen = () => {
         >
           <Icon name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Transaction Detail</Text>
+        <Text style={styles.headerTitle}>Buy USDT Transaction</Text>
         <View style={styles.headerRight} />
       </View>
 
@@ -221,22 +273,17 @@ const DetailHistoryScreen = () => {
             {isExpired ? 'This transaction has expired.' : `This transaction is valid for 5 minutes. Time left: ${formatTime(secondsLeft)}`}
           </Text>
         </View>
+
         {/* Transaction Status Card */}
         <View style={styles.statusCard}>
           <View style={styles.statusHeader}>
             <View style={[styles.statusIcon, { backgroundColor: getStatusColor() + '20' }]}>
-              <Icon
-                name={isBuy ? 'arrow-down' : 'arrow-up'}
-                size={24}
-                color={getStatusColor()}
-              />
+              <Icon name="arrow-down" size={24} color={getStatusColor()} />
             </View>
             <View style={styles.statusInfo}>
-              <Text style={styles.transactionType}>
-                {isBuy ? 'Buy USDT' : 'Sell USDT'}
-              </Text>
+              <Text style={styles.transactionType}>Buy USDT</Text>
               <Text style={styles.transactionDate}>
-                {transaction.date} • {transaction.time}
+                {transaction.createdAt ? formatCreatedAt(transaction.createdAt) : `${transaction.date} • ${transaction.time}`}
               </Text>
             </View>
           </View>
@@ -266,16 +313,16 @@ const DetailHistoryScreen = () => {
           </View>
 
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Amount</Text>
-            <Text style={[styles.infoValue, { color: isBuy ? '#4A90E2' : '#7B68EE' }]}>
-              {isBuy ? `${transaction.usdt} USDT` : `${parseInt(transaction.amount).toLocaleString('vi-VN')} VND`}
+            <Text style={styles.infoLabel}>USDT to Receive</Text>
+            <Text style={[styles.infoValue, { color: '#4A90E2' }]}>
+              {transaction.usdt} USDT
             </Text>
           </View>
 
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Exchange Amount</Text>
+            <Text style={styles.infoLabel}>VND to Pay</Text>
             <Text style={styles.infoValue}>
-              {isBuy ? `${parseInt(transaction.amount).toLocaleString('vi-VN')} VND` : `${transaction.usdt} USDT`}
+              {transaction.amount} VND
             </Text>
           </View>
 
@@ -296,24 +343,19 @@ const DetailHistoryScreen = () => {
           <View style={styles.divider} />
           
           <View style={styles.infoRow}>
-            <Text style={styles.totalLabel}>Total Amount</Text>
+            <Text style={styles.totalLabel}>Total to Pay</Text>
             <Text style={styles.totalValue}>
               {transaction.totalAmount}
             </Text>
           </View>
         </View>
 
-        {/* QR Code Section - For All Transactions */}
+        {/* QR Code Section */}
         <View style={[styles.qrCard, isExpired && { opacity: 0.5 }]}>
-          <Text style={styles.qrCardTitle}>
-            {isBuy ? 'Payment QR Code' : 'TRC20 Wallet QR Code'}
-          </Text>
+          <Text style={styles.qrCardTitle}>Payment QR Code</Text>
           <View style={styles.qrContainer}>
             <QRCode
-              value={isBuy
-                ? (transaction.qrPayload || '')
-                : (transaction.receiveAddress || 'TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE')
-              }
+              value={transaction.qrPayload || ''}
               size={wp('70%')}
               quietZone={12}
               showShare={!isExpired}
@@ -325,168 +367,115 @@ const DetailHistoryScreen = () => {
             <Text style={styles.qrInfoText}>
               {isExpired 
                 ? 'This QR code is no longer valid. Please create a new transaction.'
-                : (isBuy ? 'Scan QR code with banking app to make payment' : 'Scan QR code to send USDT from your wallet')}
+                : 'Scan QR code with banking app to make payment'}
             </Text>
           </View>
         </View>
 
-        {/* Payment/Wallet Information - For All Transactions */}
-        {isBuy ? (
-          <View style={styles.infoCard}>
-            <Text style={styles.cardTitle}>Bank Transfer Information</Text>
-            
-            {transaction.transferInfo ? (
-              <>
-                <View style={styles.transferCard}>
-                  <View style={styles.transferRow}>
-                    <Text style={styles.transferLabel}>Bank Name</Text>
-                    <View style={styles.transferValueContainer}>
-                      <Text style={styles.transferValue}>{transaction.transferInfo.bankName}</Text>
-                      <TouchableOpacity
-                        onPress={() => copyToClipboard(transaction.transferInfo!.bankName, 'Bank name copied')}
-                        style={styles.copyButton}
-                      >
-                        <Icon name="content-copy" size={16} color="#4A90E2" />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-
-                  <View style={styles.transferRow}>
-                    <Text style={styles.transferLabel}>Account Name</Text>
-                    <View style={styles.transferValueContainer}>
-                      <Text style={styles.transferValue}>{transaction.transferInfo.accountName}</Text>
-                      <TouchableOpacity
-                        onPress={() => copyToClipboard(transaction.transferInfo!.accountName, 'Account name copied')}
-                        style={styles.copyButton}
-                      >
-                        <Icon name="content-copy" size={16} color="#4A90E2" />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-
-                  <View style={styles.transferRow}>
-                    <Text style={styles.transferLabel}>Account Number</Text>
-                    <View style={styles.transferValueContainer}>
-                      <Text style={styles.transferValue}>{transaction.transferInfo.accountNumber}</Text>
-                      <TouchableOpacity
-                        onPress={() => copyToClipboard(transaction.transferInfo!.accountNumber, 'Account number copied')}
-                        style={styles.copyButton}
-                      >
-                        <Icon name="content-copy" size={16} color="#4A90E2" />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-
-                  <View style={styles.transferRow}>
-                    <Text style={styles.transferLabel}>Amount to Transfer</Text>
-                    <View style={styles.transferValueContainer}>
-                      <Text style={[styles.transferValue, { color: '#4A90E2', fontWeight: '600' }]}>
-                        {transaction.transferInfo.amount} VND
-                      </Text>
-                      <TouchableOpacity
-                        onPress={() => copyToClipboard(transaction.transferInfo!.amount.replace(/\./g, ''), 'Amount copied')}
-                        style={styles.copyButton}
-                      >
-                        <Icon name="content-copy" size={16} color="#4A90E2" />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-
-                  <View style={styles.transferRow}>
-                    <Text style={styles.transferLabel}>Transfer Content</Text>
-                    <View style={styles.transferValueContainer}>
-                      <Text style={[styles.transferValue, { color: '#4A90E2', fontWeight: '600' }]}>
-                        {transaction.transferInfo.transferContent}
-                      </Text>
-                      <TouchableOpacity
-                        onPress={() => copyToClipboard(transaction.transferInfo!.transferContent, 'Transfer content copied')}
-                        style={styles.copyButton}
-                      >
-                        <Icon name="content-copy" size={16} color="#4A90E2" />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                </View>
-
-                <TouchableOpacity
-                  style={styles.copyAllButton}
-                  onPress={() => {
-                    if (transaction.transferInfo) {
-                      const allInfo = `Bank Name: ${transaction.transferInfo.bankName}\nAccount Name: ${transaction.transferInfo.accountName}\nAccount Number: ${transaction.transferInfo.accountNumber}\nAmount: ${transaction.transferInfo.amount} VND\nTransfer Content: ${transaction.transferInfo.transferContent}`;
-                      copyToClipboard(allInfo, 'All transfer information copied');
-                    }
-                  }}
-                >
-                  <Icon name="content-copy" size={18} color="#FFFFFF" />
-                  <Text style={styles.copyAllText}>Copy All Information</Text>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <View style={styles.noDataContainer}>
-                <Icon name="bank" size={48} color="#666" />
-                <Text style={styles.noDataText}>No transfer information available</Text>
-              </View>
-            )}
-          </View>
-        ) : (
-          <View style={styles.infoCard}>
-            <Text style={styles.cardTitle}>TRC20 Wallet Information</Text>
-            
-            {transaction.receiveAddress ? (
-              <>
-                <View style={styles.walletCard}>
-                  <View style={styles.walletHeader}>
-                    <Icon name="wallet" size={20} color="#7B68EE" />
-                    <Text style={styles.walletTitle}>Send USDT To</Text>
-                  </View>
-                  
-                  <View style={styles.walletAddressContainer}>
-                    <Text style={styles.walletAddress}>{transaction.receiveAddress}</Text>
+        {/* Bank Transfer Information */}
+        <View style={styles.infoCard}>
+          <Text style={styles.cardTitle}>Bank Transfer Information</Text>
+          
+          {transaction.transferInfo ? (
+            <>
+              <View style={styles.transferCard}>
+                <View style={styles.transferRow}>
+                  <Text style={styles.transferLabel}>Bank Name</Text>
+                  <View style={styles.transferValueContainer}>
+                    <Text style={styles.transferValue}>{transaction.transferInfo.bankName}</Text>
                     <TouchableOpacity
-                      onPress={() => copyToClipboard(transaction.receiveAddress!, 'Wallet address copied')}
+                      onPress={() => copyToClipboard(transaction.transferInfo!.bankName, 'Bank name copied')}
                       style={styles.copyButton}
                     >
                       <Icon name="content-copy" size={16} color="#4A90E2" />
                     </TouchableOpacity>
                   </View>
-
-                  <View style={styles.usdtAmountContainer}>
-                    <View style={styles.usdtAmountHeader}>
-                      <Icon name="currency-usd" size={16} color="#7B68EE" />
-                      <Text style={styles.usdtAmountLabel}>USDT to Send</Text>
-                    </View>
-                    <View style={styles.usdtAmountValueContainer}>
-                      <Text style={styles.usdtAmountValue}>{transaction.usdt} USDT</Text>
-                      <TouchableOpacity
-                        onPress={() => copyToClipboard(`${transaction.usdt} USDT`, 'USDT amount copied')}
-                        style={styles.copyButton}
-                      >
-                        <Icon name="content-copy" size={16} color="#4A90E2" />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-
-                <Text style={styles.walletNote}>
-                    Send {transaction.usdt} USDT to this address to complete the transaction
-                  </Text>
                 </View>
-              </>
-            ) : (
-              <View style={styles.noDataContainer}>
-                <Icon name="wallet" size={48} color="#666" />
-                <Text style={styles.noDataText}>No wallet information available</Text>
-              </View>
-            )}
-          </View>
-        )}
 
+                <View style={styles.transferRow}>
+                  <Text style={styles.transferLabel}>Account Name</Text>
+                  <View style={styles.transferValueContainer}>
+                    <Text style={styles.transferValue}>{transaction.transferInfo.accountName}</Text>
+                    <TouchableOpacity
+                      onPress={() => copyToClipboard(transaction.transferInfo!.accountName, 'Account name copied')}
+                      style={styles.copyButton}
+                    >
+                      <Icon name="content-copy" size={16} color="#4A90E2" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View style={styles.transferRow}>
+                  <Text style={styles.transferLabel}>Account Number</Text>
+                  <View style={styles.transferValueContainer}>
+                    <Text style={styles.transferValue}>{transaction.transferInfo.accountNumber}</Text>
+                    <TouchableOpacity
+                      onPress={() => copyToClipboard(transaction.transferInfo!.accountNumber, 'Account number copied')}
+                      style={styles.copyButton}
+                    >
+                      <Icon name="content-copy" size={16} color="#4A90E2" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View style={styles.transferRow}>
+                  <Text style={styles.transferLabel}>Amount to Transfer</Text>
+                  <View style={styles.transferValueContainer}>
+                    <Text style={[styles.transferValue, { color: '#4A90E2', fontWeight: '600' }]}>
+                      {transaction.transferInfo.amount} VND
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => copyToClipboard(transaction.transferInfo!.amount.replace(/\./g, ''), 'Amount copied')}
+                      style={styles.copyButton}
+                    >
+                      <Icon name="content-copy" size={16} color="#4A90E2" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View style={styles.transferRow}>
+                  <Text style={styles.transferLabel}>Transfer Content</Text>
+                  <View style={styles.transferValueContainer}>
+                    <Text style={[styles.transferValue, { color: '#4A90E2', fontWeight: '600' }]}>
+                      {transaction.transferInfo.transferContent}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => copyToClipboard(transaction.transferInfo!.transferContent, 'Transfer content copied')}
+                      style={styles.copyButton}
+                    >
+                      <Icon name="content-copy" size={16} color="#4A90E2" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={styles.copyAllButton}
+                onPress={() => {
+                  if (transaction.transferInfo) {
+                    const allInfo = `Bank Name: ${transaction.transferInfo.bankName}\nAccount Name: ${transaction.transferInfo.accountName}\nAccount Number: ${transaction.transferInfo.accountNumber}\nAmount: ${transaction.transferInfo.amount} VND\nTransfer Content: ${transaction.transferInfo.transferContent}`;
+                    copyToClipboard(allInfo, 'All transfer information copied');
+                  }
+                }}
+              >
+                <Icon name="content-copy" size={18} color="#FFFFFF" />
+                <Text style={styles.copyAllText}>Copy All Information</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <View style={styles.noDataContainer}>
+              <Icon name="bank" size={48} color="#666" />
+              <Text style={styles.noDataText}>No transfer information available</Text>
+            </View>
+          )}
+        </View>
 
         {/* Note */}
         <View style={styles.noteContainer}>
           <Icon name="information" size={20} color="#666" />
           <Text style={styles.noteText}>
             {isPending 
-              ? 'Please complete the payment/sending process according to the information above. Transaction will be processed automatically after confirmation.'
+              ? 'Please transfer the exact amount to the bank account above. Your USDT will be sent to your wallet after payment confirmation.'
               : 'This transaction has been completed. No further action required.'
             }
           </Text>
@@ -494,6 +483,182 @@ const DetailHistoryScreen = () => {
       </ScrollView>
     </SafeAreaView>
   );
+
+  // Render Sell USDT Transaction
+  const renderSellTransaction = () => (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => (navigation as any).navigate('MainTabs', { screen: 'History' })}
+        >
+          <Icon name="arrow-left" size={24} color="#000" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Sell USDT Transaction</Text>
+        <View style={styles.headerRight} />
+      </View>
+
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Validity Banner (5 minutes) */}
+        <View style={[styles.validityBar, { backgroundColor: isExpired ? '#FFEBEE' : '#FFF4E6', borderColor: isExpired ? '#FF3B30' : '#FF9500' }]}>
+          <Icon name={isExpired ? 'timer-off' : 'timer'} size={18} color={isExpired ? '#FF3B30' : '#FF9500'} />
+          <Text style={[styles.validityText, { color: isExpired ? '#FF3B30' : '#FF9500' }]}>
+            {isExpired ? 'This transaction has expired.' : `This transaction is valid for 5 minutes. Time left: ${formatTime(secondsLeft)}`}
+          </Text>
+        </View>
+
+        {/* Transaction Status Card */}
+        <View style={styles.statusCard}>
+          <View style={styles.statusHeader}>
+            <View style={[styles.statusIcon, { backgroundColor: getStatusColor() + '20' }]}>
+              <Icon name="arrow-up" size={24} color={getStatusColor()} />
+            </View>
+            <View style={styles.statusInfo}>
+              <Text style={styles.transactionType}>Sell USDT</Text>
+              <Text style={styles.transactionDate}>
+                {transaction.createdAt ? formatCreatedAt(transaction.createdAt) : `${transaction.date} • ${transaction.time}`}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.statusContainer}>
+            <View style={[styles.statusDot, { backgroundColor: getStatusColor() }]} />
+            <Text style={[styles.statusText, { color: getStatusColor() }]}>
+              {getStatusText()}
+            </Text>
+          </View>
+        </View>
+
+        {/* Transaction Info */}
+        <View style={styles.infoCard}>
+          <Text style={styles.cardTitle}>Transaction Information</Text>
+          
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>USDT to Sell</Text>
+            <Text style={[styles.infoValue, { color: '#7B68EE' }]}>
+              {transaction.usdt} USDT
+            </Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>VND to Receive</Text>
+            <Text style={styles.infoValue}>
+              {transaction.amount} VND
+            </Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Exchange Rate</Text>
+            <Text style={styles.infoValue}>
+              {transaction.exchangeRate} VND/USDT
+            </Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Transaction Fee</Text>
+            <Text style={styles.infoValue}>
+              {transaction.fee}
+            </Text>
+          </View>
+
+          <View style={styles.divider} />
+          
+          <View style={styles.infoRow}>
+            <Text style={styles.totalLabel}>Total to Receive</Text>
+            <Text style={styles.totalValue}>
+              {transaction.totalAmount}
+            </Text>
+          </View>
+        </View>
+
+        {/* QR Code for USDT Transfer */}
+        <View style={styles.infoCard}>
+          <Text style={styles.cardTitle}>QR Code for USDT Transfer</Text>
+          
+          {transaction.receiveAddress && transaction.receiveAddress.trim() !== '' ? (
+            <View style={styles.qrContainer}>
+              <QRCode 
+                value={transaction.receiveAddress}
+                size={wp('50%')}
+                quietZone={12}
+                showShare={!isExpired}
+                showDownload={!isExpired}
+              />
+            </View>
+          ) : (
+            <View style={styles.noDataContainer}>
+              <Icon name="qr-code" size={48} color="#666" />
+              <Text style={styles.noDataText}>No QR code available</Text>
+            </View>
+          )}
+        </View>
+
+        {/* TRC20 Wallet Information */}
+        <View style={styles.infoCard}>
+          <Text style={styles.cardTitle}>TRC20 Wallet Information</Text>
+          
+          {transaction.receiveAddress && transaction.receiveAddress.trim() !== '' ? (
+            <>
+              <View style={styles.walletCard}>
+                <View style={styles.walletHeader}>
+                  <Icon name="wallet" size={20} color="#7B68EE" />
+                  <Text style={styles.walletTitle}>Send USDT To</Text>
+                </View>
+                
+                <View style={styles.walletAddressContainer}>
+                  <Text style={styles.walletAddress}>{transaction.receiveAddress}</Text>
+                  <TouchableOpacity
+                    onPress={() => copyToClipboard(transaction.receiveAddress!, 'Wallet address copied')}
+                    style={styles.copyButton}
+                  >
+                    <Icon name="content-copy" size={16} color="#4A90E2" />
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.usdtAmountContainer}>
+                  <View style={styles.usdtAmountHeader}>
+                    <Icon name="currency-usd" size={16} color="#7B68EE" />
+                    <Text style={styles.usdtAmountLabel}>USDT to Send</Text>
+                  </View>
+                  <View style={styles.usdtAmountValueContainer}>
+                    <Text style={styles.usdtAmountValue}>{transaction.usdt} USDT</Text>
+                    <TouchableOpacity
+                      onPress={() => copyToClipboard(`${transaction.usdt} USDT`, 'USDT amount copied')}
+                      style={styles.copyButton}
+                    >
+                      <Icon name="content-copy" size={16} color="#4A90E2" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <Text style={styles.walletNote}>
+                  Send {transaction.usdt} USDT to this address to complete the transaction
+                </Text>
+              </View>
+            </>
+          ) : (
+            <View style={styles.noDataContainer}>
+              <Icon name="wallet" size={48} color="#666" />
+              <Text style={styles.noDataText}>No wallet information available</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Note */}
+        <View style={styles.noteContainer}>
+          <Icon name="information" size={20} color="#666" />
+          <Text style={styles.noteText}>
+            {isPending 
+              ? 'Please send USDT to the wallet address above. Your VND will be transferred to your bank account after confirmation.'
+              : 'This transaction has been completed. No further action required.'
+            }
+          </Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
+  );
+
+  // Main return - choose which render function to use
+  return isBuy ? renderBuyTransaction() : renderSellTransaction();
 };
 
 const styles = StyleSheet.create({
@@ -605,6 +770,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#000',
     marginBottom: 16,
+    textAlign: 'center',
   },
   infoRow: {
     flexDirection: 'row',
