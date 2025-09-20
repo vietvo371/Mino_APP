@@ -172,6 +172,7 @@ const HistoryScreen = () => {
 
   const renderTransaction = (transaction: Transaction, index: number) => {
     const isBuy = transaction.type === 1; // 1 = buy, 2 = sell (based on API response)
+    const isPending = transaction.status === 0; // Only pending transactions are clickable
     
     // Format amounts based on transaction type (matching DetailHistoryScreen logic)
     let amount, exchangeAmount;
@@ -193,9 +194,12 @@ const HistoryScreen = () => {
     return (
       <TouchableOpacity
         key={`${transaction.note}-${transaction.id}-${index}`} // Use note + id + index for unique key
-        style={styles.transactionItem}
-        onPress={() => {
-          // Determine transaction type for navigation
+        style={[
+          styles.transactionItem,
+          !isPending && styles.transactionItemDisabled // Add disabled style for non-pending
+        ]}
+        onPress={isPending ? () => {
+          // Only allow navigation for pending transactions
           const transactionType = transaction.type === 1 ? 'buy' : 'sell';
           
           // Navigate to DetailHistory with idTransaction and type
@@ -203,8 +207,8 @@ const HistoryScreen = () => {
             idTransaction: transaction.id, 
             type: transactionType 
           });
-        }}
-        activeOpacity={0.7}
+        } : undefined}
+        disabled={!isPending}
       >
         <View style={styles.transactionContent}>
           <View style={styles.transactionHeader}>
@@ -757,6 +761,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#E5E5EA',
+  },
+  transactionItemDisabled: {
+    opacity: 0.6,
+    backgroundColor: '#F8F8F8',
   },
   transactionContent: {
     padding: 16,

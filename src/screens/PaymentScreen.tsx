@@ -503,16 +503,16 @@ const PaymentScreen = () => {
             {wallets.length === 0 ? (
               <View style={styles.emptyWalletContainer}>
                 <Icon name="wallet-outline" size={48} color="#CCCCCC" />
-                <Text style={styles.emptyWalletTitle}>Chưa tạo ví TRC20</Text>
+                <Text style={styles.emptyWalletTitle}>No TRC20 wallet</Text>
                 <Text style={styles.emptyWalletDescription}>
-                  Bạn cần thêm địa chỉ ví TRC20 để nhận USDT
+                  You need to add a TRC20 wallet to receive USDT
                 </Text>
                 <TouchableOpacity 
                   style={styles.addWalletButton}
                   onPress={() => (navigation as any).navigate('AddTRC20Address')}
                 >
                   <Icon name="plus" size={20} color="#FFFFFF" />
-                  <Text style={styles.addWalletText}>Thêm ví TRC20</Text>
+                  <Text style={styles.addWalletText}>Add TRC20 wallet</Text>
                 </TouchableOpacity>
               </View>
             ) : (
@@ -568,22 +568,22 @@ const PaymentScreen = () => {
             {bankAccounts.length === 0 ? (
               <View style={styles.emptyWalletContainer}>
                 <Icon name="bank-outline" size={48} color="#CCCCCC" />
-                <Text style={styles.emptyWalletTitle}>Chưa thêm tài khoản ngân hàng</Text>
+                <Text style={styles.emptyWalletTitle}>No bank account</Text>
                 <Text style={styles.emptyWalletDescription}>
-                  Bạn cần thêm tài khoản ngân hàng để nhận tiền VND
+                  You need to add a bank account to receive money
                 </Text>
                 <TouchableOpacity 
                   style={styles.addWalletButton}
                   onPress={() => (navigation as any).navigate('AddBankAccount')}
                 >
                   <Icon name="plus" size={20} color="#FFFFFF" />
-                  <Text style={styles.addWalletText}>Thêm tài khoản ngân hàng</Text>
+                  <Text style={styles.addWalletText}>Add bank account</Text>
                 </TouchableOpacity>
               </View>
             ) : (
               <>
                 <SelectCustom
-                  label="Select Bank Account to Receive Money"
+                  label="Select Bank Account to Receive Money VND"
                   value={selectedBankId}
                   onChange={(val) => {
                     setSelectedBankId(val);
@@ -620,7 +620,7 @@ const PaymentScreen = () => {
                           <Icon name="bank" size={20} color="#4A90E2" />
                         );
                       })()}
-                      <Text style={styles.walletTitle}>Receive Bank Account</Text>
+                      <Text style={styles.walletTitle}>Receive Bank Account VND</Text>
                     </View>
                     <View style={styles.walletAddressContainer}>
                       <View style={{ flex: 1 }}>
@@ -669,7 +669,7 @@ const PaymentScreen = () => {
           onPress={handleConfirm}
           disabled={(paymentInfo.type === 'buy' && !selectedReceiveTRC20) || (paymentInfo.type === 'sell' && !selectedBankId)}
         >
-          <Text style={styles.confirmButtonText}>Confirm Transaction</Text>
+          <Text style={styles.confirmButtonText}>Confirm Transaction USDT</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

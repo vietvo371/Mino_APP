@@ -9,10 +9,19 @@ import {
   Alert,
   Platform,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import api from '../utils/Api';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from 'react-native-responsive-screen';
+import Animated, { FadeInDown, FadeInUp, SlideInDown } from 'react-native-reanimated';
+import { theme } from '../theme/colors';
+
+const { width, height } = Dimensions.get('window');
 
 const PhoneVerificationScreen = () => {
   const navigation = useNavigation();
@@ -22,31 +31,49 @@ const PhoneVerificationScreen = () => {
   const [loading, setLoading] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [countdown, setCountdown] = useState(0);
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [currentInputIndex, setCurrentInputIndex] = useState(0);
+  const [isAlreadyVerified, setIsAlreadyVerified] = useState(false);
+  const [checkingStatus, setCheckingStatus] = useState(true);
 
-  // Prefill phone from profile and disable editing
+  // Fetch phone number and verification status from profile when component mounts
   useEffect(() => {
-    const fetchProfilePhone = async () => {
+    const fetchProfileAndStatus = async () => {
       try {
+        setCheckingStatus(true);
         const response = await api.get('/client/profile');
-        if (response.data?.status && response.data?.data?.number_phone) {
-          setPhone(response.data.data.number_phone);
+        if (response.data?.status && response.data?.data) {
+          const profileData = response.data.data;
+          setPhone(profileData.number_phone || '');
+          
+          // Check if phone is already verified
+          // Assuming there's a field like phone_verified or verification_status
+          const isPhoneVerified = profileData.is_active_phone === 1 ;
+                               
+          
+          setIsAlreadyVerified(isPhoneVerified);
         }
       } catch (e) {
-        // silent fail; user can still proceed
+        console.log('Error fetching profile:', e);
+        Alert.alert('Lỗi', 'Không thể lấy thông tin số điện thoại');
+      } finally {
+        setCheckingStatus(false);
       }
     };
 
-    const unsubscribe = (navigation as any).addListener('focus', fetchProfilePhone);
-    fetchProfilePhone();
+    const unsubscribe = (navigation as any).addListener('focus', fetchProfileAndStatus);
+    fetchProfileAndStatus();
     return unsubscribe;
   }, [navigation]);
 
-  const handleSendCode = async () => {
-   
+  const handleSendCode = async (phoneNumber?: string) => {
+    const phoneToUse = phoneNumber || phone;
+    if (!phoneToUse) return;
+    
     setLoading(true);
     try {
       const response = await api.post('/client/send-otp-phone', {
-        number_phone: phone, // API expects phone number in 'email' field
+        number_phone: phoneToUse,
         type: 'phone'
       });
 
@@ -56,7 +83,7 @@ const PhoneVerificationScreen = () => {
         setIsCodeSent(true);
         setCountdown(60); // 60 seconds countdown
         startCountdown();
-        Alert.alert('Thành công', response.data.message || 'Gửi mã OTP về số điện thoại thành công!');
+        Alert.alert('', response.data.message || 'Gửi mã OTP về số điện thoại thành công!');
       } else {
         Alert.alert('Lỗi', response.data.message || 'Không thể gửi OTP');
       }
@@ -86,9 +113,52 @@ const PhoneVerificationScreen = () => {
     }, 1000);
   };
 
+  // OTP input handling
+  const handleNumberPress = (num: string) => {
+    if (currentInputIndex >= 6) return;
+
+    const newOtp = [...otp];
+    newOtp[currentInputIndex] = num;
+    setOtp(newOtp);
+    setCode(newOtp.join(''));
+
+    // Move to next input
+    if (currentInputIndex < 5) {
+      setCurrentInputIndex(currentInputIndex + 1);
+    }
+  };
+
+  const handleDelete = () => {
+    if (currentInputIndex > 0) {
+      const newOtp = [...otp];
+      newOtp[currentInputIndex - 1] = '';
+      setOtp(newOtp);
+      setCode(newOtp.join(''));
+      setCurrentInputIndex(currentInputIndex - 1);
+    } else if (otp[currentInputIndex]) {
+      // If at first input and has digit, clear it
+      const newOtp = [...otp];
+      newOtp[currentInputIndex] = '';
+      setOtp(newOtp);
+      setCode(newOtp.join(''));
+    }
+  };
+
+  // Auto verify when OTP is complete
+  useEffect(() => {
+    const otpString = otp.join('');
+    if (otpString.length === 6 && !verifying) {
+      const timer = setTimeout(() => {
+        handleVerify();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [otp, verifying]);
+
   const handleVerify = async () => {
-    if (!code || code.length < 4) {
-      Alert.alert('Lỗi', 'Vui lòng nhập mã OTP');
+    const otpString = otp.join('');
+    if (!otpString || otpString.length < 6) {
+      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ mã OTP');
       return;
     }
 
@@ -96,7 +166,7 @@ const PhoneVerificationScreen = () => {
     try {
       const response = await api.post('/client/verify-phone', {
         number_phone: phone,
-        otp: code
+        otp: otpString
       });
 
       console.log('Verify OTP response:', response.data);
@@ -106,13 +176,16 @@ const PhoneVerificationScreen = () => {
           {
             text: 'OK',
             onPress: () => {
-              // Replace to SecurityScreen to refresh verification status
               (navigation as any).goBack();
             }
           }
         ]);
       } else {
         Alert.alert('Lỗi', response.data.message || 'Mã OTP không đúng. Vui lòng thử lại.');
+        // Reset OTP on error
+        setOtp(['', '', '', '', '', '']);
+        setCode('');
+        setCurrentInputIndex(0);
       }
       
     } catch (error: any) {
@@ -124,6 +197,10 @@ const PhoneVerificationScreen = () => {
         errorMessage = error.message;
       }
       Alert.alert('Lỗi', errorMessage);
+      // Reset OTP on error
+      setOtp(['', '', '', '', '', '']);
+      setCode('');
+      setCurrentInputIndex(0);
     } finally {
       setVerifying(false);
     }
@@ -134,133 +211,742 @@ const PhoneVerificationScreen = () => {
     handleSendCode();
   };
 
+  // Render already verified view
+  const renderAlreadyVerified = () => (
+    <View style={styles.verifiedContainer}>
+      <View style={styles.verifiedIconContainer}>
+        <Icon name="check-circle" size={64} color={theme.colors.success || '#34C759'} />
+      </View>
+      <Text style={styles.verifiedTitle}>Phone Already Verified</Text>
+      <Text style={styles.verifiedSubtitle}>
+        Your phone number has been successfully verified
+      </Text>
+      {phone && (
+        <View style={styles.verifiedPhoneContainer}>
+          <Icon name="cellphone-check" size={24} color={theme.colors.success || '#34C759'} />
+          <Text style={styles.verifiedPhoneText}>{phone}</Text>
+        </View>
+      )}
+      <TouchableOpacity 
+        style={styles.backToProfileButton}
+        onPress={() => (navigation as any).goBack()}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.backToProfileButtonText}>Back to Profile</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  // Render loading state while checking verification status
+  const renderCheckingStatus = () => (
+    <View style={styles.checkingContainer}>
+      <View style={styles.checkingIconContainer}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+      <Text style={styles.checkingTitle}>Checking Status...</Text>
+      <Text style={styles.checkingSubtitle}>
+        Please wait while we check your verification status
+      </Text>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-left" size={24} color="#1C1C1E" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Phone Verification</Text>
-        <View style={styles.headerRight} />
+      <View style={styles.backgroundContainer}>
+        <View style={styles.decorativeCircle1} />
+        <View style={styles.decorativeCircle2} />
       </View>
 
-      <View style={styles.content}>
-        <View style={styles.card}>
-          <Text style={styles.title}>Verify your phone</Text>
-          <Text style={styles.subtitle}>Enter your phone number to receive an OTP</Text>
+      <View style={styles.mainContent}>
+        {/* Header */}
+        <Animated.View
+          style={styles.header}
+          entering={FadeInDown.duration(600).springify()}
+        >
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+          >
+            <Icon name="arrow-left" size={24} color={theme.colors.text} />
+          </TouchableOpacity>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Phone</Text>
-            <View style={styles.inputWrapper}>
-              <Icon name="phone" size={20} color="#34C759" />
-              <TextInput
-                value={phone}
-                onChangeText={setPhone}
-                placeholder="Enter your phone number"
-                keyboardType="phone-pad"
-                style={styles.textInput}
-                placeholderTextColor="#8E8E93"
-                editable={false}
-                selectTextOnFocus={false}
-              />
-            </View>
-            <TouchableOpacity 
-              style={[styles.primaryButton, loading && styles.disabledButton]} 
-              onPress={handleSendCode}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <Text style={styles.primaryButtonText}>Send OTP</Text>
-              )}
-            </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>Phone Verification</Text>
+            <Text style={styles.headerSubtitle}>
+              {isCodeSent 
+                ? 'Enter the verification code sent to your phone'
+                : 'We\'re sending a verification code to your phone'
+              }
+            </Text>
           </View>
+        </Animated.View>
 
-          {isCodeSent && (
-            <View style={styles.inputGroup}>
+        {/* Main Card */}
+        <Animated.View
+          style={styles.card}
+          entering={FadeInDown.duration(800).delay(200).springify()}
+        >
+          {checkingStatus ? (
+            // Checking verification status
+            renderCheckingStatus()
+          ) : isAlreadyVerified ? (
+            // Already verified
+            renderAlreadyVerified()
+          ) : !isCodeSent ? (
+            // Send Code Button State
+            <View style={styles.sendCodeContainer}>
+              <View style={styles.phoneIconContainer}>
+                <Icon name="cellphone" size={48} color={theme.colors.primary} />
+              </View>
+              <Text style={styles.sendCodeTitle}>Verify Your Phone</Text>
+              <Text style={styles.sendCodeSubtitle}>
+                We'll send a verification code to your registered phone number
+              </Text>
+              {phone && (
+                <View style={styles.phoneDisplayContainer}>
+                  <Icon name="cellphone-check" size={20} color={theme.colors.primary} />
+                  <Text style={styles.phoneDisplayText}>{phone}</Text>
+                </View>
+              )}
+              <TouchableOpacity 
+                style={[styles.sendCodeButton, loading && styles.disabledButton]} 
+                onPress={() => handleSendCode()}
+                disabled={loading}
+                activeOpacity={0.8}
+              >
+                {loading ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.sendCodeButtonText}>Send Verification Code</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          ) : (
+            // OTP Input Section
+            <View style={styles.otpSection}>
               <View style={styles.otpHeader}>
-                <Text style={styles.inputLabel}>OTP</Text>
-                <Text style={styles.otpInfo}>
-                  OTP has been sent to {phone}
+                <View style={styles.otpIconContainer}>
+                  <Icon name="cellphone-message" size={32} color={theme.colors.primary} />
+                </View>
+                <Text style={styles.otpTitle}>Enter Verification Code</Text>
+                <Text style={styles.otpSubtitle}>
+                  We sent a 6-digit code to your phone
                 </Text>
               </View>
-              <View style={styles.inputWrapper}>
-                <Icon name="shield-key" size={20} color="#7B68EE" />
-                <TextInput
-                  value={code}
-                  onChangeText={setCode}
-                  placeholder="Enter OTP"
-                  keyboardType="number-pad"
-                  style={styles.textInput}
-                  placeholderTextColor="#8E8E93"
-                  maxLength={6}
-                />
+
+              {/* OTP Input Display */}
+              <View style={styles.otpContainer}>
+                {otp.map((digit, index) => {
+                  const isActive = index === currentInputIndex;
+                  const isFilled = Boolean(digit);
+                  
+                  return (
+                    <Animated.View
+                      key={index}
+                      entering={FadeInDown.duration(400).delay(index * 100)}
+                      style={[
+                        styles.otpInputWrapper,
+                        isActive && styles.otpInputWrapperActive,
+                        isFilled && styles.otpInputWrapperFilled
+                      ]}
+                    >
+                      <Text style={[
+                        styles.otpInputText,
+                        isFilled && styles.otpInputTextFilled
+                      ]}>
+                        {digit || (isActive ? '|' : '')}
+                      </Text>
+                      {isFilled && (
+                        <Animated.View
+                          entering={FadeInDown.duration(200)}
+                          style={styles.otpInputCheck}
+                        >
+                          <Icon name="check" size={12} color={theme.colors.primary} />
+                        </Animated.View>
+                      )}
+                    </Animated.View>
+                  );
+                })}
               </View>
-              <TouchableOpacity 
-                style={[styles.primaryButton, styles.verifyButton, verifying && styles.disabledButton]} 
+
+              {/* Progress Bar */}
+              <View style={styles.progressContainer}>
+                <View style={styles.progressBar}>
+                  <View style={[
+                    styles.progressFill,
+                    { width: `${(otp.filter(d => d).length / 6) * 100}%` }
+                  ]} />
+                </View>
+                <Text style={styles.progressText}>
+                  {otp.filter(d => d).length}/6
+                </Text>
+              </View>
+
+              {/* Resend Section */}
+              <View style={styles.resendContainer}>
+                {countdown > 0 ? (
+                  <Text style={styles.timerText}>
+                    Resend code after <Text style={styles.timer}>{countdown}s</Text>
+                  </Text>
+                ) : (
+                  <TouchableOpacity 
+                    onPress={handleResendCode}
+                    style={styles.resendButton}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.resendButtonText}>Resend Code</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          )}
+        </Animated.View>
+
+        {/* Custom Number Keyboard */}
+        {isCodeSent && (
+          <Animated.View
+            style={styles.keyboardContainer}
+            entering={SlideInDown.duration(600).delay(400).springify()}
+          >
+            <View style={styles.numberPad}>
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.numberButton}
+                  onPress={() => handleNumberPress(num.toString())}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.numberText}>{num}</Text>
+                </TouchableOpacity>
+              ))}
+              <TouchableOpacity
+                style={[styles.numberButton, styles.deleteButton]}
+                onPress={handleDelete}
+                activeOpacity={0.7}
+              >
+                <Icon name="backspace-outline" size={24} color="#666" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.numberButton, styles.zeroButton]}
+                onPress={() => handleNumberPress('0')}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.numberText}>0</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.numberButton, styles.verifyButton]}
                 onPress={handleVerify}
-                disabled={verifying}
+                disabled={otp.join('').length !== 6 || verifying}
+                activeOpacity={0.7}
               >
                 {verifying ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.primaryButtonText}>Verify</Text>
+                  <Icon name="check" size={24} color="#FFFFFF" />
                 )}
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.resendButton} 
-                onPress={handleResendCode}
-                disabled={countdown > 0}
-              >
-                <Text style={[styles.resendText, countdown > 0 && styles.disabledText]}>
-                  {countdown > 0 ? `Resend after ${countdown}s` : 'Resend OTP'}
-                </Text>
-              </TouchableOpacity>
             </View>
-          )}
-        </View>
+          </Animated.View>
+        )}
       </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' },
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.white,
+  },
+  backgroundContainer: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  decorativeCircle1: {
+    position: 'absolute',
+    top: -50,
+    right: -50,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: theme.colors.primary + '10',
+  },
+  decorativeCircle2: {
+    position: 'absolute',
+    bottom: -30,
+    left: -30,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: theme.colors.secondary + '10',
+  },
+  mainContent: {
+    flex: 1,
+    paddingHorizontal: wp('4%'),
+  },
+
+  // Header Styles
   header: {
     flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingTop: hp('3%'),
+    paddingBottom: hp('2%'),
+    gap: wp('4%'),
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.white,
+    justifyContent: 'center',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F2F2F7',
+    ...Platform.select({
+      ios: {
+        shadowColor: theme.colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
-  backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '600', color: '#1C1C1E' },
-  headerRight: { width: 40 },
-  content: { flex: 1, padding: 16 },
+  headerContent: {
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: wp('6%'),
+    color: theme.colors.text,
+    fontFamily: theme.typography.fontFamily,
+    marginBottom: hp('0.5%'),
+    fontWeight: '600',
+  },
+  headerSubtitle: {
+    fontSize: wp('4%'),
+    color: theme.colors.textLight,
+    fontFamily: theme.typography.fontFamily,
+    lineHeight: wp('5%'),
+  },
+
+  // Card Styles
   card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 }, android: { elevation: 2 } }),
+    backgroundColor: theme.colors.white,
+    borderRadius: wp('4%'),
+    padding: wp('6%'),
+    marginBottom: hp('2%'),
+    ...Platform.select({
+      ios: {
+        shadowColor: theme.colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
-  title: { fontSize: 18, fontWeight: '700', color: '#000', marginBottom: 6 },
-  subtitle: { fontSize: 14, color: '#8E8E93', marginBottom: 16 },
-  inputGroup: { marginTop: 8, marginBottom: 8 },
-  inputLabel: { fontSize: 14, color: '#666', marginBottom: 6 },
-  inputWrapper: { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1, borderColor: '#E5E5EA', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
-  textInput: { flex: 1, color: '#000', fontSize: 16 },
-  primaryButton: { marginTop: 12, backgroundColor: '#4A90E2', borderRadius: 10, paddingVertical: 12, alignItems: 'center' },
-  verifyButton: { backgroundColor: '#7B68EE' },
-  disabledButton: { backgroundColor: '#8E8E93', opacity: 0.6 },
-  primaryButtonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '600' },
-  otpHeader: { marginBottom: 8 },
-  otpInfo: { fontSize: 12, color: '#8E8E93', marginTop: 2 },
-  resendButton: { marginTop: 12, alignItems: 'center' },
-  resendText: { fontSize: 14, color: '#4A90E2', fontWeight: '500' },
-  disabledText: { color: '#8E8E93' },
+
+  // Send Code State Styles
+  sendCodeContainer: {
+    alignItems: 'center',
+    paddingVertical: hp('2%'),
+  },
+  phoneIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: theme.colors.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: hp('3%'),
+  },
+  sendCodeTitle: {
+    fontSize: wp('5%'),
+    color: theme.colors.text,
+    fontFamily: theme.typography.fontFamily,
+    fontWeight: '600',
+    marginBottom: hp('1%'),
+    textAlign: 'center',
+  },
+  sendCodeSubtitle: {
+    fontSize: wp('4%'),
+    color: theme.colors.textLight,
+    fontFamily: theme.typography.fontFamily,
+    textAlign: 'center',
+    lineHeight: wp('5%'),
+    marginBottom: hp('2%'),
+  },
+  phoneDisplayContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: theme.colors.primary + '10',
+    paddingHorizontal: wp('4%'),
+    paddingVertical: hp('1%'),
+    borderRadius: wp('3%'),
+    marginBottom: hp('3%'),
+  },
+  phoneDisplayText: {
+    fontSize: wp('4%'),
+    color: theme.colors.primary,
+    fontFamily: theme.typography.fontFamily,
+    fontWeight: '600',
+    marginLeft: wp('2%'),
+  },
+  sendCodeButton: {
+    backgroundColor: theme.colors.primary,
+    paddingVertical: hp('1.5%'),
+    paddingHorizontal: wp('8%'),
+    borderRadius: wp('3%'),
+    minWidth: wp('60%'),
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: theme.colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  sendCodeButtonText: {
+    fontSize: wp('4%'),
+    color: theme.colors.white,
+    fontFamily: theme.typography.fontFamily,
+    fontWeight: '600',
+  },
+  disabledButton: {
+    backgroundColor: theme.colors.textLight,
+    opacity: 0.6,
+  },
+
+  // Already Verified Styles
+  verifiedContainer: {
+    alignItems: 'center',
+    paddingVertical: hp('4%'),
+  },
+  verifiedIconContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: (theme.colors.success || '#34C759') + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: hp('3%'),
+  },
+  verifiedTitle: {
+    fontSize: wp('5%'),
+    color: theme.colors.text,
+    fontFamily: theme.typography.fontFamily,
+    fontWeight: '600',
+    marginBottom: hp('1%'),
+    textAlign: 'center',
+  },
+  verifiedSubtitle: {
+    fontSize: wp('4%'),
+    color: theme.colors.textLight,
+    fontFamily: theme.typography.fontFamily,
+    textAlign: 'center',
+    lineHeight: wp('5%'),
+    marginBottom: hp('3%'),
+  },
+  verifiedPhoneContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: (theme.colors.success || '#34C759') + '10',
+    paddingHorizontal: wp('4%'),
+    paddingVertical: hp('1.5%'),
+    borderRadius: wp('3%'),
+    marginBottom: hp('4%'),
+  },
+  verifiedPhoneText: {
+    fontSize: wp('4%'),
+    color: theme.colors.success || '#34C759',
+    fontFamily: theme.typography.fontFamily,
+    fontWeight: '600',
+    marginLeft: wp('2%'),
+  },
+  backToProfileButton: {
+    backgroundColor: theme.colors.primary,
+    paddingVertical: hp('1.5%'),
+    paddingHorizontal: wp('8%'),
+    borderRadius: wp('3%'),
+    minWidth: wp('50%'),
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: theme.colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  backToProfileButtonText: {
+    fontSize: wp('4%'),
+    color: theme.colors.white,
+    fontFamily: theme.typography.fontFamily,
+    fontWeight: '600',
+  },
+
+  // Checking Status Styles
+  checkingContainer: {
+    alignItems: 'center',
+    paddingVertical: hp('4%'),
+  },
+  checkingIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: theme.colors.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: hp('2%'),
+  },
+  checkingTitle: {
+    fontSize: wp('5%'),
+    color: theme.colors.text,
+    fontFamily: theme.typography.fontFamily,
+    fontWeight: '600',
+    marginBottom: hp('1%'),
+  },
+  checkingSubtitle: {
+    fontSize: wp('4%'),
+    color: theme.colors.textLight,
+    fontFamily: theme.typography.fontFamily,
+    textAlign: 'center',
+    lineHeight: wp('5%'),
+  },
+
+  // OTP Section Styles
+  otpSection: {
+    alignItems: 'center',
+  },
+  otpHeader: {
+    alignItems: 'center',
+    marginBottom: hp('3%'),
+  },
+  otpIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: theme.colors.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: hp('2%'),
+  },
+  otpTitle: {
+    fontSize: wp('5%'),
+    color: theme.colors.text,
+    fontFamily: theme.typography.fontFamily,
+    fontWeight: '600',
+    marginBottom: hp('0.5%'),
+  },
+  otpSubtitle: {
+    fontSize: wp('4%'),
+    color: theme.colors.textLight,
+    fontFamily: theme.typography.fontFamily,
+    textAlign: 'center',
+  },
+
+  // OTP Input Styles
+  otpContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: hp('3%'),
+    paddingHorizontal: wp('2%'),
+  },
+  otpInputWrapper: {
+    width: wp('12%'),
+    height: wp('12%'),
+    borderRadius: wp('3%'),
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  otpInputWrapperActive: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.white,
+    transform: [{ scale: 1.05 }],
+    ...Platform.select({
+      ios: {
+        shadowColor: theme.colors.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  otpInputWrapperFilled: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primary + '15',
+    transform: [{ scale: 1.02 }],
+    ...Platform.select({
+      ios: {
+        shadowColor: theme.colors.primary,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  otpInputText: {
+    fontSize: wp('6%'),
+    fontFamily: theme.typography.fontFamily,
+    color: theme.colors.textLight,
+    fontWeight: '600',
+  },
+  otpInputTextFilled: {
+    color: theme.colors.primary,
+  },
+  otpInputCheck: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: theme.colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: theme.colors.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+
+  // Progress Bar Styles
+  progressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: hp('3%'),
+  },
+  progressBar: {
+    flex: 1,
+    height: 4,
+    backgroundColor: theme.colors.border,
+    borderRadius: 2,
+    marginRight: wp('3%'),
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: theme.colors.primary,
+    borderRadius: 2,
+  },
+  progressText: {
+    fontFamily: theme.typography.fontFamily,
+    fontSize: wp('3.5%'),
+    color: theme.colors.textLight,
+  },
+
+  // Resend Section Styles
+  resendContainer: {
+    alignItems: 'center',
+  },
+  timerText: {
+    fontFamily: theme.typography.fontFamily,
+    fontSize: wp('4%'),
+    color: theme.colors.textLight,
+  },
+  timer: {
+    fontFamily: theme.typography.fontFamily,
+    color: theme.colors.primary,
+    fontWeight: '600',
+  },
+  resendButton: {
+    paddingVertical: hp('1%'),
+  },
+  resendButtonText: {
+    fontFamily: theme.typography.fontFamily,
+    fontSize: wp('4%'),
+    color: theme.colors.primary,
+    fontWeight: '600',
+  },
+
+  // Custom Keyboard Styles
+  keyboardContainer: {
+    backgroundColor: theme.colors.white,
+    paddingVertical: hp('2%'),
+    paddingHorizontal: wp('4%'),
+    ...Platform.select({
+      ios: {
+        shadowColor: theme.colors.primary,
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 8,
+      },
+    }),
+  },
+  numberPad: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  numberButton: {
+    width: '30%',
+    aspectRatio: 1.2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: theme.colors.white,
+    borderRadius: wp('3%'),
+    marginBottom: hp('1%'),
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    ...Platform.select({
+      ios: {
+        shadowColor: theme.colors.primary,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  numberText: {
+    fontSize: wp('6%'),
+    color: theme.colors.text,
+    fontFamily: theme.typography.fontFamily,
+    fontWeight: '600',
+  },
+  deleteButton: {
+    backgroundColor: '#F2F2F7',
+    borderWidth: 0,
+  },
+  zeroButton: {
+    // Số 0 ở giữa
+  },
+  verifyButton: {
+    backgroundColor: theme.colors.primary,
+    borderWidth: 0,
+  },
 });
 
 export default PhoneVerificationScreen;

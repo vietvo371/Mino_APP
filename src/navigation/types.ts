@@ -89,6 +89,7 @@ export type RootStackParamList = {
   // Settings Flow
   EmailVerification: undefined;
   PhoneVerification: undefined;
+  EditProfile: undefined;
   Settings: undefined;
   Security: undefined;
   Notifications: undefined;

@@ -8,6 +8,8 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
 import { theme } from '../theme/colors';
+import { getToken } from '../utils/TokenManager';
+import api from '../utils/Api';
 
 interface LoadingScreenProps {
   navigation: any;
@@ -15,6 +17,21 @@ interface LoadingScreenProps {
 
 const LoadingScreen: React.FC<LoadingScreenProps> = ({ navigation }) => {
   const { isAuthenticated, loading } = useAuth();
+
+  const checkLogin = async () => {
+    try {
+    const res = await api.get('/check-login');
+    if (res.data?.status) {
+      navigation.replace('Home');
+      } else {
+        navigation.replace('Login');
+      }
+    } catch (error) {
+      console.error('Error checking login:', error);
+      navigation.replace('Login');
+    }
+  
+  }
 
   useEffect(() => {
     const checkFirstLaunch = async () => {
@@ -27,7 +44,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ navigation }) => {
           // Lần đầu mở app -> Onboarding
           navigation.replace('Onboarding');
         } else {
-          // Không phải lần đầu -> Login
+          // checkLogin();
           navigation.replace('Login');
         }
       } catch (error) {

@@ -33,12 +33,12 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
 
 
   const [formData, setFormData] = useState({
-    name: 'Vu Tuan Anh',
-    email: 'vu.tuananh@dragonlab.vn',
-    phone: '0909090909',
-    address: '123456',
-    password: '12345678',
-    re_password: '12345678',
+    name: 'Võ Văn Việt',
+    email: 'vietvo37@gmail.com',
+    phone: '0708585120',
+    address: 'Hà Nội',
+    password: '123456',
+    re_password: '123456',
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});

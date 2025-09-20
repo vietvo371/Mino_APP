@@ -289,6 +289,7 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
             <TouchableOpacity 
               style={styles.editButton}
               activeOpacity={0.7}
+              onPress={() => (navigation as any).navigate('EditProfile')}
             >
               <Icon name="pencil" size={16} color="#FFFFFF" />
             </TouchableOpacity>

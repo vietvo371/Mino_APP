@@ -11,7 +11,6 @@ import {
   TouchableOpacity,
   Alert,
   Dimensions,
-  Vibration,
 } from 'react-native';
 import Animated, { FadeInDown, FadeInUp, SlideInDown } from 'react-native-reanimated';
 import { theme } from '../theme/colors';
@@ -88,11 +87,6 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
   const handleNumberPress = (num: string) => {
     if (currentInputIndex >= OTP_LENGTH) return;
 
-    // Haptic feedback
-    if (Platform.OS === 'ios') {
-      Vibration.vibrate(10);
-    }
-
     // Reset verification state when user starts typing
     if (hasVerified) {
       setHasVerified(false);
@@ -109,11 +103,6 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
   };
 
   const handleDelete = () => {
-    // Haptic feedback
-    if (Platform.OS === 'ios') {
-      Vibration.vibrate(10);
-    }
-
     // Reset verification state when user deletes
     if (hasVerified) {
       setHasVerified(false);
@@ -138,11 +127,6 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
     const numericText = text.replace(/[^0-9]/g, '');
     
     if (numericText.length > 0) {
-      // Haptic feedback for paste
-      if (Platform.OS === 'ios') {
-        Vibration.vibrate(20);
-      }
-
       // Reset verification state when user pastes
       if (hasVerified) {
         setHasVerified(false);
@@ -258,11 +242,6 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
 
   const handleResendOTP = async () => {
     if (!canResend) return;
-
-    // Haptic feedback
-    if (Platform.OS === 'ios') {
-      Vibration.vibrate(20);
-    }
 
     setLoading(true);
     try {
