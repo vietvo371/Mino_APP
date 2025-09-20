@@ -27,7 +27,7 @@ type TransactionDetail = {
   amount: string;
   usdt: string;
   exchangeRate: string;
-  status: 'pending' | 'completed' | 'failed';
+  status: 0 | 1| 2;
   date: string;
   time: string;
   transactionId: string;
@@ -115,7 +115,7 @@ const DetailHistoryScreen = () => {
               amount: parseFloat(String(d.amount_vnd ?? '')).toLocaleString('vi-VN'), // USDT amount to sell
               usdt: String(d.amount_usd ?? ''), // USDT amount to sell
               exchangeRate: parseFloat(String(d.rate ?? '')).toLocaleString('vi-VN'),
-              status: 'pending',
+              status: 0,
               date: d.created_at ? new Date(d.created_at).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN'),
               time: d.created_at ? new Date(d.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
               transactionId: d.order_code || '',
@@ -140,7 +140,7 @@ const DetailHistoryScreen = () => {
               amount: parseFloat(String(d.amount_vnd ?? '')).toLocaleString('vi-VN'),
               usdt: String(d.amount_usd ?? ''),
               exchangeRate: parseFloat(String(d.rate ?? '')).toLocaleString('vi-VN'),
-              status: 'pending',
+              status: 0,
               date: d.created_at ? new Date(d.created_at).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN'),
               time: d.created_at ? new Date(d.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
               transactionId: d.order_code || '',
@@ -220,15 +220,15 @@ const DetailHistoryScreen = () => {
   }
 
   const isBuy = transaction.type === 'buy';
-  const isPending = transaction.status === 'pending';
+  const isPending = transaction.status === 0;
 
   const getStatusColor = () => {
     switch (transaction.status) {
-      case 'completed':
+      case 1:
         return '#34C759';
-      case 'failed':
+      case 2:
         return '#FF3B30';
-      case 'pending':
+      case 0:
       default:
         return '#FF9500';
     }
@@ -236,15 +236,16 @@ const DetailHistoryScreen = () => {
 
   const getStatusText = () => {
     switch (transaction.status) {
-      case 'completed':
+      case 1:
         return 'Success';
-      case 'failed':
+      case 2:
         return 'Failed';
-      case 'pending':
+      case 0:
       default:
         return 'Pending';
     }
   };
+
 
   const copyToClipboard = (text: string, message: string) => {
     Clipboard.setString(text);
@@ -657,7 +658,8 @@ const DetailHistoryScreen = () => {
     </SafeAreaView>
   );
 
-  // Main return - choose which render function to use
+  // Main return - DetailHistoryScreen only handles pending transactions
+  // Success and Failed transactions are handled by separate screens
   return isBuy ? renderBuyTransaction() : renderSellTransaction();
 };
 

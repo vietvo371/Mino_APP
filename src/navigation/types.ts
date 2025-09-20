@@ -96,6 +96,16 @@ export type RootStackParamList = {
     flow?: 'register' | 'forgot';
     token: string;
   };
+  SuccessTransactionDetail: { 
+    transaction?: any; 
+    idTransaction?: number; 
+    type?: 'buy' | 'sell'; 
+  };
+  FailedTransactionDetail: { 
+    transaction?: any; 
+    idTransaction?: number; 
+    type?: 'buy' | 'sell'; 
+  };
   Settings: undefined;
   Security: undefined;
   Notifications: undefined;

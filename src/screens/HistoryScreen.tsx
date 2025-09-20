@@ -164,51 +164,215 @@ const HistoryScreen = () => {
   // Helper function to categorize transactions based on status
   const categorizeTransactions = () => {
     const pending = transactions.filter(t => t.status === 0); // pending
-    const success = transactions.filter(t => t.status === 1); // completed/success
+    const success = transactions.filter(t => t.status === 1); // success
     const fail = transactions.filter(t => t.status === 2); // failed
     
     return { pending, success, fail };
   };
 
-  const renderTransaction = (transaction: Transaction, index: number) => {
-    const isBuy = transaction.type === 1; // 1 = buy, 2 = sell (based on API response)
-    const isPending = transaction.status === 0; // Only pending transactions are clickable
+  // Render success transaction view
+  const renderSuccessTransaction = (transaction: Transaction, index: number) => {
+    const isBuy = transaction.type === 1; // 1 = buy, 2 = sell
     
-    // Format amounts based on transaction type (matching DetailHistoryScreen logic)
+    // Format amounts based on transaction type
     let amount, exchangeAmount;
     if (isBuy) {
-      // Buy USDT: amount = VND to pay, exchangeAmount = USDT to receive
       amount = `${transaction.amount_vnd_real.toLocaleString('vi-VN')} VND`;
       exchangeAmount = `${transaction.amount_usdt} USDT`;
     } else {
-      // Sell USDT: amount = VND to receive, exchangeAmount = USDT to sell  
       amount = `${transaction.amount_vnd_real.toLocaleString('vi-VN')} VND`;
       exchangeAmount = `${transaction.amount_usdt} USDT`;
     }
     
-    // Use createdAt for date/time display
     const { date, time } = transaction.created_at 
       ? formatCreatedAt(transaction.created_at)
-      : formatCreatedAt(new Date().toISOString()); // fallback if no created_at
+      : formatCreatedAt(new Date().toISOString());
 
     return (
       <TouchableOpacity
-        key={`${transaction.note}-${transaction.id}-${index}`} // Use note + id + index for unique key
-        style={[
-          styles.transactionItem,
-          !isPending && styles.transactionItemDisabled // Add disabled style for non-pending
-        ]}
-        onPress={isPending ? () => {
-          // Only allow navigation for pending transactions
+        key={`${transaction.note}-${transaction.id}-${index}`}
+        style={[styles.transactionItem, styles.successTransactionItem]}
+        onPress={() => {
           const transactionType = transaction.type === 1 ? 'buy' : 'sell';
-          
-          // Navigate to DetailHistory with idTransaction and type
+          (navigation as any).navigate('SuccessTransactionDetail', { 
+            transaction: transaction,
+            idTransaction: transaction.id, 
+            type: transactionType 
+          });
+        }}
+      >
+        <View style={styles.transactionContent}>
+          <View style={styles.transactionHeader}>
+            <View style={styles.transactionTitleContainer}>
+              <View style={[styles.iconContainer, { backgroundColor: '#E8F5E8' }]}>
+                <Icon
+                  name="check-circle"
+                  size={20}
+                  color="#34C759"
+                />
+              </View>
+              <View>
+                <Text style={styles.transactionType}>
+                  {isBuy ? 'Buy USDT' : 'Sell USDT'} - Completed
+                </Text>
+                <Text style={styles.transactionDate}>
+                  {date} • {time}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.statusContainer}>
+              <View style={[styles.statusDot, { backgroundColor: '#34C759' }]} />
+              <Text style={[styles.transactionStatus, { color: '#34C759' }]}>
+                Success
+              </Text>
+            </View>
+          </View>
+
+          <View style={[styles.amountContainer, styles.successAmountContainer]}>
+            <View style={styles.amountRow}>
+              <Text style={styles.amountLabel}>{isBuy ? 'Amount Paid:' : 'Amount Received:'}</Text>
+              <Text style={[styles.amountValue, { color: '#34C759' }]}>
+                {amount}
+              </Text>
+            </View>
+            <View style={styles.amountRow}>
+              <Text style={styles.amountLabel}>{isBuy ? 'USDT Received:' : 'USDT Sold:'}</Text>
+              <Text style={[styles.exchangeValue, { color: '#34C759' }]}>{exchangeAmount}</Text>
+            </View>
+            <View style={styles.amountRow}>
+              <Text style={styles.amountLabel}>Exchange Rate:</Text>
+              <Text style={styles.exchangeRateValue}>
+                {transaction.rate ? transaction.rate.toLocaleString('vi-VN') : '0'} VND/USDT
+              </Text>
+            </View>
+            <View style={styles.amountRow}>
+              <Text style={styles.amountLabel}>Transaction Fee:</Text>
+              <Text style={styles.exchangeRateValue}>
+                {transaction.fee_vnd ? transaction.fee_vnd.toLocaleString('vi-VN') : '0'} VND ({transaction.fee_percent ? (transaction.fee_percent * 100).toFixed(2) : '0'}%)
+              </Text>
+            </View>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  // Render failed transaction view
+  const renderFailedTransaction = (transaction: Transaction, index: number) => {
+    const isBuy = transaction.type === 1; // 1 = buy, 2 = sell
+    
+    // Format amounts based on transaction type
+    let amount, exchangeAmount;
+    if (isBuy) {
+      amount = `${transaction.amount_vnd_real.toLocaleString('vi-VN')} VND`;
+      exchangeAmount = `${transaction.amount_usdt} USDT`;
+    } else {
+      amount = `${transaction.amount_vnd_real.toLocaleString('vi-VN')} VND`;
+      exchangeAmount = `${transaction.amount_usdt} USDT`;
+    }
+    
+    const { date, time } = transaction.created_at 
+      ? formatCreatedAt(transaction.created_at)
+      : formatCreatedAt(new Date().toISOString());
+
+    return (
+      <TouchableOpacity
+        key={`${transaction.note}-${transaction.id}-${index}`}
+        style={[styles.transactionItem, styles.failedTransactionItem]}
+        // onPress={() => {
+        //   const transactionType = transaction.type === 1 ? 'buy' : 'sell';
+        //   (navigation as any).navigate('FailedTransactionDetail', { 
+        //     transaction: transaction,
+        //     idTransaction: transaction.id, 
+        //     type: transactionType 
+        //   });
+        // }}
+      >
+        <View style={styles.transactionContent}>
+          <View style={styles.transactionHeader}>
+            <View style={styles.transactionTitleContainer}>
+              <View style={[styles.iconContainer, { backgroundColor: '#FFEBEE' }]}>
+                <Icon
+                  name="close-circle"
+                  size={20}
+                  color="#FF3B30"
+                />
+              </View>
+              <View>
+                <Text style={styles.transactionType}>
+                  {isBuy ? 'Buy USDT' : 'Sell USDT'} - Failed
+                </Text>
+                <Text style={styles.transactionDate}>
+                  {date} • {time}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.statusContainer}>
+              <View style={[styles.statusDot, { backgroundColor: '#FF3B30' }]} />
+              <Text style={[styles.transactionStatus, { color: '#FF3B30' }]}>
+                Failed
+              </Text>
+            </View>
+          </View>
+
+          <View style={[styles.amountContainer, styles.failedAmountContainer]}>
+            <View style={styles.amountRow}>
+              <Text style={styles.amountLabel}>{isBuy ? 'Amount to Pay:' : 'Amount to Receive:'}</Text>
+              <Text style={[styles.amountValue, { color: '#FF3B30' }]}>
+                {amount}
+              </Text>
+            </View>
+            <View style={styles.amountRow}>
+              <Text style={styles.amountLabel}>{isBuy ? 'USDT to Receive:' : 'USDT to Sell:'}</Text>
+              <Text style={[styles.exchangeValue, { color: '#FF3B30' }]}>{exchangeAmount}</Text>
+            </View>
+            <View style={styles.amountRow}>
+              <Text style={styles.amountLabel}>Exchange Rate:</Text>
+              <Text style={styles.exchangeRateValue}>
+                {transaction.rate ? transaction.rate.toLocaleString('vi-VN') : '0'} VND/USDT
+              </Text>
+            </View>
+            <View style={styles.amountRow}>
+              <Text style={styles.amountLabel}>Transaction Fee:</Text>
+              <Text style={styles.exchangeRateValue}>
+                {transaction.fee_vnd ? transaction.fee_vnd.toLocaleString('vi-VN') : '0'} VND ({transaction.fee_percent ? (transaction.fee_percent * 100).toFixed(2) : '0'}%)
+              </Text>
+            </View>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  // Render pending transaction view (original logic)
+  const renderPendingTransaction = (transaction: Transaction, index: number) => {
+    const isBuy = transaction.type === 1; // 1 = buy, 2 = sell
+    
+    // Format amounts based on transaction type
+    let amount, exchangeAmount;
+    if (isBuy) {
+      amount = `${transaction.amount_vnd_real.toLocaleString('vi-VN')} VND`;
+      exchangeAmount = `${transaction.amount_usdt} USDT`;
+    } else {
+      amount = `${transaction.amount_vnd_real.toLocaleString('vi-VN')} VND`;
+      exchangeAmount = `${transaction.amount_usdt} USDT`;
+    }
+    
+    const { date, time } = transaction.created_at 
+      ? formatCreatedAt(transaction.created_at)
+      : formatCreatedAt(new Date().toISOString());
+
+    return (
+      <TouchableOpacity
+        key={`${transaction.note}-${transaction.id}-${index}`}
+        style={[styles.transactionItem, styles.pendingTransactionItem]}
+        onPress={() => {
+          const transactionType = transaction.type === 1 ? 'buy' : 'sell';
           (navigation as any).navigate('DetailHistory', { 
             idTransaction: transaction.id, 
             type: transactionType 
           });
-        } : undefined}
-        disabled={!isPending}
+        }}
       >
         <View style={styles.transactionContent}>
           <View style={styles.transactionHeader}>
@@ -222,7 +386,7 @@ const HistoryScreen = () => {
               </View>
               <View>
                 <Text style={styles.transactionType}>
-                  {isBuy ? 'Buy USDT' : 'Sell USDT'}
+                  {isBuy ? 'Buy USDT' : 'Sell USDT'} - Processing
                 </Text>
                 <Text style={styles.transactionDate}>
                   {date} • {time}
@@ -230,27 +394,14 @@ const HistoryScreen = () => {
               </View>
             </View>
             <View style={styles.statusContainer}>
-              <View style={[
-                styles.statusDot,
-                { 
-                  backgroundColor: transaction.status === 1 ? '#34C759' : 
-                                  transaction.status === 2 ? '#FF3B30' : '#FF9500' 
-                }
-              ]} />
-              <Text style={[
-                styles.transactionStatus,
-                { 
-                  color: transaction.status === 1 ? '#34C759' : 
-                        transaction.status === 2 ? '#FF3B30' : '#FF9500' 
-                }
-              ]}>
-                {transaction.status === 1 ? 'Success' : 
-                 transaction.status === 2 ? 'Failed' : 'Pending'}
+              <View style={[styles.statusDot, { backgroundColor: '#FF9500' }]} />
+              <Text style={[styles.transactionStatus, { color: '#FF9500' }]}>
+                Pending
               </Text>
             </View>
           </View>
 
-          <View style={styles.amountContainer}>
+          <View style={[styles.amountContainer, styles.pendingAmountContainer]}>
             <View style={styles.amountRow}>
               <Text style={styles.amountLabel}>{isBuy ? 'Total to Pay:' : 'Total to Receive:'}</Text>
               <Text style={[styles.amountValue, { color: isBuy ? '#4A90E2' : '#7B68EE' }]}>
@@ -277,6 +428,20 @@ const HistoryScreen = () => {
         </View>
       </TouchableOpacity>
     );
+  };
+
+  // Main render function that chooses the appropriate view
+  const renderTransaction = (transaction: Transaction, index: number) => {
+    if (transaction.status === 0) {
+      return renderPendingTransaction(transaction, index);
+    } else if (transaction.status === 1) {
+      return renderSuccessTransaction(transaction, index);
+    } else if (transaction.status === 2) {
+      return renderFailedTransaction(transaction, index);
+    } else {
+      // Fallback to pending for unknown status
+      return renderPendingTransaction(transaction, index);
+    }
   };
 
   const getCurrentTransactions = () => {
@@ -762,9 +927,29 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E5EA',
   },
-  transactionItemDisabled: {
-    opacity: 0.6,
-    backgroundColor: '#F8F8F8',
+  // Success transaction styles
+  successTransactionItem: {
+    borderColor: '#34C759',
+    backgroundColor: '#F8FFF8',
+  },
+  successAmountContainer: {
+    backgroundColor: '#E8F5E8',
+  },
+  // Failed transaction styles
+  failedTransactionItem: {
+    borderColor: '#FF3B30',
+    backgroundColor: '#FFF8F8',
+  },
+  failedAmountContainer: {
+    backgroundColor: '#FFEBEE',
+  },
+  // Pending transaction styles
+  pendingTransactionItem: {
+    borderColor: '#FF9500',
+    backgroundColor: '#FFFBF5',
+  },
+  pendingAmountContainer: {
+    backgroundColor: '#FFF4E6',
   },
   transactionContent: {
     padding: 16,
