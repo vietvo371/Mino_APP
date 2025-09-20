@@ -72,8 +72,8 @@ const PhoneVerificationScreen = () => {
     
     setLoading(true);
     try {
-      const response = await api.post('/client/send-otp-phone', {
-        number_phone: phoneToUse,
+      const response = await api.post('/auth/resend-otp', {
+        username: phoneToUse,
         type: 'phone'
       });
 

@@ -70,7 +70,8 @@ const EmailVerificationScreen = () => {
     setLoading(true);
     try {
       const response = await api.post('/auth/resend-otp', {
-        email: email,
+        username: email,
+        type: 'email'
       });
 
       console.log('Send OTP response:', response.data);

@@ -184,7 +184,9 @@ const TRC20AddressesScreen = () => {
           addresses.map((item) => (
             <View key={item.id} style={styles.addressCard}>
               <View style={styles.addressHeader}>
-                <Text style={styles.addressName}>{item.name}</Text>
+                <Text style={styles.addressName}
+                numberOfLines={1}
+                ellipsizeMode="tail">{item.name}</Text>
                 {item.isDefault && (
                   <View style={styles.defaultBadge}>
                     <Text style={styles.defaultText}>Default</Text>
@@ -330,6 +332,8 @@ const styles = StyleSheet.create({
     fontSize: wp('4.5%'),
     fontWeight: '600',
     color: '#000',
+    flex: 1,
+    marginRight: 8,
   },
   defaultBadge: {
     backgroundColor: '#4A90E215',

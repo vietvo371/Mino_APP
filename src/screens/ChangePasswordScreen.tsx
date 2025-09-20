@@ -1,0 +1,414 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  SafeAreaView,
+  Alert,
+  Platform,
+  ActivityIndicator,
+  Dimensions,
+  ScrollView,
+} from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from 'react-native-responsive-screen';
+import Animated, { FadeInDown, FadeInUp, SlideInDown } from 'react-native-reanimated';
+import { theme } from '../theme/colors';
+import InputCustom from '../component/InputCustom';
+import ButtonCustom from '../component/ButtonCustom';
+import LoadingOverlay from '../component/LoadingOverlay';
+import api from '../utils/Api';
+
+const { width, height } = Dimensions.get('window');
+
+interface ChangePasswordScreenProps {
+  navigation: any;
+  route: {
+    params: {
+      identifier: string;
+      type: 'phone' | 'email';
+      token: string;
+    };
+  };
+}
+
+const ChangePasswordScreen: React.FC<ChangePasswordScreenProps> = ({ navigation, route }) => {
+  const { identifier, type, token } = route.params;
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState(0);
+  const [errors, setErrors] = useState<{
+    newPassword?: string;
+    confirmPassword?: string;
+  }>({});
+
+  const validateForm = () => {
+    const newErrors: { newPassword?: string; confirmPassword?: string } = {};
+
+    if (!newPassword) {
+      newErrors.newPassword = 'New password is required';
+    } else if (newPassword.length < 8) {
+      newErrors.newPassword = 'Password must be at least 8 characters';
+    } 
+    if (!confirmPassword) {
+      newErrors.confirmPassword = 'Please confirm your password';
+    } else if (newPassword !== confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleChangePassword = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await api.post('/auth/reset-password', {
+        username: identifier,
+        type: type,
+        token: token,
+        password: newPassword,
+        re_password: confirmPassword,
+      });
+
+      console.log('Change password response:', response.data);
+      
+      if (response.data.status) {
+        Alert.alert(
+          'Success',
+          'Your password has been changed successfully!',
+          [
+            {
+              text: 'OK',
+              onPress: () => navigation.navigate('Login'),
+            },
+          ]
+        );
+      } else {
+        Alert.alert('Error', response.data.message || 'Failed to change password');
+      }
+    } catch (error: any) {
+      console.log('Change password error:', error);
+      let errorMessage = 'Failed to change password. Please try again.';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      Alert.alert('Error', errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const calculatePasswordStrength = (password: string) => {
+    let strength = 0;
+    if (password.length >= 6) strength += 1;
+    if (password.length >= 8) strength += 1;
+    if (/[a-z]/.test(password)) strength += 1;
+    if (/[A-Z]/.test(password)) strength += 1;
+    if (/\d/.test(password)) strength += 1;
+    if (/[^A-Za-z0-9]/.test(password)) strength += 1;
+    return strength;
+  };
+
+  const getPasswordStrengthText = (strength: number) => {
+    if (strength <= 2) return { text: 'Weak', color: theme.colors.error };
+    if (strength <= 4) return { text: 'Medium', color: theme.colors.warning };
+    return { text: 'Strong', color: theme.colors.success };
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.backgroundContainer}>
+        <View style={styles.decorativeCircle1} />
+        <View style={styles.decorativeCircle2} />
+      </View>
+
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Header */}
+        <Animated.View
+          style={styles.header}
+          entering={FadeInDown.duration(600).springify()}
+        >
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+          >
+            <Icon name="arrow-left" size={24} color={theme.colors.text} />
+          </TouchableOpacity>
+
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>Create New Password</Text>
+            <Text style={styles.headerSubtitle}>
+              Enter a strong password for your account
+            </Text>
+          </View>
+        </Animated.View>
+
+        {/* Main Card */}
+        <Animated.View
+          style={styles.card}
+          entering={FadeInDown.duration(800).delay(200).springify()}
+        >
+          <View style={styles.cardHeader}>
+            <View style={styles.cardIconContainer}>
+              <Icon name="lock-reset" size={32} color={theme.colors.primary} />
+            </View>
+            <Text style={styles.cardTitle}>Reset Password</Text>
+            <Text style={styles.cardSubtitle}>
+              Verification successful! Now create your new password.
+            </Text>
+          </View>
+
+          {/* Form Fields */}
+          <View style={styles.formContainer}>
+            <InputCustom
+              label="New Password"
+              placeholder="Enter new password"
+              value={newPassword}
+              onChangeText={(text) => {
+                setNewPassword(text);
+                setPasswordStrength(calculatePasswordStrength(text));
+              }}
+              secureTextEntry={!showPassword}
+              error={errors.newPassword}
+              required
+              leftIcon="lock-outline"
+              rightIcon={showPassword ? 'eye-off-outline' : 'eye-outline'}
+              onRightIconPress={() => setShowPassword(!showPassword)}
+              containerStyle={styles.input}
+            />
+
+            {/* Password Strength Indicator */}
+            {newPassword.length > 0 && (
+              <View style={styles.passwordStrengthContainer}>
+                <View style={styles.passwordStrengthBar}>
+                  <View
+                    style={[
+                      styles.passwordStrengthFill,
+                      {
+                        width: `${(passwordStrength / 6) * 100}%`,
+                        backgroundColor: getPasswordStrengthText(passwordStrength).color
+                      }
+                    ]}
+                  />
+                </View>
+                <Text style={[
+                  styles.passwordStrengthText,
+                  { color: getPasswordStrengthText(passwordStrength).color }
+                ]}>
+                  {getPasswordStrengthText(passwordStrength).text}
+                </Text>
+              </View>
+            )}
+
+            <InputCustom
+              label="Confirm Password"
+              placeholder="Confirm new password"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry={!showConfirmPassword}
+              error={errors.confirmPassword}
+              required
+              leftIcon="lock-check-outline"
+              rightIcon={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
+              onRightIconPress={() => setShowConfirmPassword(!showConfirmPassword)}
+              containerStyle={styles.input}
+            />
+
+            {/* Change Password Button */}
+            <ButtonCustom
+              title="Change Password"
+              onPress={handleChangePassword}
+              style={styles.changePasswordButton}
+              icon="check-circle"
+            />
+          </View>
+        </Animated.View>
+
+      </ScrollView>
+
+      <LoadingOverlay visible={loading} message="Changing password..." />
+    </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.white,
+  },
+  backgroundContainer: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  decorativeCircle1: {
+    position: 'absolute',
+    top: -50,
+    right: -50,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: theme.colors.primary + '10',
+  },
+  decorativeCircle2: {
+    position: 'absolute',
+    bottom: -30,
+    left: -30,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: theme.colors.secondary + '10',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: wp('4%'),
+    paddingBottom: hp('4%'),
+  },
+
+  // Header Styles
+  header: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingTop: hp('3%'),
+    paddingBottom: hp('2%'),
+    gap: wp('4%'),
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: theme.colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  headerContent: {
+    flex: 1,
+  },
+  headerTitle: {
+    fontSize: wp('6%'),
+    color: theme.colors.text,
+    fontFamily: theme.typography.fontFamily,
+    marginBottom: hp('0.5%'),
+    fontWeight: '600',
+  },
+  headerSubtitle: {
+    fontSize: wp('4%'),
+    color: theme.colors.textLight,
+    fontFamily: theme.typography.fontFamily,
+    lineHeight: wp('5%'),
+  },
+
+  // Card Styles
+  card: {
+    backgroundColor: theme.colors.white,
+    borderRadius: wp('4%'),
+    padding: wp('6%'),
+    marginBottom: hp('2%'),
+    ...Platform.select({
+      ios: {
+        shadowColor: theme.colors.primary,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  cardHeader: {
+    alignItems: 'center',
+    marginBottom: hp('3%'),
+  },
+  cardIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: theme.colors.primary + '15',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: hp('2%'),
+  },
+  cardTitle: {
+    fontSize: wp('5%'),
+    color: theme.colors.text,
+    fontFamily: theme.typography.fontFamily,
+    fontWeight: '600',
+    marginBottom: hp('0.5%'),
+  },
+  cardSubtitle: {
+    fontSize: wp('4%'),
+    color: theme.colors.textLight,
+    fontFamily: theme.typography.fontFamily,
+    textAlign: 'center',
+  },
+
+  // Form Styles
+  formContainer: {
+    marginBottom: hp('2%'),
+  },
+  input: {
+    marginBottom: theme.spacing.lg,
+  },
+
+  // Password Strength
+  passwordStrengthContainer: {
+    marginTop: -theme.spacing.md,
+    marginBottom: theme.spacing.lg,
+  },
+  passwordStrengthBar: {
+    height: 4,
+    backgroundColor: theme.colors.border,
+    borderRadius: 2,
+    overflow: 'hidden',
+    marginBottom: theme.spacing.xs,
+  },
+  passwordStrengthFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  passwordStrengthText: {
+    fontSize: theme.typography.fontSize.xs,
+    fontFamily: theme.typography.fontFamily,
+    textAlign: 'right',
+  },
+
+  // Change Password Button
+  changePasswordButton: {
+    marginBottom: theme.spacing.lg,
+    height: 56,
+  },
+
+});
+
+export default ChangePasswordScreen;

@@ -98,7 +98,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       });
       console.log('Login response:', response.data);
       if (response.data.status === false) {
-        Alert.alert('Login Failed', response.data.message);
+        setErrors({
+          identifier: response.data.message
+        });
         return;
       }
       console.log('Login successful:', response.data.data); 

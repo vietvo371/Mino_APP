@@ -90,6 +90,12 @@ export type RootStackParamList = {
   EmailVerification: undefined;
   PhoneVerification: undefined;
   EditProfile: undefined;
+  ChangePassword: {
+    identifier: string;
+    type: 'phone' | 'email';
+    flow?: 'register' | 'forgot';
+    token: string;
+  };
   Settings: undefined;
   Security: undefined;
   Notifications: undefined;

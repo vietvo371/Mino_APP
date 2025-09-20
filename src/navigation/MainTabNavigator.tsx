@@ -39,6 +39,7 @@ import DetailHistoryScreen from '../screens/DetailHistoryScreen';
 import EmailVerificationScreen from '../screens/EmailVerificationScreen';
 import PhoneVerificationScreen from '../screens/PhoneVerificationScreen';
 import EditProfileScreen from '../screens/EditProfileScreen';
+import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<RootStackParamList>();
@@ -147,6 +148,7 @@ const MainNavigator = () => {
         <Stack.Screen name="EmailVerification" component={EmailVerificationScreen} />
         <Stack.Screen name="PhoneVerification" component={PhoneVerificationScreen} />
         <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+        <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
         <Stack.Screen name="Notifications" component={NotificationsScreen} />
         <Stack.Screen name="Help" component={HelpScreen} />
         <Stack.Screen name="BankAccounts" component={BankAccountsScreen} />

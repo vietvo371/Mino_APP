@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  KeyboardAvoidingView,
   Platform,
   ScrollView,
   SafeAreaView,
@@ -12,10 +11,8 @@ import {
   Alert,
   Dimensions,
 } from 'react-native';
-import Animated, { FadeInDown, FadeInUp, SlideInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, SlideInDown } from 'react-native-reanimated';
 import { theme } from '../theme/colors';
-import { useAuth } from '../contexts/AuthContext';
-import ButtonCustom from '../component/ButtonCustom';
 import LoadingOverlay from '../component/LoadingOverlay';
 import api from '../utils/Api';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -26,24 +23,11 @@ import {
 
 import { StackScreen } from '../navigation/types';
 
-interface OTPVerificationScreenProps {
-  navigation: any;
-  route: {
-    params: {
-      identifier: string;
-      type: 'phone' | 'email';
-      flow?: 'register' | 'login';
-      registrationData?: any;
-    };
-  };
-}
-
 const { width, height } = Dimensions.get('window');
 const OTP_LENGTH = 6;
 
 const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, route }) => {
-  const { signIn } = useAuth();
-  const { identifier, type, flow = 'login' } = route.params;
+  const { identifier, type, flow = 'forgot' } = route.params;
 
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
@@ -121,6 +105,7 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
     }
   };
 
+
   // Handle paste from clipboard
   const handlePaste = (text: string) => {
     // Remove non-numeric characters
@@ -173,13 +158,26 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
     setHasVerified(true);
     setLoading(true);
     try {
-      // Call the API directly like in RegisterScreen
-      console.log('OTP verification:', otpString);
-      console.log('OTP verification:', identifier);
-      const response = await api.post('/auth/verify-email', {
-        email: identifier,
-        otp: otpString,
-      });
+      let response;
+      
+      if (flow === 'forgot') {
+        // Forgot password flow - use different API endpoint
+        console.log('OTP verification for forgot password:', otpString);
+        console.log('OTP verification for forgot password:', identifier);
+        response = await api.post('/auth/accept-otp-password', {
+          username: identifier,
+          type: type,
+          otp: otpString,
+        });
+      } else {
+        // Register flow - use original API endpoint
+        console.log('OTP verification for register:', otpString);
+        console.log('OTP verification for register:', identifier);
+        response = await api.post('/auth/verify-email', {
+          email: identifier,
+          otp: otpString,
+        });
+      }
       
       console.log('OTP verification response:', response.data);
       
@@ -201,14 +199,31 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
           ]
         );
       } else {
-        Alert.alert('Verification Successful!', response.data.message,
-          [
-            {
-              text: 'OK',
-              onPress: () => navigation.replace('Login')
-            }
-          ]
-        );
+        if (flow === 'forgot') {
+          // Navigate to ChangePassword screen for forgot password flow
+          Alert.alert('Verification Successful!', response.data.message,
+            [
+              {
+                text: 'OK',
+                onPress: () => navigation.navigate('ChangePassword', {
+                  identifier: identifier,
+                  type: type,
+                  token: response.data.data?.token || otpString,
+                })
+              }
+            ]
+          );
+        } else {
+          // Navigate to Login for register flow
+          Alert.alert('Verification Successful!', response.data.message,
+            [
+              {
+                text: 'OK',
+                onPress: () => navigation.replace('Login')
+              }
+            ]
+          );
+        }
       }
     } catch (error: any) {
       console.log('OTP verification error:', error);
@@ -245,11 +260,23 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
 
     setLoading(true);
     try {
-      // Call resend OTP API directly
-      console.log('Resend OTP:', identifier);
-      const response = await api.post('/auth/resend-otp', {
-        email: identifier,
-      });
+      let response;
+      
+      if (flow === 'forgot') {
+        // Forgot password flow - use forgot password resend API
+        console.log('Resend OTP for forgot password:', identifier);
+        response = await api.post('/auth/forgot-password', {
+          username: identifier,
+          type: type
+        });
+      } else {
+        // Register flow - use original resend API
+        console.log('Resend OTP for register:', identifier);
+        response = await api.post('/auth/resend-otp', {
+          username: identifier,
+          type: type
+        });
+      }
       
       console.log('Resend OTP response:', response.data);
       
@@ -286,6 +313,8 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
     return `${username.charAt(0)}***@${domain}`;
   };
 
+  
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.backgroundContainer}>
@@ -313,11 +342,13 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
 
             <View style={styles.headerContent}>
               <Text style={styles.headerTitle}>
-                {flow === 'register' ? 'Verify Your Account' : 'OTP Verification'}
+                {flow === 'register' ? 'Verify Your Account' : flow === 'forgot' ? 'Reset Password' : 'OTP Verification'}
               </Text>
               <Text style={styles.headerSubtitle}>
                 {flow === 'register' 
                   ? `Enter verification code sent to ${formatIdentifier(identifier)} to complete your registration`
+                  : flow === 'forgot'
+                  ? `Enter verification code sent to ${formatIdentifier(identifier)} to reset your password`
                   : `Enter verification code sent to ${formatIdentifier(identifier)}`
                 }
               </Text>
@@ -460,7 +491,13 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
 
       <LoadingOverlay 
         visible={loading} 
-        message={flow === 'register' ? "Verifying your account..." : "Verifying OTP..."} 
+        message={
+          flow === 'register' 
+            ? "Verifying your account..." 
+            : flow === 'forgot' 
+            ? "Verifying reset code..." 
+            : "Verifying OTP..."
+        } 
       />
     </SafeAreaView>
   );

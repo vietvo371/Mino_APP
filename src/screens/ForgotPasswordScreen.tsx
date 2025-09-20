@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,11 @@ import ButtonCustom from '../component/ButtonCustom';
 import LoadingOverlay from '../component/LoadingOverlay';
 import LanguageSelector from '../components/LanguageSelector';
 import CountryCodePicker from '../components/CountryCodePicker';
+import api from '../utils/Api';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from 'react-native-responsive-screen';
 
 interface ForgotPasswordScreenProps {
   navigation: any;
@@ -29,7 +34,7 @@ const { width, height } = Dimensions.get('window');
 const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation }) => {
   const [identifier, setIdentifier] = useState('');
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<{ identifier?: string }>({});
+  const [errors, setErrors] = useState<{ identifier?: string; otp?: string }>({});
   const [isPhoneNumber, setIsPhoneNumber] = useState(false);
   const [showLanguageSelector, setShowLanguageSelector] = useState(false);
   const [showCountryPicker, setShowCountryPicker] = useState(false);
@@ -39,6 +44,9 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
     dialCode: '+84',
     flag: '🇻🇳',
   });
+
+  // OTP states (not used in this screen anymore)
+  const [verifying, setVerifying] = useState(false);
 
   const validateForm = () => {
     const newErrors: { identifier?: string } = {};
@@ -59,32 +67,65 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
     return Object.keys(newErrors).length === 0;
   };
 
+
   const handleInputTypeChange = (isPhone: boolean) => {
     setIsPhoneNumber(isPhone);
     setIdentifier('');
     setErrors({});
   };
 
-  const handleResetPassword = () => {
+
+  const handleSendOTPForgot = async () => {
     if (!validateForm()) {
       return;
     }
-
+    console.log('Send OTP for forgot password:', isPhoneNumber);
+    console.log('Send OTP for forgot password:', identifier);
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const response = await api.post('/auth/forgot-password', {
+        username: identifier,
+        type: isPhoneNumber ? 'phone' : 'email'
+      });
+
+      console.log('Send OTP response:', response.data);
+
+      if (response.data.status) {
+        navigation.navigate('OTPVerification', {
+          identifier: identifier,
+          type: isPhoneNumber ? 'phone' : 'email',
+          flow: 'forgot',
+        })
+      } else {
+        setErrors({
+          identifier: response.data.message
+        });
+      }
+    } catch (error: any) {
+      if (error.response?.data?.errors) {
+        const newErrors: Record<string, string> = {};
+        Object.keys(error.response.data.errors).forEach(field => {
+          newErrors[field] = error.response.data.errors[field][0];
+        });
+        setErrors(newErrors);
+      } else if (error.response?.data?.message) {
+        setErrors({
+          identifier: error.response.data.message
+        });
+      } else if (error.message) {
+        setErrors({
+          identifier: error.message
+        });
+      } else {
+        setErrors({
+          identifier: 'Failed to send OTP. Please try again.'
+        });
+      }
+    } finally {
       setLoading(false);
-      Alert.alert(
-        'Reset Link Sent',
-        `We've sent a password reset link to your ${isPhoneNumber ? 'phone' : 'email'}. Please check your ${isPhoneNumber ? 'SMS' : 'inbox'} and follow the instructions to reset your password.`,
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.goBack(),
-          },
-        ]
-      );
-    }, 2000);
+    }
   };
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -102,7 +143,7 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
           >
             <Icon name="translate" size={24} color={theme.colors.text} />
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={styles.headerIconButton}
             onPress={() => navigation.navigate('Help')}
@@ -158,10 +199,12 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
             <View style={styles.iconContainer}>
               <Icon name="lock-reset" size={48} color={theme.colors.primary} />
             </View>
-            
-            <Text style={styles.title}>Forgot Password?</Text>
+
+            <Text style={styles.title}>
+              {'Forgot Password?'}
+            </Text>
             <Text style={styles.subtitle}>
-              Don't worry! Enter your email or phone number and we'll send you a reset link.
+              {"Don't worry! Enter your email or phone number and we'll send you a verification code."}
             </Text>
           </Animated.View>
 
@@ -173,7 +216,7 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
             <View style={styles.form}>
               {/* Input Type Indicator */}
               <View style={styles.inputTypeIndicator}>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[
                     styles.inputTypeTab,
                     !isPhoneNumber && styles.inputTypeTabActive
@@ -192,7 +235,7 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
                     Email
                   </Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={[
                     styles.inputTypeTab,
                     isPhoneNumber && styles.inputTypeTabActive
@@ -246,12 +289,11 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
               )}
 
               <ButtonCustom
-                title="Send Reset Link"
-                onPress={handleResetPassword}
+                title="Send Verification Code"
+                onPress={handleSendOTPForgot}
                 style={styles.resetButton}
                 icon="send"
               />
-
               {/* Back to Login */}
               <TouchableOpacity
                 onPress={() => navigation.goBack()}
@@ -281,7 +323,7 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <LoadingOverlay visible={loading} message="Sending reset link..." />
+      <LoadingOverlay visible={loading} message="Sending verification code..." />
     </SafeAreaView>
   );
 };
@@ -503,6 +545,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     flex: 1,
   },
+
 });
 
 export default ForgotPasswordScreen;

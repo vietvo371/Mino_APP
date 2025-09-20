@@ -166,15 +166,15 @@ const BankAccountsScreen = () => {
       <View style={styles.verificationIconContainer}>
         <Icon name="shield-check" size={64} color="#FF9500" />
       </View>
-      <Text style={styles.verificationTitle}>Xác thực cần thiết</Text>
+      <Text style={styles.verificationTitle}>Verification Required</Text>
       <Text style={styles.verificationDescription}>
-        Vui lòng hoàn thành xác thực eKYC, email và số điện thoại trước khi quản lý tài khoản ngân hàng.
+        Please complete eKYC, email and phone verification before managing bank accounts.
       </Text>
       <TouchableOpacity 
         style={styles.verificationButton}
         onPress={() => (navigation as any).navigate('Security')}
       >
-        <Text style={styles.verificationButtonText}>Đi đến xác thực</Text>
+        <Text style={styles.verificationButtonText}>Go to verification</Text>
       </TouchableOpacity>
     </View>
   );
@@ -232,7 +232,9 @@ const BankAccountsScreen = () => {
           accounts.map((account) => (
             <View key={account.id} style={styles.accountCard}>
               <View style={styles.accountHeader}>
-                <Text style={styles.bankName}>{account.bank}</Text>
+                <Text style={styles.bankName} 
+                numberOfLines={1}
+                ellipsizeMode="tail">{account.bank}</Text>
                 {account.isDefault && (
                   <View style={styles.defaultBadge}>
                     <Text style={styles.defaultText}>Default</Text>
@@ -376,6 +378,8 @@ const styles = StyleSheet.create({
     fontSize: wp('4.5%'),
     fontWeight: '600',
     color: '#000',
+    flex: 1,
+    marginRight: 8,
   },
   defaultBadge: {
     backgroundColor: '#4A90E215',
