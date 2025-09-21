@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   SafeAreaView,
   Alert,
@@ -11,6 +10,7 @@ import {
   ActivityIndicator,
   Dimensions,
   ScrollView,
+  KeyboardAvoidingView,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
@@ -18,8 +18,11 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeInUp, SlideInDown } from 'react-native-reanimated';
 import { theme } from '../theme/colors';
+import InputCustom from '../component/InputCustom';
+import ButtonCustom from '../component/ButtonCustom';
+import LoadingOverlay from '../component/LoadingOverlay';
 import api from '../utils/Api';
 
 const { width, height } = Dimensions.get('window');
@@ -51,6 +54,10 @@ const EditProfileScreen = () => {
   // Verification statuses
   const [isEmailVerified, setIsEmailVerified] = useState(false);
   const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+  const [isEkycVerified, setIsEkycVerified] = useState(false);
+
+  // Form errors
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     fetchUserProfile();
@@ -72,6 +79,7 @@ const EditProfileScreen = () => {
         // Check verification statuses
         setIsEmailVerified(profileData.is_active_mail === 1);
         setIsPhoneVerified(profileData.is_active_phone === 1);
+        setIsEkycVerified(profileData.is_ekyc === 1);
       }
     } catch (error) {
       console.log('Error fetching profile:', error);
@@ -81,23 +89,56 @@ const EditProfileScreen = () => {
     }
   };
 
-  const handleSave = async () => {
-    if (!fullName.trim()) {
-      Alert.alert('Error', 'Please enter your full name');
-      return;
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+
+    // Only validate full name if not eKYC verified
+    if (!isEkycVerified) {
+      if (!fullName.trim()) {
+        newErrors.full_name = 'Full name is required';
+      } else if (fullName.trim().length < 2) {
+        newErrors.full_name = 'Full name must be at least 2 characters';
+      }
     }
 
     if (!address.trim()) {
-      Alert.alert('Error', 'Please enter your address');
+      newErrors.address = 'Address is required';
+    }
+
+    // Only validate email if not verified and has value
+    if (!isEmailVerified && email.trim()) {
+      if (!/\S+@\S+\.\S+/.test(email.trim())) {
+        newErrors.email = 'Please enter a valid email';
+      }
+    }
+
+    // Only validate phone if not verified and has value
+    if (!isPhoneVerified && phone.trim()) {
+      if (!/^[0-9+().\-\s]{7,15}$/.test(phone.trim())) {
+        newErrors.number_phone = 'Please enter a valid phone number';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSave = async () => {
+    const isValid = validateForm();
+    if (!isValid) {
       return;
     }
 
     setSaving(true);
     try {
       const updateData: any = {
-        full_name: fullName.trim(),
         address: address.trim(),
       };
+
+      // Only include full name if not eKYC verified
+      if (!isEkycVerified) {
+        updateData.full_name = fullName.trim();
+      }
 
       // Only include email if not verified
       if (!isEmailVerified && email.trim()) {
@@ -109,7 +150,7 @@ const EditProfileScreen = () => {
         updateData.number_phone = phone.trim();
       }
 
-      const response = await api.put('/client/profile', updateData);
+      const response = await api.post('/client/update-profile',   );
       
       if (response.data.status) {
         Alert.alert('Success', 'Update profile successfully!', [
@@ -123,20 +164,49 @@ const EditProfileScreen = () => {
       }
     } catch (error: any) {
       console.log('Update profile error:', error);
-      let errorMessage = 'Update profile failed. Please try again.';
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
+      if (error.response?.data?.errors) {
+        const newErrors: Record<string, string> = {};
+        Object.keys(error.response.data.errors).forEach(field => {
+          newErrors[field] = error.response.data.errors[field][0];
+        });
+        setErrors(newErrors);
+      } else {
+        let errorMessage = 'Update profile failed. Please try again.';
+        if (error.response?.data?.message) {
+          errorMessage = error.response.data.message;
+        }
+        Alert.alert('Error', errorMessage);
       }
-      Alert.alert('Error', errorMessage);
     } finally {
       setSaving(false);
     }
   };
 
+  const updateFormData = (key: string, value: string) => {
+    switch (key) {
+      case 'full_name':
+        setFullName(value);
+        break;
+      case 'email':
+        setEmail(value);
+        break;
+      case 'number_phone':
+        setPhone(value);
+        break;
+      case 'address':
+        setAddress(value);
+        break;
+    }
+    
+    if (errors[key]) {
+      setErrors(prev => ({ ...prev, [key]: '' }));
+    }
+  };
+
   const renderInputField = (
+    fieldKey: string,
     label: string,
     value: string,
-    onChangeText: (text: string) => void,
     placeholder: string,
     isVerified: boolean,
     keyboardType: 'default' | 'email-address' | 'phone-pad' = 'default',
@@ -152,27 +222,26 @@ const EditProfileScreen = () => {
           </View>
         )}
       </View>
-      <View style={[
-        styles.inputWrapper,
-        isVerified && styles.inputWrapperDisabled
-      ]}>
-        <Icon name={icon} size={20} color={isVerified ? '#8E8E93' : theme.colors.primary} />
-        <TextInput
-          value={value}
-          onChangeText={onChangeText}
-          placeholder={placeholder}
-          keyboardType={keyboardType}
-          style={[styles.textInput, isVerified && styles.textInputDisabled]}
-          placeholderTextColor="#8E8E93"
-          editable={!isVerified}
-        />
-        {isVerified && (
-          <Icon name="lock" size={16} color="#8E8E93" />
-        )}
-      </View>
+      
+      <InputCustom
+        // placeholder={placeholder}
+        value={value}
+        onChangeText={(text) => updateFormData(fieldKey, text)}
+        keyboardType={keyboardType}
+        error={errors[fieldKey]}
+        required={!isVerified}
+        leftIcon={icon}
+        rightIcon={isVerified ? 'lock' : undefined}
+        editable={!isVerified}
+        containerStyle={styles.input}
+      />
+      
       {isVerified && (
         <Text style={styles.disabledText}>
-          This field has been verified and cannot be edited
+          {fieldKey === 'full_name' 
+            ? 'This field has been verified through eKYC and cannot be edited'
+            : 'This field has been verified and cannot be edited'
+          }
         </Text>
       )}
     </View>
@@ -196,97 +265,96 @@ const EditProfileScreen = () => {
         <View style={styles.decorativeCircle2} />
       </View>
 
-      <View style={styles.mainContent}>
-        {/* Header */}
-        <Animated.View
-          style={styles.header}
-          entering={FadeInDown.duration(600).springify()}
-        >
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-          >
-            <Icon name="arrow-left" size={24} color={theme.colors.text} />
-          </TouchableOpacity>
-
-          <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>Edit Profile</Text>
-          </View>
-        </Animated.View>
-
-        <ScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
-          {/* Main Card */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.keyboardAvoidingView}
+      >
+        <View style={styles.mainContent}>
+          {/* Header */}
           <Animated.View
-            style={styles.card}
-            entering={FadeInDown.duration(800).delay(200).springify()}
+            style={styles.header}
+            entering={FadeInDown.duration(600).springify()}
           >
-            {/* Form Fields */}
-            <View style={styles.formContainer}>
-              {renderInputField(
-                'Full Name',
-                fullName,
-                setFullName,
-                'Enter your full name',
-                false, // Always editable
-                'default',
-                'account'
-              )}
-
-              {renderInputField(
-                'Email',
-                email,
-                setEmail,
-                'Enter your email',
-                isEmailVerified,
-                'email-address',
-                'email'
-              )}
-
-              {renderInputField(
-                'Phone',
-                phone,
-                setPhone,
-                'Enter your phone',
-                isPhoneVerified,
-                'phone-pad',
-                'phone'
-              )}
-
-              {renderInputField(
-                'Address',
-                address,
-                setAddress,
-                'Enter your address',
-                false, // Always editable
-                'default',
-                'map-marker'
-              )}
-            </View>
-
-            {/* Save Button */}
             <TouchableOpacity
-              style={[styles.saveButton, saving && styles.saveButtonDisabled]}
-              onPress={handleSave}
-              disabled={saving}
-              activeOpacity={0.8}
+              onPress={() => navigation.goBack()}
+              style={styles.backButton}
             >
-              {saving ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <>
-                  <Icon name="content-save" size={20} color="#FFFFFF" />
-                  <Text style={styles.saveButtonText}>Save changes</Text>
-                </>
-              )}
+              <Icon name="arrow-left" size={24} color={theme.colors.text} />
             </TouchableOpacity>
+
+            <View style={styles.headerContent}>
+              <Text style={styles.headerTitle}>Edit Profile</Text>
+            </View>
           </Animated.View>
 
-        </ScrollView>
-      </View>
+          <ScrollView
+            style={styles.scrollView}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Main Card */}
+            <Animated.View
+              style={styles.card}
+              entering={SlideInDown.duration(800).delay(200).springify()}
+            >
+              {/* Form Fields */}
+              <View style={styles.formContainer}>
+                {renderInputField(
+                  'full_name',
+                  'Full Name',
+                  fullName,
+                  'Enter your full name',
+                  isEkycVerified, // Not editable if eKYC verified
+                  'default',
+                  'account-outline'
+                )}
+
+                {renderInputField(
+                  'email',
+                  'Email',
+                  email,
+                  'Enter your email',
+                  isEmailVerified,
+                  'email-address',
+                  'email-outline'
+                )}
+
+                {renderInputField(
+                  'number_phone',
+                  'Phone',
+                  phone,
+                  'Enter your phone',
+                  isPhoneVerified,
+                  'phone-pad',
+                  'phone-outline'
+                )}
+
+                {renderInputField(
+                  'address',
+                  'Address',
+                  address,
+                  'Enter your address',
+                  false, // Always editable
+                  'default',
+                  'map-marker-outline'
+                )}
+              </View>
+
+              {/* Save Button */}
+              <ButtonCustom
+                title="Save Changes"
+                onPress={handleSave}
+                style={styles.saveButton}
+                icon="content-save"
+                loading={saving}
+              />
+            </Animated.View>
+          </ScrollView>
+        </View>
+      </KeyboardAvoidingView>
+
+      <LoadingOverlay visible={saving} message="Saving changes..." />
     </SafeAreaView>
   );
 };
@@ -317,18 +385,21 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     backgroundColor: theme.colors.secondary + '10',
   },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
   mainContent: {
     flex: 1,
-    paddingHorizontal: wp('4%'),
+    paddingHorizontal: theme.spacing.lg,
   },
 
   // Header Styles
   header: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    paddingTop: hp('3%'),
-    paddingBottom: hp('2%'),
-    gap: wp('4%'),
+    paddingTop: height * 0.03,
+    paddingBottom: theme.spacing.lg,
+    gap: theme.spacing.md,
   },
   backButton: {
     width: 40,
@@ -353,17 +424,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerTitle: {
-    fontSize: wp('6%'),
+    fontSize: 28,
     color: theme.colors.text,
     fontFamily: theme.typography.fontFamily,
-    marginBottom: hp('0.5%'),
     fontWeight: '600',
-  },
-  headerSubtitle: {
-    fontSize: wp('4%'),
-    color: theme.colors.textLight,
-    fontFamily: theme.typography.fontFamily,
-    lineHeight: wp('5%'),
   },
 
   // Scroll View
@@ -371,69 +435,32 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: hp('4%'),
+    flexGrow: 1,
+    paddingBottom: theme.spacing.xl,
   },
 
   // Card Styles
   card: {
     backgroundColor: theme.colors.white,
-    borderRadius: wp('4%'),
-    padding: wp('6%'),
-    marginBottom: hp('2%'),
-    ...Platform.select({
-      ios: {
-        shadowColor: theme.colors.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
-  },
-  cardHeader: {
-    alignItems: 'center',
-    marginBottom: hp('3%'),
-  },
-  cardIconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: theme.colors.primary + '15',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: hp('2%'),
-  },
-  cardTitle: {
-    fontSize: wp('5%'),
-    color: theme.colors.text,
-    fontFamily: theme.typography.fontFamily,
-    fontWeight: '600',
-    marginBottom: hp('0.5%'),
-  },
-  cardSubtitle: {
-    fontSize: wp('4%'),
-    color: theme.colors.textLight,
-    fontFamily: theme.typography.fontFamily,
-    textAlign: 'center',
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.xl,
   },
 
   // Form Styles
   formContainer: {
-    marginBottom: hp('3%'),
+    marginBottom: theme.spacing.xl,
   },
   inputGroup: {
-    marginBottom: hp('2%'),
+    marginBottom: theme.spacing.lg,
   },
   inputLabelContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: hp('1%'),
+    marginBottom: theme.spacing.sm,
   },
   inputLabel: {
-    fontSize: wp('4%'),
+    fontSize: theme.typography.fontSize.md,
     color: theme.colors.text,
     fontFamily: theme.typography.fontFamily,
     fontWeight: '600',
@@ -442,107 +469,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: (theme.colors.success || '#34C759') + '15',
-    paddingHorizontal: wp('2%'),
-    paddingVertical: hp('0.5%'),
-    borderRadius: wp('2%'),
-    gap: wp('1%'),
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.sm,
+    gap: theme.spacing.xs,
   },
   verifiedText: {
-    fontSize: wp('3%'),
+    fontSize: theme.typography.fontSize.xs,
     color: theme.colors.success || '#34C759',
     fontFamily: theme.typography.fontFamily,
     fontWeight: '600',
   },
-  inputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: theme.colors.border,
-    borderRadius: wp('3%'),
-    paddingHorizontal: wp('4%'),
-    paddingVertical: hp('1.5%'),
-    backgroundColor: theme.colors.white,
-    gap: wp('3%'),
-  },
-  inputWrapperDisabled: {
-    backgroundColor: '#F8F8F8',
-    borderColor: '#E5E5EA',
-  },
-  textInput: {
-    flex: 1,
-    fontSize: wp('4%'),
-    color: theme.colors.text,
-    fontFamily: theme.typography.fontFamily,
-  },
-  textInputDisabled: {
-    color: '#8E8E93',
+  input: {
+    marginBottom: 0,
   },
   disabledText: {
-    fontSize: wp('3%'),
+    fontSize: theme.typography.fontSize.xs,
     color: '#8E8E93',
     fontFamily: theme.typography.fontFamily,
-    marginTop: hp('0.5%'),
+    marginTop: theme.spacing.xs,
     fontStyle: 'italic',
   },
 
   // Save Button
   saveButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.colors.primary,
-    paddingVertical: hp('1.5%'),
-    paddingHorizontal: wp('8%'),
-    borderRadius: wp('3%'),
-    gap: wp('2%'),
-    ...Platform.select({
-      ios: {
-        shadowColor: theme.colors.primary,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
-  },
-  saveButtonDisabled: {
-    backgroundColor: theme.colors.textLight,
-    opacity: 0.6,
-  },
-  saveButtonText: {
-    fontSize: wp('4%'),
-    color: theme.colors.white,
-    fontFamily: theme.typography.fontFamily,
-    fontWeight: '600',
-  },
-
-  // Info Card
-  infoCard: {
-    backgroundColor: theme.colors.primary + '10',
-    borderRadius: wp('3%'),
-    padding: wp('4%'),
-    borderLeftWidth: 4,
-    borderLeftColor: theme.colors.primary,
-  },
-  infoHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: hp('1%'),
-    gap: wp('2%'),
-  },
-  infoTitle: {
-    fontSize: wp('4%'),
-    color: theme.colors.text,
-    fontFamily: theme.typography.fontFamily,
-    fontWeight: '600',
-  },
-  infoText: {
-    fontSize: wp('3.5%'),
-    color: theme.colors.textLight,
-    fontFamily: theme.typography.fontFamily,
-    lineHeight: wp('5%'),
+    height: 56,
+    marginTop: theme.spacing.lg,
   },
 
   // Loading
@@ -552,10 +504,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    fontSize: wp('4%'),
+    fontSize: theme.typography.fontSize.md,
     color: theme.colors.textLight,
     fontFamily: theme.typography.fontFamily,
-    marginTop: hp('2%'),
+    marginTop: theme.spacing.md,
   },
 });
 

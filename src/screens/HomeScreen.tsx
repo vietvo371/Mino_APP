@@ -9,6 +9,7 @@ import {
   ScrollView,
   Dimensions,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -64,6 +65,28 @@ interface UserProfile {
   is_active_phone: number;
 }
 
+interface WalletData {
+  id: number;
+  client_id: number;
+  name: string;
+  address_wallet: string;
+  is_default: number;
+  created_at: string;
+  updated_at: string;
+}
+
+interface BankAccountData {
+  id: number;
+  id_bank: number;
+  name_ekyc: string;
+  bank_number: string;
+  is_default: number;
+  created_at: string;
+  updated_at: string;
+  bank_name?: string;
+  bank_code?: string;
+}
+
 const HomeScreen: StackScreen<'Home'> = () => {
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy');
@@ -74,6 +97,12 @@ const HomeScreen: StackScreen<'Home'> = () => {
   const [isLoadingRate, setIsLoadingRate] = useState(false);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [hasTRC20Wallet, setHasTRC20Wallet] = useState(false);
+  const [hasBankAccount, setHasBankAccount] = useState(false);
+  const [isLoadingWallets, setIsLoadingWallets] = useState(true);
+  const [isLoadingBanks, setIsLoadingBanks] = useState(true);
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Function to fetch user profile
   const fetchUserProfile = async () => {
@@ -86,6 +115,44 @@ const HomeScreen: StackScreen<'Home'> = () => {
       console.log('Profile fetch error:', error);
     } finally {
       setIsLoadingProfile(false);
+    }
+  };
+
+  // Function to check TRC20 wallets
+  const fetchTRC20Wallets = async () => {
+    try {
+      setIsLoadingWallets(true);
+      const response = await api.get('/client/wallet/data');
+      if (response.data.status) {
+        const walletData: WalletData[] = response.data.data;
+        setHasTRC20Wallet(walletData.length > 0);
+      } else {
+        setHasTRC20Wallet(false);
+      }
+    } catch (error) {
+      console.log('Fetch TRC20 wallets error:', error);
+      setHasTRC20Wallet(false);
+    } finally {
+      setIsLoadingWallets(false);
+    }
+  };
+
+  // Function to check bank accounts
+  const fetchBankAccounts = async () => {
+    try {
+      setIsLoadingBanks(true);
+      const response = await api.get('/client/bank/data');
+      if (response.data.status) {
+        const accountData: BankAccountData[] = response.data.data;
+        setHasBankAccount(accountData.length > 0);
+      } else {
+        setHasBankAccount(false);
+      }
+    } catch (error) {
+      console.log('Fetch bank accounts error:', error);
+      setHasBankAccount(false);
+    } finally {
+      setIsLoadingBanks(false);
     }
   };
 
@@ -136,11 +203,45 @@ const HomeScreen: StackScreen<'Home'> = () => {
     }, [])
   );
 
+  // Initial data loading
+  useEffect(() => {
+    const loadInitialData = async () => {
+      setIsInitialLoading(true);
+      try {
+        await Promise.all([
+          fetchUserProfile(),
+          fetchTRC20Wallets(),
+          fetchBankAccounts()
+        ]);
+      } finally {
+        setIsInitialLoading(false);
+      }
+    };
+    
+    loadInitialData();
+  }, []);
+
   // Refresh profile data when screen comes into focus (e.g., after verification)
   useFocusEffect(
     React.useCallback(() => {
-      fetchUserProfile();
-    }, [])
+      if (!isInitialLoading) {
+        const refreshData = async () => {
+          setIsRefreshing(true);
+          try {
+            // Always refresh wallet and bank data when focusing
+            await Promise.all([
+              fetchTRC20Wallets(),
+              fetchBankAccounts(),
+              fetchUserProfile()
+            ]);
+          } finally {
+            setIsRefreshing(false);
+          }
+        };
+        
+        refreshData();
+      }
+    }, [isInitialLoading])
   );
 
   // Function to format amount with commas for display
@@ -296,6 +397,33 @@ const HomeScreen: StackScreen<'Home'> = () => {
     return isEkycVerified && isEmailVerified && isPhoneVerified;
   };
 
+  // Check if user can perform transaction based on tab and requirements
+  const canPerformTransaction = () => {
+    if (!checkVerificationStatus()) return false;
+    
+    if (activeTab === 'buy' && !hasTRC20Wallet) return false;
+    if (activeTab === 'sell' && !hasBankAccount) return false;
+    
+    return true;
+  };
+
+  // Get button text based on current state
+  const getButtonText = () => {
+    if (!checkVerificationStatus()) {
+      return 'Complete Verification Required';
+    }
+    
+    if (activeTab === 'buy' && !hasTRC20Wallet) {
+      return 'Add TRC20 Wallet Required';
+    }
+    
+    if (activeTab === 'sell' && !hasBankAccount) {
+      return 'Add Bank Account Required';
+    }
+    
+    return activeTab === 'buy' ? 'Buy USDT' : 'Sell USDT';
+  };
+
   const handleAction = () => {
     const cleanAmount = amount.replace(/,/g, '');
     if (!cleanAmount || parseFloat(cleanAmount) === 0) return;
@@ -314,6 +442,43 @@ const HomeScreen: StackScreen<'Home'> = () => {
           {
             text: 'Go to Security',
             onPress: () => navigation.navigate('Security' as never)
+          },
+          {
+            text: 'Cancel',
+            style: 'cancel'
+          }
+        ]
+      );
+      return;
+    }
+
+    // Check wallet/account requirements based on transaction type
+    if (activeTab === 'buy' && !hasTRC20Wallet) {
+      Alert.alert(
+        'TRC20 Wallet Required',
+        'To buy USDT, you need to add a TRC20 wallet address first. Please add your wallet address in the TRC20 Addresses section.',
+        [
+          {
+            text: 'Add TRC20 Wallet',
+            onPress: () => navigation.navigate('TRC20Addresses' as never)
+          },
+          {
+            text: 'Cancel',
+            style: 'cancel'
+          }
+        ]
+      );
+      return;
+    }
+
+    if (activeTab === 'sell' && !hasBankAccount) {
+      Alert.alert(
+        'Bank Account Required',
+        'To sell USDT, you need to add a bank account first. Please add your bank account in the Bank Accounts section.',
+        [
+          {
+            text: 'Add Bank Account',
+            onPress: () => navigation.navigate('BankAccounts' as never)
           },
           {
             text: 'Cancel',
@@ -354,6 +519,18 @@ const HomeScreen: StackScreen<'Home'> = () => {
     });
   };
 
+  // Show loading screen while initial data is loading
+  if (isInitialLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#4A90E2" />
+          <Text style={styles.loadingText}>Loading...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Buy/Sell Tabs */}
@@ -383,6 +560,14 @@ const HomeScreen: StackScreen<'Home'> = () => {
       </View>
 
       <View style={styles.mainContent}>
+        {/* Refresh Indicator */}
+        {isRefreshing && (
+          <View style={styles.refreshIndicator}>
+            <ActivityIndicator size="small" color="#4A90E2" />
+            <Text style={styles.refreshText}>Updating data...</Text>
+          </View>
+        )}
+
         <ScrollView 
           style={styles.scrollView}
           showsVerticalScrollIndicator={false}
@@ -482,23 +667,54 @@ const HomeScreen: StackScreen<'Home'> = () => {
           </View>
         </ScrollView>
 
-
-        {/* Confirm Button - Outside ScrollView to stay fixed at bottom */}
-        <TouchableOpacity 
-          style={[
-            styles.confirmButton,
-            (!amount || parseFloat(amount.replace(/,/g, '')) === 0 || !checkVerificationStatus()) && styles.confirmButtonDisabled
-          ]}
-          onPress={handleAction}
-          disabled={!amount || parseFloat(amount.replace(/,/g, '')) === 0 || !checkVerificationStatus()}
-        >
-          <Text style={styles.confirmButtonText}>
-            {!checkVerificationStatus() 
-              ? 'Complete Verification Required' 
-              : (activeTab === 'buy' ? 'Buy USDT' : 'Sell USDT')
-            }
-          </Text>
-        </TouchableOpacity>
+        {/* Status Banner or Confirm Button */}
+        {(activeTab === 'buy' && !hasTRC20Wallet) || (activeTab === 'sell' && !hasBankAccount) ? (
+          // Show warning banner when missing wallet/bank
+          <View style={styles.statusBanner}>
+            {activeTab === 'buy' && !hasTRC20Wallet && (
+              <View style={styles.warningBanner}>
+                <Icon name="wallet-outline" size={20} color="#FF9500" />
+                <Text style={styles.warningText}>
+                  Add a TRC20 wallet address to receive USDT
+                </Text>
+                <TouchableOpacity 
+                  style={styles.warningButton}
+                  onPress={() => navigation.navigate('TRC20Addresses' as never)}
+                >
+                  <Text style={styles.warningButtonText}>Add Wallet</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            {activeTab === 'sell' && !hasBankAccount && (
+              <View style={styles.warningBanner}>
+                <Icon name="bank-outline" size={20} color="#FF9500" />
+                <Text style={styles.warningText}>
+                  Add a bank account to receive VND
+                </Text>
+                <TouchableOpacity 
+                  style={styles.warningButton}
+                  onPress={() => navigation.navigate('BankAccounts' as never)}
+                >
+                  <Text style={styles.warningButtonText}>Add Account</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        ) : (
+          // Show confirm button when user has required wallet/bank
+          <TouchableOpacity 
+            style={[
+              styles.confirmButton,
+              (!amount || parseFloat(amount.replace(/,/g, '')) === 0 || !canPerformTransaction()) && styles.confirmButtonDisabled
+            ]}
+            onPress={handleAction}
+            disabled={!amount || parseFloat(amount.replace(/,/g, '')) === 0 || !canPerformTransaction()}
+          >
+            <Text style={styles.confirmButtonText}>
+              {getButtonText()}
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -703,6 +919,70 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: wp("3%"),
     fontWeight: '600',
+  },
+  statusBanner: {
+    position: 'absolute',
+    bottom: -15,
+    left: 0,
+    right: 0,
+  },
+  warningBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF4E6',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginHorizontal: 16,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF9500',
+  },
+  warningText: {
+    flex: 1,
+    fontSize: wp("3.5%"),
+    color: '#FF9500',
+    marginLeft: 8,
+    fontWeight: '500',
+  },
+  warningButton: {
+    backgroundColor: '#FF9500',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  warningButtonText: {
+    color: '#FFFFFF',
+    fontSize: wp("3%"),
+    fontWeight: '600',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: wp("4%"),
+    color: '#666',
+    fontWeight: '500',
+  },
+  refreshIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F8F9FA',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    borderRadius: 8,
+    marginHorizontal: 16,
+  },
+  refreshText: {
+    marginLeft: 8,
+    fontSize: wp("3.5%"),
+    color: '#666',
+    fontWeight: '500',
   },
 });
 
