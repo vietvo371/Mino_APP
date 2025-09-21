@@ -11,6 +11,7 @@ import {
   Image,
   ActivityIndicator,
 } from 'react-native';
+import LoadingOverlay from '../component/LoadingOverlay';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -20,6 +21,7 @@ import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import api from '../utils/Api';
+import { useTranslation } from '../hooks/useTranslation';
 
 const { width } = Dimensions.get('window');
 
@@ -89,6 +91,7 @@ interface BankAccountData {
 
 const HomeScreen: StackScreen<'Home'> = () => {
   const navigation = useNavigation();
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy');
   const [amount, setAmount] = useState('');
   const [binanceRate, setBinanceRate] = useState(0);
@@ -410,18 +413,18 @@ const HomeScreen: StackScreen<'Home'> = () => {
   // Get button text based on current state
   const getButtonText = () => {
     if (!checkVerificationStatus()) {
-      return 'Complete Verification Required';
+      return t('verification.completeVerification');
     }
     
     if (activeTab === 'buy' && !hasTRC20Wallet) {
-      return 'Add TRC20 Wallet Required';
+      return t('home.addWalletRequired');
     }
     
     if (activeTab === 'sell' && !hasBankAccount) {
-      return 'Add Bank Account Required';
+      return t('home.addBankRequired');
     }
     
-    return activeTab === 'buy' ? 'Buy USDT' : 'Sell USDT';
+    return activeTab === 'buy' ? t('home.buyUsdtButton') : t('home.sellUsdtButton');
   };
 
   const handleAction = () => {
@@ -519,20 +522,13 @@ const HomeScreen: StackScreen<'Home'> = () => {
     });
   };
 
-  // Show loading screen while initial data is loading
-  if (isInitialLoading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#4A90E2" />
-          <Text style={styles.loadingText}>Loading...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   return (
     <SafeAreaView style={styles.container}>
+      {/* Loading Overlay */}
+      <LoadingOverlay 
+        visible={isInitialLoading} 
+        message={t('common.loading')} 
+      />
       {/* Buy/Sell Tabs */}
       <View style={styles.tabContainer}>
         <TouchableOpacity
@@ -543,7 +539,7 @@ const HomeScreen: StackScreen<'Home'> = () => {
           }}
         >
           <Text style={[styles.tabText, activeTab === 'buy' && styles.activeTabText]}>
-            VND → USDT
+            {t('home.vndToUsdt')}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -554,19 +550,17 @@ const HomeScreen: StackScreen<'Home'> = () => {
           }}
         >
           <Text style={[styles.tabText, activeTab === 'sell' && styles.activeTabText]}>
-            USDT → VND
+            {t('home.usdtToVnd')}
           </Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.mainContent}>
-        {/* Refresh Indicator */}
-        {isRefreshing && (
-          <View style={styles.refreshIndicator}>
-            <ActivityIndicator size="small" color="#4A90E2" />
-            <Text style={styles.refreshText}>Updating data...</Text>
-          </View>
-        )}
+        {/* Refresh Loading Overlay */}
+        <LoadingOverlay 
+          visible={isRefreshing} 
+          message={t('common.loading')} 
+        />
 
         <ScrollView 
           style={styles.scrollView}
@@ -675,13 +669,13 @@ const HomeScreen: StackScreen<'Home'> = () => {
               <View style={styles.warningBanner}>
                 <Icon name="wallet-outline" size={20} color="#FF9500" />
                 <Text style={styles.warningText}>
-                  Add a TRC20 wallet address to receive USDT
+                  {t('wallet.walletRequiredMessage')}
                 </Text>
                 <TouchableOpacity 
                   style={styles.warningButton}
                   onPress={() => navigation.navigate('TRC20Addresses' as never)}
                 >
-                  <Text style={styles.warningButtonText}>Add Wallet</Text>
+                  <Text style={styles.warningButtonText}>{t('wallet.addWalletButton')}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -689,13 +683,13 @@ const HomeScreen: StackScreen<'Home'> = () => {
               <View style={styles.warningBanner}>
                 <Icon name="bank-outline" size={20} color="#FF9500" />
                 <Text style={styles.warningText}>
-                  Add a bank account to receive VND
+                  {t('bank.bankRequiredMessage')}
                 </Text>
                 <TouchableOpacity 
                   style={styles.warningButton}
                   onPress={() => navigation.navigate('BankAccounts' as never)}
                 >
-                  <Text style={styles.warningButtonText}>Add Account</Text>
+                  <Text style={styles.warningButtonText}>{t('bank.addAccountButton')}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -954,35 +948,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: wp("3%"),
     fontWeight: '600',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: wp("4%"),
-    color: '#666',
-    fontWeight: '500',
-  },
-  refreshIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#F8F9FA',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    marginBottom: 8,
-    borderRadius: 8,
-    marginHorizontal: 16,
-  },
-  refreshText: {
-    marginLeft: 8,
-    fontSize: wp("3.5%"),
-    color: '#666',
-    fontWeight: '500',
   },
 });
 

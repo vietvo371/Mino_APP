@@ -20,11 +20,13 @@ import {
 import Animated, { FadeInDown, FadeInUp, SlideInDown } from 'react-native-reanimated';
 import { theme } from '../theme/colors';
 import api from '../utils/Api';
+import { useTranslation } from '../hooks/useTranslation';
 
 const { width, height } = Dimensions.get('window');
 
 const EmailVerificationScreen = () => {
   const navigation = useNavigation();
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const [isCodeSent, setIsCodeSent] = useState(false);
@@ -53,7 +55,7 @@ const EmailVerificationScreen = () => {
         }
       } catch (e) {
         console.log('Error fetching profile:', e);
-        Alert.alert('Lỗi', 'Không thể lấy thông tin email');
+        Alert.alert(t('common.error'), t('emailVerification.getEmailError'));
       } finally {
         setCheckingStatus(false);
       }
@@ -80,19 +82,19 @@ const EmailVerificationScreen = () => {
         setIsCodeSent(true);
         setCountdown(60); // 60 seconds countdown
         startCountdown();
-        Alert.alert('', response.data.message || 'Gửi mã OTP về email thành công!');
+        Alert.alert('', response.data.message || t('emailVerification.sendOtpSuccess'));
       } else {
-        Alert.alert('Lỗi', response.data.message || 'Không thể gửi OTP');
+        Alert.alert(t('common.error'), response.data.message || t('emailVerification.sendOtpError'));
       }
     } catch (error: any) {
       console.log('Send OTP error:', error);
-      let errorMessage = 'Không thể gửi OTP. Vui lòng thử lại.';
+      let errorMessage = t('emailVerification.sendOtpFailed');
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.message) {
         errorMessage = error.message;
       }
-      Alert.alert('Lỗi', errorMessage);
+      Alert.alert(t('common.error'), errorMessage);
     } finally {
       setLoading(false);
     }
@@ -155,7 +157,7 @@ const EmailVerificationScreen = () => {
   const handleVerify = async () => {
     const otpString = otp.join('');
     if (!otpString || otpString.length < 6) {
-      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ mã OTP');
+      Alert.alert(t('common.error'), t('emailVerification.enterFullOtp'));
       return;
     }
 
@@ -169,7 +171,7 @@ const EmailVerificationScreen = () => {
       console.log('Verify OTP response:', response.data);
       
       if (response.data.status) {
-        Alert.alert('Thành công', 'Email đã được xác thực thành công!', [
+        Alert.alert(t('common.success'), t('emailVerification.emailVerifiedSuccess'), [
           {
             text: 'OK',
             onPress: () => {
@@ -178,7 +180,7 @@ const EmailVerificationScreen = () => {
           }
         ]);
       } else {
-        Alert.alert('Lỗi', response.data.message || 'Mã OTP không đúng. Vui lòng thử lại.');
+        Alert.alert(t('common.error'), response.data.message || t('emailVerification.otpIncorrect'));
         // Reset OTP on error
         setOtp(['', '', '', '', '', '']);
         setCode('');
@@ -187,13 +189,13 @@ const EmailVerificationScreen = () => {
       
     } catch (error: any) {
       console.log('Verify OTP error:', error);
-      let errorMessage = 'Mã OTP không đúng. Vui lòng thử lại.';
+      let errorMessage = t('emailVerification.otpIncorrect');
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.message) {
         errorMessage = error.message;
       }
-      Alert.alert('Lỗi', errorMessage);
+      Alert.alert(t('common.error'), errorMessage);
       // Reset OTP on error
       setOtp(['', '', '', '', '', '']);
       setCode('');
@@ -214,9 +216,9 @@ const EmailVerificationScreen = () => {
       <View style={styles.verifiedIconContainer}>
         <Icon name="check-circle" size={64} color={theme.colors.success || '#34C759'} />
       </View>
-      <Text style={styles.verifiedTitle}>Email Already Verified</Text>
+      <Text style={styles.verifiedTitle}>{t('emailVerification.emailAlreadyVerified')}</Text>
       <Text style={styles.verifiedSubtitle}>
-        Your email address has been successfully verified
+        {t('emailVerification.emailVerifiedDescription')}
       </Text>
       {email && (
         <View style={styles.verifiedEmailContainer}>
@@ -229,7 +231,7 @@ const EmailVerificationScreen = () => {
         onPress={() => (navigation as any).goBack()}
         activeOpacity={0.8}
       >
-        <Text style={styles.backToProfileButtonText}>Back to Profile</Text>
+        <Text style={styles.backToProfileButtonText}>{t('emailVerification.backToProfile')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -240,9 +242,9 @@ const EmailVerificationScreen = () => {
       <View style={styles.checkingIconContainer}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
-      <Text style={styles.checkingTitle}>Checking Status...</Text>
+      <Text style={styles.checkingTitle}>{t('emailVerification.checkingStatus')}</Text>
       <Text style={styles.checkingSubtitle}>
-        Please wait while we check your verification status
+        {t('emailVerification.checkingDescription')}
       </Text>
     </View>
   );
@@ -268,11 +270,11 @@ const EmailVerificationScreen = () => {
           </TouchableOpacity>
 
           <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>Email Verification</Text>
+            <Text style={styles.headerTitle}>{t('emailVerification.title')}</Text>
             <Text style={styles.headerSubtitle}>
               {isCodeSent 
-                ? 'Enter the verification code sent to your email'
-                : 'We\'re sending a verification code to your email'
+                ? t('emailVerification.subtitleCodeSent')
+                : t('emailVerification.subtitle')
               }
             </Text>
           </View>
@@ -295,9 +297,9 @@ const EmailVerificationScreen = () => {
               <View style={styles.emailIconContainer}>
                 <Icon name="email" size={48} color={theme.colors.primary} />
               </View>
-              <Text style={styles.sendCodeTitle}>Verify Your Email</Text>
+              <Text style={styles.sendCodeTitle}>{t('emailVerification.verifyEmail')}</Text>
               <Text style={styles.sendCodeSubtitle}>
-                We'll send a verification code to your registered email address
+                {t('emailVerification.sendCodeDescription')}
               </Text>
               {email && (
                 <View style={styles.emailDisplayContainer}>
@@ -314,7 +316,7 @@ const EmailVerificationScreen = () => {
                 {loading ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.sendCodeButtonText}>Send Verification Code</Text>
+                  <Text style={styles.sendCodeButtonText}>{t('emailVerification.sendVerificationCode')}</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -325,9 +327,9 @@ const EmailVerificationScreen = () => {
                 <View style={styles.otpIconContainer}>
                   <Icon name="email-outline" size={32} color={theme.colors.primary} />
                 </View>
-                <Text style={styles.otpTitle}>Enter Verification Code</Text>
+                <Text style={styles.otpTitle}>{t('emailVerification.enterVerificationCode')}</Text>
                 <Text style={styles.otpSubtitle}>
-                  We sent a 6-digit code to your email
+                  {t('emailVerification.codeSentDescription')}
                 </Text>
               </View>
 
@@ -383,7 +385,7 @@ const EmailVerificationScreen = () => {
               <View style={styles.resendContainer}>
                 {countdown > 0 ? (
                   <Text style={styles.timerText}>
-                    Resend code after <Text style={styles.timer}>{countdown}s</Text>
+                    {t('emailVerification.resendCodeAfter')} <Text style={styles.timer}>{countdown}s</Text>
                   </Text>
                 ) : (
                   <TouchableOpacity 
@@ -391,7 +393,7 @@ const EmailVerificationScreen = () => {
                     style={styles.resendButton}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.resendButtonText}>Resend Code</Text>
+                    <Text style={styles.resendButtonText}>{t('emailVerification.resendCode')}</Text>
                   </TouchableOpacity>
                 )}
               </View>

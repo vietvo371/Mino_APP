@@ -20,11 +20,13 @@ import {
 } from 'react-native-responsive-screen';
 import Animated, { FadeInDown, FadeInUp, SlideInDown } from 'react-native-reanimated';
 import { theme } from '../theme/colors';
+import { useTranslation } from '../hooks/useTranslation';
 
 const { width, height } = Dimensions.get('window');
 
 const PhoneVerificationScreen = () => {
   const navigation = useNavigation();
+  const { t } = useTranslation();
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [isCodeSent, setIsCodeSent] = useState(false);
@@ -55,7 +57,7 @@ const PhoneVerificationScreen = () => {
         }
       } catch (e) {
         console.log('Error fetching profile:', e);
-        Alert.alert('Lỗi', 'Không thể lấy thông tin số điện thoại');
+        Alert.alert(t('common.error'), t('phoneVerification.getPhoneError'));
       } finally {
         setCheckingStatus(false);
       }
@@ -83,19 +85,19 @@ const PhoneVerificationScreen = () => {
         setIsCodeSent(true);
         setCountdown(60); // 60 seconds countdown
         startCountdown();
-        Alert.alert('', response.data.message || 'Gửi mã OTP về số điện thoại thành công!');
+        Alert.alert('', response.data.message || t('phoneVerification.sendOtpSuccess'));
       } else {
-        Alert.alert('Lỗi', response.data.message || 'Không thể gửi OTP');
+        Alert.alert(t('common.error'), response.data.message || t('phoneVerification.sendOtpError'));
       }
     } catch (error: any) {
       console.log('Send OTP error:', error);
-      let errorMessage = 'Không thể gửi OTP. Vui lòng thử lại.';
+      let errorMessage = t('phoneVerification.sendOtpFailed');
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.message) {
         errorMessage = error.message;
       }
-      Alert.alert('Lỗi', errorMessage);
+      Alert.alert(t('common.error'), errorMessage);
     } finally {
       setLoading(false);
     }
@@ -158,7 +160,7 @@ const PhoneVerificationScreen = () => {
   const handleVerify = async () => {
     const otpString = otp.join('');
     if (!otpString || otpString.length < 6) {
-      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ mã OTP');
+      Alert.alert(t('common.error'), t('phoneVerification.enterFullOtp'));
       return;
     }
 
@@ -172,7 +174,7 @@ const PhoneVerificationScreen = () => {
       console.log('Verify OTP response:', response.data);
       
       if (response.data.status) {
-        Alert.alert('Thành công', 'Số điện thoại đã được xác thực thành công!', [
+        Alert.alert(t('common.success'), t('phoneVerification.phoneVerifiedSuccess'), [
           {
             text: 'OK',
             onPress: () => {
@@ -181,7 +183,7 @@ const PhoneVerificationScreen = () => {
           }
         ]);
       } else {
-        Alert.alert('Lỗi', response.data.message || 'Mã OTP không đúng. Vui lòng thử lại.');
+        Alert.alert(t('common.error'), response.data.message || t('phoneVerification.otpIncorrect'));
         // Reset OTP on error
         setOtp(['', '', '', '', '', '']);
         setCode('');
@@ -190,13 +192,13 @@ const PhoneVerificationScreen = () => {
       
     } catch (error: any) {
       console.log('Verify OTP error:', error);
-      let errorMessage = 'Mã OTP không đúng. Vui lòng thử lại.';
+      let errorMessage = t('phoneVerification.otpIncorrect');
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.message) {
         errorMessage = error.message;
       }
-      Alert.alert('Lỗi', errorMessage);
+      Alert.alert(t('common.error'), errorMessage);
       // Reset OTP on error
       setOtp(['', '', '', '', '', '']);
       setCode('');
@@ -217,9 +219,9 @@ const PhoneVerificationScreen = () => {
       <View style={styles.verifiedIconContainer}>
         <Icon name="check-circle" size={64} color={theme.colors.success || '#34C759'} />
       </View>
-      <Text style={styles.verifiedTitle}>Phone Already Verified</Text>
+      <Text style={styles.verifiedTitle}>{t('phoneVerification.phoneAlreadyVerified')}</Text>
       <Text style={styles.verifiedSubtitle}>
-        Your phone number has been successfully verified
+        {t('phoneVerification.phoneVerifiedDescription')}
       </Text>
       {phone && (
         <View style={styles.verifiedPhoneContainer}>
@@ -232,7 +234,7 @@ const PhoneVerificationScreen = () => {
         onPress={() => (navigation as any).goBack()}
         activeOpacity={0.8}
       >
-        <Text style={styles.backToProfileButtonText}>Back to Profile</Text>
+        <Text style={styles.backToProfileButtonText}>{t('phoneVerification.backToProfile')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -243,9 +245,9 @@ const PhoneVerificationScreen = () => {
       <View style={styles.checkingIconContainer}>
         <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
-      <Text style={styles.checkingTitle}>Checking Status...</Text>
+      <Text style={styles.checkingTitle}>{t('phoneVerification.checkingStatus')}</Text>
       <Text style={styles.checkingSubtitle}>
-        Please wait while we check your verification status
+        {t('phoneVerification.checkingDescription')}
       </Text>
     </View>
   );
@@ -271,11 +273,11 @@ const PhoneVerificationScreen = () => {
           </TouchableOpacity>
 
           <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>Phone Verification</Text>
+            <Text style={styles.headerTitle}>{t('phoneVerification.title')}</Text>
             <Text style={styles.headerSubtitle}>
               {isCodeSent 
-                ? 'Enter the verification code sent to your phone'
-                : 'We\'re sending a verification code to your phone'
+                ? t('phoneVerification.subtitleCodeSent')
+                : t('phoneVerification.subtitle')
               }
             </Text>
           </View>
@@ -298,9 +300,9 @@ const PhoneVerificationScreen = () => {
               <View style={styles.phoneIconContainer}>
                 <Icon name="cellphone" size={48} color={theme.colors.primary} />
               </View>
-              <Text style={styles.sendCodeTitle}>Verify Your Phone</Text>
+              <Text style={styles.sendCodeTitle}>{t('phoneVerification.verifyPhone')}</Text>
               <Text style={styles.sendCodeSubtitle}>
-                We'll send a verification code to your registered phone number
+                {t('phoneVerification.sendCodeDescription')}
               </Text>
               {phone && (
                 <View style={styles.phoneDisplayContainer}>
@@ -317,7 +319,7 @@ const PhoneVerificationScreen = () => {
                 {loading ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.sendCodeButtonText}>Send Verification Code</Text>
+                  <Text style={styles.sendCodeButtonText}>{t('phoneVerification.sendVerificationCode')}</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -328,9 +330,9 @@ const PhoneVerificationScreen = () => {
                 <View style={styles.otpIconContainer}>
                   <Icon name="cellphone-message" size={32} color={theme.colors.primary} />
                 </View>
-                <Text style={styles.otpTitle}>Enter Verification Code</Text>
+                <Text style={styles.otpTitle}>{t('phoneVerification.enterVerificationCode')}</Text>
                 <Text style={styles.otpSubtitle}>
-                  We sent a 6-digit code to your phone
+                  {t('phoneVerification.codeSentDescription')}
                 </Text>
               </View>
 
@@ -386,7 +388,7 @@ const PhoneVerificationScreen = () => {
               <View style={styles.resendContainer}>
                 {countdown > 0 ? (
                   <Text style={styles.timerText}>
-                    Resend code after <Text style={styles.timer}>{countdown}s</Text>
+                    {t('phoneVerification.resendCodeAfter')} <Text style={styles.timer}>{countdown}s</Text>
                   </Text>
                 ) : (
                   <TouchableOpacity 
@@ -394,7 +396,7 @@ const PhoneVerificationScreen = () => {
                     style={styles.resendButton}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.resendButtonText}>Resend Code</Text>
+                    <Text style={styles.resendButtonText}>{t('phoneVerification.resendCode')}</Text>
                   </TouchableOpacity>
                 )}
               </View>

@@ -21,6 +21,7 @@ import {
 } from 'react-native-responsive-screen';
 import { getUser } from '../utils/TokenManager';
 import api from '../utils/Api';
+import { useTranslation } from '../hooks/useTranslation';
 
 type SuccessTransactionDetail = {
   id: string;
@@ -48,6 +49,7 @@ type SuccessTransactionDetail = {
 };
 
 const SuccessTransactionDetailScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const route = useRoute();
   const params: any = route.params || {};
@@ -195,9 +197,9 @@ const SuccessTransactionDetailScreen = () => {
   const copyToClipboard = async (text: string, message: string) => {
     try {
       await Clipboard.setString(text);
-      Alert.alert('✅ Copied', message, [{ text: 'OK' }]);
+      Alert.alert(`✅ ${t('successTransaction.copied')}`, message, [{ text: t('common.confirm') }]);
     } catch (error) {
-      Alert.alert('❌ Error', 'Unable to copy. Please try again.');
+      Alert.alert(`❌ ${t('common.error')}`, t('successTransaction.unableToCopy'));
     }
   };
 
@@ -226,7 +228,7 @@ const SuccessTransactionDetailScreen = () => {
           >
             <Icon name="arrow-left" size={24} color="#1A1A1A" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Transaction Details</Text>
+          <Text style={styles.headerTitle}>{t('successTransaction.title')}</Text>
           <View style={styles.headerRight} />
         </View>
         {loading ? (
@@ -234,21 +236,21 @@ const SuccessTransactionDetailScreen = () => {
             <View style={styles.loadingSpinner}>
               <ActivityIndicator size="large" color="#00D4AA" />
             </View>
-            <Text style={styles.loadingText}>Loading transaction details...</Text>
-            <Text style={styles.loadingSubtext}>Please wait a moment</Text>
+            <Text style={styles.loadingText}>{t('successTransaction.loadingDetails')}</Text>
+            <Text style={styles.loadingSubtext}>{t('successTransaction.pleaseWait')}</Text>
           </View>
         ) : (
           <View style={styles.errorContainer}>
             <View style={styles.errorIconContainer}>
               <Icon name="alert-circle-outline" size={64} color="#FF6B6B" />
             </View>
-            <Text style={styles.errorText}>Transaction not found</Text>
-            <Text style={styles.errorSubtext}>Transaction may have been deleted or does not exist</Text>
+            <Text style={styles.errorText}>{t('successTransaction.transactionNotFound')}</Text>
+            <Text style={styles.errorSubtext}>{t('successTransaction.transactionDeleted')}</Text>
             <TouchableOpacity 
               style={styles.retryButton}
               onPress={() => (navigation as any).navigate('MainTabs', { screen: 'History' })}
             >
-              <Text style={styles.retryButtonText}>Back to History</Text>
+              <Text style={styles.retryButtonText}>{t('successTransaction.backToHistory')}</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -268,7 +270,7 @@ const SuccessTransactionDetailScreen = () => {
           <Icon name="arrow-left" size={24} color="#1A1A1A" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
-          {isBuy ? 'Buy USDT' : 'Sell USDT'} - Success
+          {isBuy ? t('successTransaction.buyUsdtSuccess') : t('successTransaction.sellUsdtSuccess')}
         </Text>
         <View style={styles.headerRight} />
       </View>
@@ -293,11 +295,11 @@ const SuccessTransactionDetailScreen = () => {
               <View style={styles.successRipple2} />
             </View>
             
-            <Text style={styles.successTitle}>Transaction Successful!</Text>
+            <Text style={styles.successTitle}>{t('successTransaction.transactionSuccessful')}</Text>
             <Text style={styles.successSubtitle}>
               {isBuy 
-                ? `Successfully bought ${transaction.usdt} USDT`
-                : `Successfully sold ${transaction.usdt} USDT for ${transaction.amount} VND`
+                ? `${t('successTransaction.successfullyBought')} ${transaction.usdt} USDT`
+                : `${t('successTransaction.successfullySold')} ${transaction.usdt} USDT ${t('successTransaction.from')} ${transaction.amount} VND`
               }
             </Text>
             
@@ -311,7 +313,7 @@ const SuccessTransactionDetailScreen = () => {
               <View style={styles.transactionMetaItem}>
                 <Icon name="shield-check" size={16} color="#00D4AA" />
                 <Text style={[styles.transactionMetaText, { color: '#00D4AA' }]}>
-                  Verified
+                  {t('successTransaction.verified')}
                 </Text>
               </View>
             </View>
@@ -321,7 +323,7 @@ const SuccessTransactionDetailScreen = () => {
           <View style={styles.amountCard}>
             <View style={styles.amountHeader}>
               <Text style={styles.amountLabel}>
-                {isBuy ? 'USDT Purchased' : 'VND Received'}
+                {isBuy ? t('successTransaction.usdtPurchased') : t('successTransaction.vndReceived')}
               </Text>
               <View style={[styles.typeBadge, isBuy ? styles.buyBadge : styles.sellBadge]}>
                 <Icon 
@@ -340,7 +342,7 @@ const SuccessTransactionDetailScreen = () => {
             </Text>
             
             <Text style={styles.amountSecondary}>
-              {isBuy ? `Paid ${transaction.amount} VND` : `From ${transaction.usdt} USDT`}
+              {isBuy ? `${t('successTransaction.paid')} ${transaction.amount} VND` : `${t('successTransaction.from')} ${transaction.usdt} USDT`}
             </Text>
           </View>
 
@@ -348,28 +350,28 @@ const SuccessTransactionDetailScreen = () => {
           <View style={styles.detailsCard}>
             <Text style={styles.cardTitle}>
               <Icon name="information-outline" size={18} color="#374151" />
-              {'  '}Transaction Details
+              {'  '}{t('successTransaction.transactionDetails')}
             </Text>
             
             <View style={styles.detailsList}>
               <DetailRow
-                label="Transaction ID"
+                label={t('successTransaction.transactionId')}
                 value={transaction.transactionId && transaction.transactionId.length > 8 
                   ? `${transaction.transactionId.slice(0, 8)}...` 
                   : transaction.transactionId || 'N/A'
                 }
                 copyable
-                onCopy={() => copyToClipboard(transaction.transactionId || '', 'Transaction ID copied')}
+                onCopy={() => copyToClipboard(transaction.transactionId || '', t('successTransaction.transactionIdCopied'))}
               />
               
               <DetailRow
-                label="Exchange Rate"
+                label={t('successTransaction.exchangeRate')}
                 value={`${transaction.exchangeRate} VND/USDT`}
                 icon="trending-up"
               />
               
               <DetailRow
-                label="Transaction Fee"
+                label={t('successTransaction.transactionFee')}
                 value={transaction.fee}
                 icon="cash-minus"
               />
@@ -377,43 +379,43 @@ const SuccessTransactionDetailScreen = () => {
               {isBuy ? (
                 <>
                   <DetailRow
-                    label="USDT Wallet Address"
+                    label={t('successTransaction.usdtWalletAddress')}
                     value={transaction.receiveAddress}
                     copyable
-                    onCopy={() => copyToClipboard(transaction.receiveAddress!, 'Wallet address copied')}
+                    onCopy={() => copyToClipboard(transaction.receiveAddress!, t('successTransaction.walletAddressCopied'))}
                     truncate
                   />
                   <DetailRow
-                    label="Amount Paid"
+                    label={t('successTransaction.amountPaid')}
                     value={`${transaction.amount} VND`}
                     highlight="negative"
                   />
                   <DetailRow
-                    label="Payment Method"
-                    value="Bank Transfer"
+                    label={t('successTransaction.paymentMethod')}
+                    value={t('successTransaction.bankTransfer')}
                     icon="bank"
                   />
                 </>
               ) : (
                 <>
                   <DetailRow
-                    label="USDT Wallet Address"
+                    label={t('successTransaction.usdtWalletAddress')}
                     value={transaction.receiveAddress}
                     copyable
-                    onCopy={() => copyToClipboard(transaction.receiveAddress!, 'Wallet address copied')}
+                    onCopy={() => copyToClipboard(transaction.receiveAddress!, t('successTransaction.walletAddressCopied'))}
                     truncate
                   />
                   <DetailRow
-                    label="Bank Account"
+                    label={t('successTransaction.bankAccount')}
                     value={transaction.transferInfo?.bankName}
                     copyable
-                    onCopy={() => copyToClipboard(transaction.transferInfo!.bankName, 'Bank name copied')}
+                    onCopy={() => copyToClipboard(transaction.transferInfo!.bankName, t('successTransaction.bankNameCopied'))}
                   />
                   <DetailRow
-                    label="Account Number"
+                    label={t('successTransaction.accountNumber')}
                     value={transaction.transferInfo?.accountNumber}
                     copyable
-                    onCopy={() => copyToClipboard(transaction.transferInfo!.accountNumber, 'Account number copied')}
+                    onCopy={() => copyToClipboard(transaction.transferInfo!.accountNumber, t('successTransaction.accountNumberCopied'))}
                   />
                 </>
               )}
@@ -422,7 +424,7 @@ const SuccessTransactionDetailScreen = () => {
             <View style={styles.totalSection}>
               <View style={styles.totalRow}>
                 <Text style={styles.totalLabel}>
-                  {isBuy ? 'Total Paid' : 'Total Received'}
+                  {isBuy ? t('successTransaction.totalPaid') : t('successTransaction.totalReceived')}
                 </Text>
                 <Text style={[styles.totalValue, isBuy ? styles.totalNegative : styles.totalPositive]}>
                   {transaction.totalAmount}
@@ -430,7 +432,7 @@ const SuccessTransactionDetailScreen = () => {
               </View>
               <View style={styles.totalRow}>
                 <Text style={[styles.totalLabel, { fontSize: wp('3.5%'), color: '#6B7280' }]}>
-                  {isBuy ? 'Including transaction fee' : 'After transaction fee'}
+                  {isBuy ? t('successTransaction.includingFee') : t('successTransaction.afterFee')}
                 </Text>
               </View>
             </View>

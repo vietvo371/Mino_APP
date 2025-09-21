@@ -18,6 +18,7 @@ import { StackScreen } from '../navigation/types';
 import { useAuth } from '../contexts/AuthContext';
 import { getUser, removeUser, removeToken } from '../utils/TokenManager';
 import api from '../utils/Api';
+import { useTranslation } from '../hooks/useTranslation';
 
 type BankAccount = {
   bank: string;
@@ -38,40 +39,40 @@ type MenuItem = {
   route: string;
 };
 
-const MENU_ITEMS = [
+const getMenuItems = (t: any) => [
   {
     id: 'security',
-    title: 'Verification',
-    description: 'Verify eKYC, email, and phone number',
+    title: t('profile.verification'),
+    description: t('profile.verificationDesc'),
     icon: 'shield-lock',
     route: 'Security',
   },
   {
     id: 'bank_accounts',
-    title: 'Bank Accounts',
-    description: 'Manage bank account list',
+    title: t('profile.bankAccounts'),
+    description: t('profile.bankAccountsDesc'),
     icon: 'bank',
     route: 'BankAccounts',
   },
   {
     id: 'trc20_addresses',
-    title: 'TRC20 Addresses',
-    description: 'Manage TRC20 wallets',
+    title: t('profile.trc20Addresses'),
+    description: t('profile.trc20AddressesDesc'),
     icon: 'wallet',
     route: 'TRC20Addresses',
   },
  
   {
     id: 'notifications',
-    title: 'Notifications',
-    description: 'Notification settings',
+    title: t('profile.notifications'),
+    description: t('profile.notificationsDesc'),
     icon: 'bell',
     route: 'Notifications',
   },
   {
     id: 'help',
-    title: 'Help',
-    description: 'FAQ and support',
+    title: t('profile.help'),
+    description: t('profile.helpDesc'),
     icon: 'help-circle',
     route: 'Help',
   },
@@ -90,7 +91,9 @@ interface UserProfile {
 }
 
 const ProfileScreen: StackScreen<'Profile'> = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation();
+  const menuItems = getMenuItems(t);
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -110,19 +113,19 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
       if (response.data.status) {
         setUser(response.data.data);
       } else {
-        Alert.alert('Error', 'Failed to load profile data');
+        Alert.alert(t('common.error'), t('profile.failedToLoadProfile'));
       }
     } catch (error: any) {
       console.log('Profile fetch error:', error);
       
-      let errorMessage = 'Failed to load profile. Please try again.';
+      let errorMessage = t('profile.failedToLoadProfile');
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.message) {
         errorMessage = error.message;
       }
       
-      Alert.alert('Error', errorMessage);
+      Alert.alert(t('common.error'), errorMessage);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -165,12 +168,12 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
 
   const handleSignOut = () => {
     Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
+      t('profile.signOut'),
+      t('profile.signOutConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('profile.cancel'), style: 'cancel' },
         {
-          text: 'Sign Out',
+          text: t('profile.signOut'),
           style: 'destructive',
           onPress: () => {
             signOut();
@@ -255,7 +258,7 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <Icon name="loading" size={40} color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Loading profile...</Text>
+          <Text style={styles.loadingText}>{t('profile.loadingProfile')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -301,15 +304,15 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
             <TouchableOpacity style={styles.badgesContainer} activeOpacity={0.7} onPress={() => (navigation as any).navigate('Security')}>
               <View style={[styles.badge, { backgroundColor: isEkycVerified ? '#34C75915' : '#E5E5EA' }]}>
                 <Icon name="shield-check" size={14} color={isEkycVerified ? '#34C759' : '#8E8E93'} />
-                <Text style={[styles.badgeText, { color: isEkycVerified ? '#34C759' : '#8E8E93' }]}>eKYC</Text>
+                <Text style={[styles.badgeText, { color: isEkycVerified ? '#34C759' : '#8E8E93' }]}>{t('profile.ekyc')}</Text>
               </View>
               <View style={[styles.badge, { backgroundColor: isEmailVerified ? '#34C75915' : '#E5E5EA' }]}>
                 <Icon name="email-check" size={14} color={isEmailVerified ? '#34C759' : '#8E8E93'} />
-                <Text style={[styles.badgeText, { color: isEmailVerified ? '#34C759' : '#8E8E93' }]}>Email</Text>
+                <Text style={[styles.badgeText, { color: isEmailVerified ? '#34C759' : '#8E8E93' }]}>{t('profile.email')}</Text>
               </View>
               <View style={[styles.badge, { backgroundColor: isPhoneVerified ? '#34C75915' : '#E5E5EA' }]}>
                 <Icon name="phone-check" size={14} color={isPhoneVerified ? '#34C759' : '#8E8E93'} />
-                <Text style={[styles.badgeText, { color: isPhoneVerified ? '#34C759' : '#8E8E93' }]}>Phone</Text>
+                <Text style={[styles.badgeText, { color: isPhoneVerified ? '#34C759' : '#8E8E93' }]}>{t('profile.phone')}</Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -319,7 +322,7 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
 
         {/* Menu Items */}
         <View style={styles.menuContainer}>
-          {MENU_ITEMS.map(renderMenuItem)}
+          {menuItems.map(renderMenuItem)}
         </View>
 
         {/* Sign Out Button */}
@@ -329,7 +332,7 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
           activeOpacity={0.7}
         >
           <Icon name="logout" size={20} color="#FF3B30" />
-          <Text style={styles.signOutText}>Sign Out</Text>
+          <Text style={styles.signOutText}>{t('profile.signOut')}</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>

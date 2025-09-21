@@ -17,6 +17,7 @@ import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import api from '../utils/Api';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface WalletData {
   id: number;
@@ -38,6 +39,7 @@ type TRC20Address = {
 
 const TRC20AddressesScreen = () => {
   const navigation = useNavigation();
+  const { t } = useTranslation();
   const [addresses, setAddresses] = useState<TRC20Address[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -71,13 +73,13 @@ const TRC20AddressesScreen = () => {
       }
     } catch (error: any) {
       console.log('Fetch wallet data error:', error);
-      let errorMessage = 'Failed to load wallet data. Please try again.';
+      let errorMessage = t('trc20Addresses.loadAddressesError');
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.message) {
         errorMessage = error.message;
       }
-      Alert.alert('Error', errorMessage);
+      Alert.alert(t('common.error'), errorMessage);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -110,7 +112,7 @@ const TRC20AddressesScreen = () => {
   const handleCopyAddress = (address: string) => {
     // Copy address to clipboard
     // You can implement clipboard functionality here
-    Alert.alert('Copied', 'Address copied to clipboard');
+    Alert.alert(t('trc20Addresses.copied'), t('trc20Addresses.addressCopied'));
   };
 
   const renderVerificationRequired = () => (
@@ -118,15 +120,15 @@ const TRC20AddressesScreen = () => {
       <View style={styles.verificationIconContainer}>
         <Icon name="shield-check" size={64} color="#FF9500" />
       </View>
-      <Text style={styles.verificationTitle}>Xác thực cần thiết</Text>
+      <Text style={styles.verificationTitle}>{t('trc20Addresses.verificationRequired')}</Text>
       <Text style={styles.verificationDescription}>
-        Vui lòng hoàn thành xác thực eKYC, email và số điện thoại trước khi quản lý địa chỉ TRC20.
+        {t('trc20Addresses.verificationDescription')}
       </Text>
       <TouchableOpacity 
         style={styles.verificationButton}
         onPress={() => (navigation as any).navigate('Security')}
       >
-        <Text style={styles.verificationButtonText}>Đi đến xác thực</Text>
+        <Text style={styles.verificationButtonText}>{t('trc20Addresses.goToVerification')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -140,7 +142,7 @@ const TRC20AddressesScreen = () => {
         >
           <Icon name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>TRC20 Addresses</Text>
+        <Text style={styles.headerTitle}>{t('trc20Addresses.title')}</Text>
         <TouchableOpacity 
           style={styles.addButton}
           onPress={handleAddAddress}
@@ -158,26 +160,26 @@ const TRC20AddressesScreen = () => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        <Text style={styles.sectionTitle}>Address List</Text>
+        <Text style={styles.sectionTitle}>{t('trc20Addresses.addressList')}</Text>
         
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#4A90E2" />
-            <Text style={styles.loadingText}>Loading wallet addresses...</Text>
+            <Text style={styles.loadingText}>{t('trc20Addresses.loadingAddresses')}</Text>
           </View>
         ) : addresses.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Icon name="wallet-outline" size={64} color="#CCCCCC" />
-            <Text style={styles.emptyTitle}>No wallet addresses</Text>
+            <Text style={styles.emptyTitle}>{t('trc20Addresses.noWalletAddresses')}</Text>
             <Text style={styles.emptyDescription}>
-              Add your first TRC20 wallet address to start receiving USDT
+              {t('trc20Addresses.noAddressesDescription')}
             </Text>
             <TouchableOpacity 
               style={styles.addFirstButton}
               onPress={handleAddAddress}
             >
               <Icon name="plus" size={20} color="#FFFFFF" />
-              <Text style={styles.addFirstText}>Add Address</Text>
+              <Text style={styles.addFirstText}>{t('trc20Addresses.addAddress')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -189,14 +191,14 @@ const TRC20AddressesScreen = () => {
                 ellipsizeMode="tail">{item.name}</Text>
                 {item.isDefault && (
                   <View style={styles.defaultBadge}>
-                    <Text style={styles.defaultText}>Default</Text>
+                    <Text style={styles.defaultText}>{t('trc20Addresses.default')}</Text>
                   </View>
                 )}
               </View>
 
               <View style={styles.addressInfo}>
                 <View style={styles.addressContainer}>
-                  <Text style={styles.addressLabel}>Wallet Address</Text>
+                  <Text style={styles.addressLabel}>{t('trc20Addresses.walletAddress')}</Text>
                   <Text style={styles.address}>{item.address}</Text>
                 </View>
                 <TouchableOpacity 
@@ -209,14 +211,14 @@ const TRC20AddressesScreen = () => {
 
               <View style={styles.addressFooter}>
                 <Text style={styles.createdDate}>
-                  Created: {new Date(item.createdAt).toLocaleDateString()}
+                  {t('trc20Addresses.created')} {new Date(item.createdAt).toLocaleDateString()}
                 </Text>
                 <TouchableOpacity 
                   style={styles.editButton}
                   onPress={() => handleEditAddress(item)}
                 >
                   <Icon name="pencil" size={16} color="#666" />
-                  <Text style={styles.editText}>Edit</Text>
+                  <Text style={styles.editText}>{t('trc20Addresses.edit')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -226,7 +228,7 @@ const TRC20AddressesScreen = () => {
         <View style={styles.infoBox}>
           <Icon name="information" size={20} color="#666" />
           <Text style={styles.infoText}>
-            Only accept TRC20 wallet addresses from supported exchanges or e-wallets
+            {t('trc20Addresses.infoText')}
           </Text>
         </View>
       </ScrollView>

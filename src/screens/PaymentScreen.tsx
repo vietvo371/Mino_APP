@@ -21,6 +21,7 @@ import QRCode from '../component/QRCode';
 import api from '../utils/Api';
 import SelectCustom from '../component/SelectCustom';
 import { getUser } from '../utils/TokenManager';
+import { useTranslation } from '../hooks/useTranslation';
 
 // API endpoint: sẽ dùng api.get('/client/exchange/rate')
 
@@ -68,6 +69,7 @@ const PaymentScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const paymentInfo = (route.params as any)?.paymentInfo as PaymentInfo;
+  const { t } = useTranslation();
   const [selectedBank, setSelectedBank] = useState('');
   const [selectedBankId, setSelectedBankId] = useState<string>('');
   const [selectedReceiveTRC20, setSelectedReceiveTRC20] = useState('');
@@ -287,7 +289,7 @@ const PaymentScreen = () => {
         ? parseInt(selectedWalletId, 10)
         : (wallets.find(w => w.isDefault)?.id || undefined);
       if (!walletId) {
-        Alert.alert('Notification', 'Please select a TRC20 wallet to receive USDT');
+        Alert.alert(t('payment.notification'), t('payment.selectWalletRequired'));
         return;
       }
 
@@ -306,15 +308,15 @@ const PaymentScreen = () => {
             if (idTx) {
               (navigation as any).navigate('DetailHistory', { idTransaction: idTx, type: 'buy' });
             } else {
-              Alert.alert('Success', res.data.message || 'Created buy transaction successfully.');
+              Alert.alert(t('payment.success'), res.data.message || t('payment.createBuyTransactionSuccess'));
             }
           } else {
-            Alert.alert('Error', res?.data?.message || 'Failed to create transaction');
+            Alert.alert(t('payment.error'), res?.data?.message || t('payment.createTransactionFailed'));
           }
         })
         .catch((err) => {
           console.log('Create buy tx error:', err);
-          Alert.alert('Error', err?.response?.data?.message || 'Create transaction failed');
+          Alert.alert(t('payment.error'), err?.response?.data?.message || t('payment.createTransactionFailed'));
         });
     } else {
       // Determine bank account ID: selected one or default
@@ -322,7 +324,7 @@ const PaymentScreen = () => {
         ? parseInt(selectedBankId, 10)
         : (bankAccounts.find(b => b.isDefault)?.id || undefined);
       if (!bankAccountId) {
-        Alert.alert('Notification', 'Please select a bank account to receive money');
+        Alert.alert(t('payment.notification'), t('payment.selectBankRequired'));
         return;
       }
 
@@ -340,22 +342,22 @@ const PaymentScreen = () => {
             if (idTx) {
               (navigation as any).navigate('DetailHistory', { idTransaction: idTx, type: 'sell' });
             } else {
-              Alert.alert('Success', res.data.message || 'Created sell transaction successfully.');
+              Alert.alert(t('payment.success'), res.data.message || t('payment.createSellTransactionSuccess'));
             }
           } else {
-            Alert.alert('Error', res?.data?.message || 'Failed to create transaction');
+            Alert.alert(t('payment.error'), res?.data?.message || t('payment.createTransactionFailed'));
           }
         })
         .catch((err) => {
           console.log('Create sell tx error:', err);
-          Alert.alert('Error', err?.response?.data?.message || 'Create transaction failed');
+          Alert.alert(t('payment.error'), err?.response?.data?.message || t('payment.createTransactionFailed'));
         });
     }
   };
 
   const copyToClipboard = (text: string, message: string) => {
     Clipboard.setString(text);
-    Alert.alert('Copied', message);
+    Alert.alert(t('payment.copied'), message);
   };
 
   const getTransactionInfo = () => {
@@ -414,14 +416,14 @@ const PaymentScreen = () => {
             <Icon name="arrow-left" size={24} color="#000" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>
-            {paymentInfo.type === 'buy' ? 'Buy USDT' : 'Sell USDT'}
+            {paymentInfo.type === 'buy' ? t('payment.buyUsdt') : t('payment.sellUsdt')}
           </Text>
           <View style={styles.headerRight} />
         </View>
         
         <View style={styles.loadingContainer}>
           <Icon name="loading" size={48} color="#4A90E2" />
-          <Text style={styles.loadingText}>Đang tải thông tin giao dịch...</Text>
+          <Text style={styles.loadingText}>{t('payment.loadingTransaction')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -437,7 +439,7 @@ const PaymentScreen = () => {
           <Icon name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
-          {paymentInfo.type === 'buy' ? 'Buy USDT' : 'Sell USDT'}
+          {paymentInfo.type === 'buy' ? t('payment.buyUsdt') : t('payment.sellUsdt')}
         </Text>
         <TouchableOpacity style={styles.headerRight} onPress={fetchExchangeRate}>
           <Icon name="refresh" size={16} color="#4A90E2" />
@@ -456,40 +458,40 @@ const PaymentScreen = () => {
           {paymentInfo.type === 'buy' ? (
             <>
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>USDT to Buy</Text>
+                <Text style={styles.infoLabel}>{t('payment.usdtToBuy')}</Text>
                 <Text style={styles.infoValue}>{transactionInfo.usdtWant}</Text>
               </View>
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Exchange Rate</Text>
+                <Text style={styles.infoLabel}>{t('payment.exchangeRate')}</Text>
                 <Text style={styles.infoValue}>{transactionInfo.exchangeRate}</Text>
               </View>
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Transaction Fee</Text>
+                <Text style={styles.infoLabel}>{t('payment.transactionFee')}</Text>
                 <Text style={styles.infoValue}>{transactionInfo.fee}</Text>
               </View>
               <View style={styles.divider} />
               <View style={styles.infoRow}>
-                <Text style={styles.totalLabel}>VND to Transfer</Text>
+                <Text style={styles.totalLabel}>{t('payment.vndToTransfer')}</Text>
                 <Text style={styles.totalValue}>{transactionInfo.totalVND}</Text>
               </View>
             </>
           ) : (
             <>
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>USDT to Sell</Text>
+                <Text style={styles.infoLabel}>{t('payment.usdtToSell')}</Text>
                 <Text style={styles.infoValue}>{transactionInfo.usdtSell}</Text>
               </View>
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Exchange Rate</Text>
+                <Text style={styles.infoLabel}>{t('payment.exchangeRate')}</Text>
                 <Text style={styles.infoValue}>{transactionInfo.exchangeRate}</Text>
               </View>
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Transaction Fee</Text>
+                <Text style={styles.infoLabel}>{t('payment.transactionFee')}</Text>
                 <Text style={styles.infoValue}>{transactionInfo.fee}</Text>
               </View>
               <View style={styles.divider} />
               <View style={styles.infoRow}>
-                <Text style={styles.totalLabel}>VND to Receive</Text>
+                <Text style={styles.totalLabel}>{t('payment.vndToReceive')}</Text>
                 <Text style={styles.totalValue}>{transactionInfo.receiveVND}</Text>
               </View>
             </>
@@ -503,22 +505,22 @@ const PaymentScreen = () => {
             {wallets.length === 0 ? (
               <View style={styles.emptyWalletContainer}>
                 <Icon name="wallet-outline" size={48} color="#CCCCCC" />
-                <Text style={styles.emptyWalletTitle}>No TRC20 wallet</Text>
+                <Text style={styles.emptyWalletTitle}>{t('payment.noTrc20Wallet')}</Text>
                 <Text style={styles.emptyWalletDescription}>
-                  You need to add a TRC20 wallet to receive USDT
+                  {t('payment.noTrc20WalletMessage')}
                 </Text>
                 <TouchableOpacity 
                   style={styles.addWalletButton}
                   onPress={() => (navigation as any).navigate('AddTRC20Address')}
                 >
                   <Icon name="plus" size={20} color="#FFFFFF" />
-                  <Text style={styles.addWalletText}>Add TRC20 wallet</Text>
+                  <Text style={styles.addWalletText}>{t('payment.addTrc20Wallet')}</Text>
                 </TouchableOpacity>
               </View>
             ) : (
               <>
                 <SelectCustom
-                  label="Select TRC20 Wallet to Receive USDT"
+                  label={t('payment.selectTrc20Wallet')}
                   value={selectedWalletId}
                   onChange={(val) => {
                     setSelectedWalletId(val);
@@ -531,9 +533,9 @@ const PaymentScreen = () => {
                     subtitle: w.address,
                     searchText: `${w.name} ${w.address}`,
                   }))}
-                  placeholder={selectedReceiveTRC20 ? selectedReceiveTRC20 : 'Select TRC20 wallet (default if none)'}
+                  placeholder={selectedReceiveTRC20 ? selectedReceiveTRC20 : t('payment.selectWallet')}
                   searchable
-                  searchPlaceholder="Search wallet by name or address..."
+                  searchPlaceholder={t('payment.searchWallet')}
                   containerStyle={{ marginBottom: 12 }}
                 />
 
@@ -541,19 +543,19 @@ const PaymentScreen = () => {
                   <View style={styles.walletCard}>
                     <View style={styles.walletHeader}>
                       <Icon name="wallet" size={20} color="#7B68EE" />
-                      <Text style={styles.walletTitle}>Receive USDT Address</Text>
+                      <Text style={styles.walletTitle}>{t('payment.receiveUsdtAddress')}</Text>
                     </View>
                     <View style={styles.walletAddressContainer}>
                       <Text style={styles.walletAddress}>{selectedReceiveTRC20}</Text>
                       <TouchableOpacity
                         style={styles.copyButton}
-                        onPress={() => copyToClipboard(selectedReceiveTRC20, 'Wallet address copied')}
+                        onPress={() => copyToClipboard(selectedReceiveTRC20, t('payment.walletAddressCopied'))}
                       >
                         <Icon name="content-copy" size={16} color="#4A90E2" />
                       </TouchableOpacity>
                     </View>
                     <Text style={styles.walletNote}>
-                      USDT will be received at this address after your payment is confirmed.
+                      {t('payment.usdtReceiveNote')}
                     </Text>
                   </View>
                 ) : null}
@@ -568,22 +570,22 @@ const PaymentScreen = () => {
             {bankAccounts.length === 0 ? (
               <View style={styles.emptyWalletContainer}>
                 <Icon name="bank-outline" size={48} color="#CCCCCC" />
-                <Text style={styles.emptyWalletTitle}>No bank account</Text>
+                <Text style={styles.emptyWalletTitle}>{t('payment.noBankAccount')}</Text>
                 <Text style={styles.emptyWalletDescription}>
-                  You need to add a bank account to receive money
+                  {t('payment.noBankAccountMessage')}
                 </Text>
                 <TouchableOpacity 
                   style={styles.addWalletButton}
                   onPress={() => (navigation as any).navigate('AddBankAccount')}
                 >
                   <Icon name="plus" size={20} color="#FFFFFF" />
-                  <Text style={styles.addWalletText}>Add bank account</Text>
+                  <Text style={styles.addWalletText}>{t('payment.addBankAccount')}</Text>
                 </TouchableOpacity>
               </View>
             ) : (
               <>
                 <SelectCustom
-                  label="Select Bank Account to Receive Money VND"
+                  label={t('payment.selectBankAccount')}
                   value={selectedBankId}
                   onChange={(val) => {
                     setSelectedBankId(val);
@@ -597,9 +599,9 @@ const PaymentScreen = () => {
                     subtitle: `${b.accountNumber} - ${b.accountName}`,
                     searchText: `${b.bank} ${b.accountNumber} ${b.accountName}`,
                   }))}
-                  placeholder={selectedBank ? selectedBank : 'Select bank account (default if none)'}
+                  placeholder={selectedBank ? selectedBank : t('payment.selectBank')}
                   searchable
-                  searchPlaceholder="Search bank account by name or number..."
+                  searchPlaceholder={t('payment.searchBank')}
                   containerStyle={{ marginBottom: 12 }}
                 />
 
@@ -620,7 +622,7 @@ const PaymentScreen = () => {
                           <Icon name="bank" size={20} color="#4A90E2" />
                         );
                       })()}
-                      <Text style={styles.walletTitle}>Receive Bank Account VND</Text>
+                      <Text style={styles.walletTitle}>{t('payment.receiveBankAccount')}</Text>
                     </View>
                     <View style={styles.walletAddressContainer}>
                       <View style={{ flex: 1 }}>
@@ -633,13 +635,13 @@ const PaymentScreen = () => {
                       </View>
                       <TouchableOpacity
                         style={styles.copyButton}
-                        onPress={() => copyToClipboard(selectedBank, 'Bank info copied')}
+                        onPress={() => copyToClipboard(selectedBank, t('payment.bankInfoCopied'))}
                       >
                         <Icon name="content-copy" size={16} color="#4A90E2" />
                       </TouchableOpacity>
                     </View>
                     <Text style={styles.walletNote}>
-                      Money will be transferred to this bank account after your USDT is confirmed.
+                      {t('payment.bankReceiveNote')}
                     </Text>
                   </View>
                 ) : null}
@@ -669,7 +671,7 @@ const PaymentScreen = () => {
           onPress={handleConfirm}
           disabled={(paymentInfo.type === 'buy' && !selectedReceiveTRC20) || (paymentInfo.type === 'sell' && !selectedBankId)}
         >
-          <Text style={styles.confirmButtonText}>Confirm Transaction USDT</Text>
+          <Text style={styles.confirmButtonText}>{t('payment.confirmTransaction')}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

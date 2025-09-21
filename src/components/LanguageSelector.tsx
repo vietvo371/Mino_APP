@@ -13,6 +13,7 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
+import { useTranslation } from '../hooks/useTranslation';
 
 const { height } = Dimensions.get('window');
 
@@ -43,6 +44,14 @@ type Props = {
 };
 
 const LanguageSelector = ({ visible, onClose, onSelect, currentLanguage }: Props) => {
+  const { t, changeLanguage } = useTranslation();
+
+  const handleLanguageSelect = async (languageCode: string) => {
+    await changeLanguage(languageCode);
+    onSelect(languageCode);
+    onClose();
+  };
+
   return (
     <Modal
       visible={visible}
@@ -57,7 +66,7 @@ const LanguageSelector = ({ visible, onClose, onSelect, currentLanguage }: Props
       >
         <View style={styles.modalContent}>
           <View style={styles.header}>
-            <Text style={styles.title}>Chọn ngôn ngữ</Text>
+            <Text style={styles.title}>{t('language.title')}</Text>
             <TouchableOpacity onPress={onClose}>
               <Icon name="close" size={24} color="#000" />
             </TouchableOpacity>
@@ -67,10 +76,7 @@ const LanguageSelector = ({ visible, onClose, onSelect, currentLanguage }: Props
             <TouchableOpacity
               key={language.code}
               style={styles.languageItem}
-              onPress={() => {
-                onSelect(language.code);
-                onClose();
-              }}
+              onPress={() => handleLanguageSelect(language.code)}
             >
               <View style={styles.languageInfo}>
                 <Image 

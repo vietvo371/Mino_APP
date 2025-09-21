@@ -21,6 +21,7 @@ import {
 import api from '../utils/Api';
 import SelectCustom from '../component/SelectCustom';
 import { getUser } from '../utils/TokenManager';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface BankData {
   id: number;
@@ -47,6 +48,7 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { account } = route.params as { account: BankAccountData };
+  const { t } = useTranslation();
 
   const [banks, setBanks] = useState<BankData[]>([]);
   const [selectedBankId, setSelectedBankId] = useState<string>(account.id_bank.toString());
@@ -67,11 +69,11 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
       if (response.data.status) {
         setBanks(response.data.data);
       } else {
-        Alert.alert('Error', 'Failed to load banks');
+        Alert.alert(t('common.error'), t('editBankAccount.alerts.loadBanksError'));
       }
     } catch (error: any) {
       console.log('Fetch banks error:', error);
-      Alert.alert('Error', 'Failed to load banks. Please try again.');
+      Alert.alert(t('common.error'), t('editBankAccount.alerts.loadBanksFailed'));
     } finally {
       setLoadingBanks(false);
     }
@@ -85,17 +87,17 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
     const newErrors: {[key: string]: string} = {};
     
     if (!selectedBankId) {
-      newErrors.bank = 'Please select a bank';
+      newErrors.bank = t('editBankAccount.validationErrors.selectBank');
     }
     
     if (!accountNumber.trim()) {
-      newErrors.accountNumber = 'Account number is required';
+      newErrors.accountNumber = t('editBankAccount.validationErrors.accountNumberRequired');
     } else if (!/^\d{8,20}$/.test(accountNumber.trim())) {
-      newErrors.accountNumber = 'Invalid account number format';
+      newErrors.accountNumber = t('editBankAccount.validationErrors.accountNumberInvalid');
     }
     
     if (!accountName.trim()) {
-      newErrors.accountName = 'Account holder name is required';
+      newErrors.accountName = t('editBankAccount.validationErrors.accountNameRequired');
     }
     
     setErrors(newErrors);
@@ -116,7 +118,7 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
     try {
       const user = await getUser();
       if (!user?.email) {
-        Alert.alert('Error', 'User not authenticated');
+        Alert.alert(t('common.error'), t('editBankAccount.alerts.userNotAuthenticated'));
         return;
       }
       const response = await api.post('/client/bank/update', {
@@ -132,8 +134,8 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
       
       if (response.data.status) {
         Alert.alert(
-          'Success', 
-          response.data.message || 'Cập nhật tài khoản ngân hàng thành công!',
+          t('common.success'), 
+          response.data.message || t('editBankAccount.alerts.updateSuccess'),
           [
             {
               text: 'OK',
@@ -142,7 +144,7 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
           ]
         );
       } else {
-        Alert.alert('Error', response.data.message || 'Failed to update bank account');
+        Alert.alert(t('common.error'), response.data.message || t('editBankAccount.alerts.updateFailed'));
       }
       
     } catch (error: any) {
@@ -166,16 +168,16 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
         
         // Show first error in alert
         const firstError = Object.values(formattedErrors)[0];
-        Alert.alert('Validation Error', firstError);
+        Alert.alert(t('editBankAccount.alerts.validationError'), firstError);
       } else {
         // Handle other errors
-        let errorMessage = 'Failed to update bank account. Please try again.';
+        let errorMessage = t('editBankAccount.alerts.updateFailed');
         if (error.response?.data?.message) {
           errorMessage = error.response.data.message;
         } else if (error.message) {
           errorMessage = error.message;
         }
-        Alert.alert('Error', errorMessage);
+        Alert.alert(t('common.error'), errorMessage);
       }
     } finally {
       setLoading(false);
@@ -184,12 +186,12 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
 
   const handleDelete = () => {
     Alert.alert(
-      'Delete Bank Account',
-      'Are you sure you want to delete this bank account? This action cannot be undone.',
+      t('editBankAccount.alerts.deleteConfirm'),
+      t('editBankAccount.alerts.deleteMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('editBankAccount.alerts.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('editBankAccount.alerts.delete'),
           style: 'destructive',
           onPress: async () => {
             await deleteBankAccount();
@@ -201,7 +203,7 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
 
   const deleteBankAccount = async () => {
     if (!account?.id) {
-      Alert.alert('Error', 'Invalid bank account data');
+      Alert.alert(t('common.error'), t('editBankAccount.alerts.invalidAccountData'));
       return;
     }
 
@@ -209,7 +211,7 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
     try {
       const user = await getUser();
       if (!user?.email) {
-        Alert.alert('Error', 'User not authenticated');
+        Alert.alert(t('common.error'), t('editBankAccount.alerts.userNotAuthenticated'));
         return;
       }
       const response = await api.post('/client/bank/delete', {
@@ -220,7 +222,7 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
       console.log('Delete bank account response:', response.data);
 
       if (response?.data?.status) {
-        Alert.alert('Success', 'Bank account deleted successfully', [
+        Alert.alert(t('common.success'), t('editBankAccount.alerts.deleteSuccess'), [
           {
             text: 'OK',
             onPress: () => {
@@ -229,13 +231,13 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
           },
         ]);
       } else {
-        Alert.alert('Error', response?.data?.message || 'Failed to delete bank account');
+        Alert.alert(t('common.error'), response?.data?.message || t('editBankAccount.alerts.deleteFailed'));
       }
     } catch (error: any) {
       console.log('Delete bank account error:', error.response);
       Alert.alert(
-        'Error',
-        error?.response?.data?.message || 'Failed to delete bank account. Please try again.'
+        t('common.error'),
+        error?.response?.data?.message || t('editBankAccount.alerts.deleteFailed')
       );
     } finally {
       setLoading(false);
@@ -251,7 +253,7 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
         >
           <Icon name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Bank Account</Text>
+        <Text style={styles.headerTitle}>{t('editBankAccount.title')}</Text>
         <TouchableOpacity 
           style={[styles.saveButton, loading && styles.saveButtonDisabled]}
           onPress={handleUpdate}
@@ -260,7 +262,7 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
           {loading ? (
             <ActivityIndicator size="small" color="#4A90E2" />
           ) : (
-            <Text style={styles.saveText}>Update</Text>
+            <Text style={styles.saveText}>{t('editBankAccount.update')}</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -268,7 +270,7 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
       <ScrollView style={styles.content}>
         {/* Bank Selection */}
         <SelectCustom
-          label="Bank"
+          label={t('editBankAccount.bank')}
           value={selectedBankId}
           onChange={(value) => {
             setSelectedBankId(value);
@@ -283,16 +285,16 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
             iconUrl: bank.logo,
             searchText: `${bank.name} ${bank.code} ${bank.bin}`,
           }))}
-          placeholder="Select bank"
+          placeholder={t('editBankAccount.selectBank')}
           error={errors.bank}
           required
           searchable={true}
-          searchPlaceholder="Search by name, code..."
+          searchPlaceholder={t('editBankAccount.searchBank')}
           containerStyle={styles.selectContainer}
         />
 
         {/* Account Number */}
-        <Text style={styles.label}>Account Number</Text>
+        <Text style={styles.label}>{t('editBankAccount.accountNumber')}</Text>
         <TextInput
           style={[styles.input, errors.accountNumber && styles.inputError]}
           value={accountNumber}
@@ -302,14 +304,14 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
               setErrors(prev => ({ ...prev, accountNumber: '' }));
             }
           }}
-          placeholder="Enter account number"
+          placeholder={t('editBankAccount.enterAccountNumber')}
           keyboardType="numeric"
           placeholderTextColor="#999"
         />
         {errors.accountNumber && <Text style={styles.errorText}>{errors.accountNumber}</Text>}
 
         {/* Account Name */}
-        <Text style={styles.label}>Account Holder Name</Text>
+        <Text style={styles.label}>{t('editBankAccount.accountHolderName')}</Text>
         <TextInput
           style={[styles.input, errors.accountName && styles.inputError]}
           value={accountName}
@@ -319,7 +321,7 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
               setErrors(prev => ({ ...prev, accountName: '' }));
             }
           }}
-          placeholder="Enter account holder name"
+          placeholder={t('editBankAccount.enterAccountHolderName')}
           autoCapitalize="characters"
           placeholderTextColor="#999"
         />
@@ -328,9 +330,9 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
         {/* Default Account Toggle */}
         <View style={styles.defaultContainer}>
           <View>
-            <Text style={styles.defaultTitle}>Set as default account</Text>
+            <Text style={styles.defaultTitle}>{t('editBankAccount.setAsDefault')}</Text>
             <Text style={styles.defaultDescription}>
-              This account will be selected by default when withdrawing
+              {t('editBankAccount.defaultDescription')}
             </Text>
           </View>
           <Switch
@@ -352,13 +354,13 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
           ) : (
             <Icon name="trash-can-outline" size={20} color="#FF3B30" />
           )}
-          <Text style={styles.deleteText}>Delete this bank account</Text>
+          <Text style={styles.deleteText}>{t('editBankAccount.deleteAccount')}</Text>
         </TouchableOpacity>
 
         <View style={styles.infoBox}>
           <Icon name="information" size={20} color="#666" />
           <Text style={styles.infoText}>
-            Please check account information carefully before updating to ensure accurate transaction processing
+            {t('editBankAccount.infoText')}
           </Text>
         </View>
       </ScrollView>

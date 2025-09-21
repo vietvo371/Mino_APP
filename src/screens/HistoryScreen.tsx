@@ -20,6 +20,7 @@ import {
 } from 'react-native-responsive-screen';
 import api from '../utils/Api';
 import LoadingOverlay from '../component/LoadingOverlay';
+import { useTranslation } from '../hooks/useTranslation';
 
 const { width } = Dimensions.get('window');
 
@@ -60,6 +61,7 @@ const TIME_FILTERS = [
 ];
 
 const HistoryScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState<'pending' | 'success' | 'fail'>('pending');
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -98,7 +100,7 @@ const HistoryScreen = () => {
     } catch (error: any) {
       console.log('Transaction history error:', error);
       
-      let errorMessage = 'Failed to fetch transaction history. Please try again.';
+      let errorMessage = t('history.failedToLoad');
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.message) {
@@ -106,7 +108,7 @@ const HistoryScreen = () => {
       }
       
       setError(errorMessage);
-      Alert.alert('Error', errorMessage);
+      Alert.alert(t('common.error'), errorMessage);
     } finally {
       setLoading(false);
     }
@@ -213,7 +215,7 @@ const HistoryScreen = () => {
               </View>
               <View>
                 <Text style={styles.transactionType}>
-                  {isBuy ? 'Buy USDT' : 'Sell USDT'} - Completed
+                  {isBuy ? t('history.buyUsdt') : t('history.sellUsdt')} - {t('history.completed')}
                 </Text>
                 <Text style={styles.transactionDate}>
                   {date} • {time}
@@ -223,30 +225,30 @@ const HistoryScreen = () => {
             <View style={styles.statusContainer}>
               <View style={[styles.statusDot, { backgroundColor: '#34C759' }]} />
               <Text style={[styles.transactionStatus, { color: '#34C759' }]}>
-                Success
+                {t('history.success')}
               </Text>
             </View>
           </View>
 
           <View style={[styles.amountContainer, styles.successAmountContainer]}>
             <View style={styles.amountRow}>
-              <Text style={styles.amountLabel}>{isBuy ? 'Amount Paid:' : 'Amount Received:'}</Text>
+              <Text style={styles.amountLabel}>{isBuy ? t('history.amountPaid') : t('history.amountReceived')}</Text>
               <Text style={[styles.amountValue, { color: '#34C759' }]}>
                 {amount}
               </Text>
             </View>
             <View style={styles.amountRow}>
-              <Text style={styles.amountLabel}>{isBuy ? 'USDT Received:' : 'USDT Sold:'}</Text>
+              <Text style={styles.amountLabel}>{isBuy ? t('history.usdtReceived') : t('history.usdtSold')}</Text>
               <Text style={[styles.exchangeValue, { color: '#34C759' }]}>{exchangeAmount}</Text>
             </View>
             <View style={styles.amountRow}>
-              <Text style={styles.amountLabel}>Exchange Rate:</Text>
+              <Text style={styles.amountLabel}>{t('history.exchangeRate')}</Text>
               <Text style={styles.exchangeRateValue}>
                 {transaction.rate ? transaction.rate.toLocaleString('vi-VN') : '0'} VND/USDT
               </Text>
             </View>
             <View style={styles.amountRow}>
-              <Text style={styles.amountLabel}>Transaction Fee:</Text>
+              <Text style={styles.amountLabel}>{t('history.transactionFee')}</Text>
               <Text style={styles.exchangeRateValue}>
                 {transaction.fee_vnd ? transaction.fee_vnd.toLocaleString('vi-VN') : '0'} VND ({transaction.fee_percent ? (transaction.fee_percent * 100).toFixed(2) : '0'}%)
               </Text>
@@ -300,7 +302,7 @@ const HistoryScreen = () => {
               </View>
               <View>
                 <Text style={styles.transactionType}>
-                  {isBuy ? 'Buy USDT' : 'Sell USDT'} - Failed
+                  {isBuy ? t('history.buyUsdt') : t('history.sellUsdt')} - {t('history.failed')}
                 </Text>
                 <Text style={styles.transactionDate}>
                   {date} • {time}
@@ -310,30 +312,30 @@ const HistoryScreen = () => {
             <View style={styles.statusContainer}>
               <View style={[styles.statusDot, { backgroundColor: '#FF3B30' }]} />
               <Text style={[styles.transactionStatus, { color: '#FF3B30' }]}>
-                Failed
+                {t('history.failed')}
               </Text>
             </View>
           </View>
 
           <View style={[styles.amountContainer, styles.failedAmountContainer]}>
             <View style={styles.amountRow}>
-              <Text style={styles.amountLabel}>{isBuy ? 'Amount to Pay:' : 'Amount to Receive:'}</Text>
+              <Text style={styles.amountLabel}>{isBuy ? t('history.amountToPay') : t('history.amountToReceive')}</Text>
               <Text style={[styles.amountValue, { color: '#FF3B30' }]}>
                 {amount}
               </Text>
             </View>
             <View style={styles.amountRow}>
-              <Text style={styles.amountLabel}>{isBuy ? 'USDT to Receive:' : 'USDT to Sell:'}</Text>
+              <Text style={styles.amountLabel}>{isBuy ? t('history.usdtToReceive') : t('history.usdtToSell')}</Text>
               <Text style={[styles.exchangeValue, { color: '#FF3B30' }]}>{exchangeAmount}</Text>
             </View>
             <View style={styles.amountRow}>
-              <Text style={styles.amountLabel}>Exchange Rate:</Text>
+              <Text style={styles.amountLabel}>{t('history.exchangeRate')}</Text>
               <Text style={styles.exchangeRateValue}>
                 {transaction.rate ? transaction.rate.toLocaleString('vi-VN') : '0'} VND/USDT
               </Text>
             </View>
             <View style={styles.amountRow}>
-              <Text style={styles.amountLabel}>Transaction Fee:</Text>
+              <Text style={styles.amountLabel}>{t('history.transactionFee')}</Text>
               <Text style={styles.exchangeRateValue}>
                 {transaction.fee_vnd ? transaction.fee_vnd.toLocaleString('vi-VN') : '0'} VND ({transaction.fee_percent ? (transaction.fee_percent * 100).toFixed(2) : '0'}%)
               </Text>
@@ -386,7 +388,7 @@ const HistoryScreen = () => {
               </View>
               <View>
                 <Text style={styles.transactionType}>
-                  {isBuy ? 'Buy USDT' : 'Sell USDT'} - Processing
+                  {isBuy ? t('history.buyUsdt') : t('history.sellUsdt')} - {t('history.processing')}
                 </Text>
                 <Text style={styles.transactionDate}>
                   {date} • {time}
@@ -396,30 +398,30 @@ const HistoryScreen = () => {
             <View style={styles.statusContainer}>
               <View style={[styles.statusDot, { backgroundColor: '#FF9500' }]} />
               <Text style={[styles.transactionStatus, { color: '#FF9500' }]}>
-                Pending
+                {t('history.pending')}
               </Text>
             </View>
           </View>
 
           <View style={[styles.amountContainer, styles.pendingAmountContainer]}>
             <View style={styles.amountRow}>
-              <Text style={styles.amountLabel}>{isBuy ? 'Total to Pay:' : 'Total to Receive:'}</Text>
+              <Text style={styles.amountLabel}>{isBuy ? t('history.totalToPay') : t('history.totalToReceive')}</Text>
               <Text style={[styles.amountValue, { color: isBuy ? '#4A90E2' : '#7B68EE' }]}>
                 {amount}
               </Text>
             </View>
             <View style={styles.amountRow}>
-              <Text style={styles.amountLabel}>{isBuy ? 'USDT to Receive:' : 'USDT to Sell:'}</Text>
+              <Text style={styles.amountLabel}>{isBuy ? t('history.usdtToReceive') : t('history.usdtToSell')}</Text>
               <Text style={styles.exchangeValue}>{exchangeAmount}</Text>
             </View>
             <View style={styles.amountRow}>
-              <Text style={styles.amountLabel}>Exchange Rate:</Text>
+              <Text style={styles.amountLabel}>{t('history.exchangeRate')}</Text>
               <Text style={styles.exchangeRateValue}>
                 {transaction.rate ? transaction.rate.toLocaleString('vi-VN') : '0'} VND/USDT
               </Text>
             </View>
             <View style={styles.amountRow}>
-              <Text style={styles.amountLabel}>Transaction Fee:</Text>
+              <Text style={styles.amountLabel}>{t('history.transactionFee')}</Text>
               <Text style={styles.exchangeRateValue}>
                 {transaction.fee_vnd ? transaction.fee_vnd.toLocaleString('vi-VN') : '0'} VND ({transaction.fee_percent ? (transaction.fee_percent * 100).toFixed(2) : '0'}%)
               </Text>
@@ -455,27 +457,27 @@ const HistoryScreen = () => {
     const isSuccess = activeTab === 'success';
     const isFail = activeTab === 'fail';
 
-    let title = 'No transactions';
-    let description = 'There are no transactions to display.';
+    let title = t('history.noTransactions');
+    let description = t('history.noTransactionsDesc');
     let iconName = 'information-outline';
     let iconColor = '#999999';
     let bgColor = '#F2F2F7';
 
     if (isPending) {
-      title = 'No pending transactions';
-      description = 'Pending transactions will appear here.';
+      title = t('history.noPendingTransactions');
+      description = t('history.noPendingDesc');
       iconName = 'clock-outline';
       iconColor = '#FF9500';
       bgColor = '#FFF4E6';
     } else if (isSuccess) {
-      title = 'No successful transactions';
-      description = 'Successful transactions will appear here.';
+      title = t('history.noSuccessfulTransactions');
+      description = t('history.noSuccessfulDesc');
       iconName = 'check-circle-outline';
       iconColor = '#34C759';
       bgColor = '#E8F5E8';
     } else if (isFail) {
-      title = 'No failed transactions';
-      description = 'Failed transactions will appear here.';
+      title = t('history.noFailedTransactions');
+      description = t('history.noFailedDesc');
       iconName = 'close-circle-outline';
       iconColor = '#FF3B30';
       bgColor = '#FFEBEE';
@@ -501,22 +503,22 @@ const HistoryScreen = () => {
       <View style={styles.verificationIconContainer}>
         <Icon name="shield-check" size={64} color="#FF9500" />
       </View>
-      <Text style={styles.verificationTitle}>Xác thực cần thiết</Text>
+      <Text style={styles.verificationTitle}>{t('history.verificationRequired')}</Text>
       <Text style={styles.verificationDescription}>
-        Để xem lịch sử giao dịch, bạn cần hoàn thành xác thực:
+        {t('history.verificationDesc')}
       </Text>
       <View style={styles.verificationList}>
         <View style={styles.verificationItem}>
           <Icon name="check-circle" size={20} color="#34C759" />
-          <Text style={styles.verificationItemText}>Xác thực eKYC</Text>
+          <Text style={styles.verificationItemText}>{t('history.ekycVerification')}</Text>
         </View>
         <View style={styles.verificationItem}>
           <Icon name="check-circle" size={20} color="#34C759" />
-          <Text style={styles.verificationItemText}>Xác thực email</Text>
+          <Text style={styles.verificationItemText}>{t('history.emailVerification')}</Text>
         </View>
         <View style={styles.verificationItem}>
           <Icon name="check-circle" size={20} color="#34C759" />
-          <Text style={styles.verificationItemText}>Xác thực số điện thoại</Text>
+          <Text style={styles.verificationItemText}>{t('history.phoneVerification')}</Text>
         </View>
       </View>
       <TouchableOpacity 
@@ -526,7 +528,7 @@ const HistoryScreen = () => {
           (navigation as any).navigate('Profile');
         }}
       >
-        <Text style={styles.verificationButtonText}>Đi đến xác thực</Text>
+        <Text style={styles.verificationButtonText}>{t('history.goToVerification')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -534,7 +536,7 @@ const HistoryScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Transaction History</Text>
+        <Text style={styles.headerTitle}>{t('history.title')}</Text>
         <View style={styles.headerButtons}>
           <TouchableOpacity 
             style={styles.refreshButton}
@@ -570,7 +572,7 @@ const HistoryScreen = () => {
                 styles.tabText, 
                 activeTab === 'pending' && [styles.tabTextActive, styles.tabTextPending]
               ]}>
-                Pending
+                {t('history.pending')}
               </Text>
               <View style={[
                 styles.tabBadge, 
@@ -596,7 +598,7 @@ const HistoryScreen = () => {
                 styles.tabText, 
                 activeTab === 'success' && [styles.tabTextActive, styles.tabTextSuccess]
               ]}>
-                Success
+                {t('history.success')}
               </Text>
               <View style={[
                 styles.tabBadge, 
@@ -622,7 +624,7 @@ const HistoryScreen = () => {
                 styles.tabText, 
                 activeTab === 'fail' && [styles.tabTextActive, styles.tabTextFail]
               ]}>
-                Failed
+                {t('history.failed')}
               </Text>
               <View style={[
                 styles.tabBadge, 
@@ -664,7 +666,7 @@ const HistoryScreen = () => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Filter</Text>
+              <Text style={styles.modalTitle}>{t('history.filter')}</Text>
               <TouchableOpacity 
                 style={styles.closeButton}
                 onPress={() => setShowFilterModal(false)}
@@ -673,7 +675,7 @@ const HistoryScreen = () => {
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.filterLabel}>Time</Text>
+            <Text style={styles.filterLabel}>{t('history.time')}</Text>
             <View style={styles.timeFilterContainer}>
               {TIME_FILTERS.map((filter) => (
                 <TouchableOpacity
@@ -765,20 +767,20 @@ const HistoryScreen = () => {
                   setSelectedYear(2025);
                 }}
               >
-                <Text style={styles.resetButtonText}>Reset</Text>
+                <Text style={styles.resetButtonText}>{t('history.reset')}</Text>
               </TouchableOpacity>
               <TouchableOpacity 
                 style={styles.confirmButton}
                 onPress={handleFilterConfirm}
               >
-                <Text style={styles.confirmButtonText}>Confirm</Text>
+                <Text style={styles.confirmButtonText}>{t('history.confirm')}</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       </Modal>
 
-      <LoadingOverlay visible={loading} message="Loading transaction history..." />
+      <LoadingOverlay visible={loading} message={t('history.loadingHistory')} />
     </SafeAreaView>
   );
 };
@@ -842,7 +844,7 @@ const styles = StyleSheet.create({
     }),
   },
   tabText: {
-    fontSize: wp('3.8%'),
+    fontSize: wp('3%'),
     fontWeight: '500',
     color: '#666',
     marginRight: 6,

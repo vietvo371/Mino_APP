@@ -23,6 +23,7 @@ import InputCustom from '../component/InputCustom';
 import ButtonCustom from '../component/ButtonCustom';
 import LoadingOverlay from '../component/LoadingOverlay';
 import api from '../utils/Api';
+import { useTranslation } from '../hooks/useTranslation';
 
 const { width, height } = Dimensions.get('window');
 
@@ -38,6 +39,7 @@ interface ChangePasswordScreenProps {
 }
 
 const ChangePasswordScreen: React.FC<ChangePasswordScreenProps> = ({ navigation, route }) => {
+  const { t } = useTranslation();
   const { identifier, type, token } = route.params;
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -54,14 +56,14 @@ const ChangePasswordScreen: React.FC<ChangePasswordScreenProps> = ({ navigation,
     const newErrors: { newPassword?: string; confirmPassword?: string } = {};
 
     if (!newPassword) {
-      newErrors.newPassword = 'New password is required';
+      newErrors.newPassword = t('changePassword.newPasswordRequired');
     } else if (newPassword.length < 8) {
-      newErrors.newPassword = 'Password must be at least 8 characters';
+      newErrors.newPassword = t('changePassword.passwordMinLength');
     } 
     if (!confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
+      newErrors.confirmPassword = t('changePassword.confirmPasswordRequired');
     } else if (newPassword !== confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+      newErrors.confirmPassword = t('changePassword.passwordsNotMatch');
     }
 
     setErrors(newErrors);
@@ -87,27 +89,27 @@ const ChangePasswordScreen: React.FC<ChangePasswordScreenProps> = ({ navigation,
       
       if (response.data.status) {
         Alert.alert(
-          'Success',
-          'Your password has been changed successfully!',
+          t('common.success'),
+          t('changePassword.passwordChanged'),
           [
             {
-              text: 'OK',
+              text: t('common.confirm'),
               onPress: () => navigation.navigate('Login'),
             },
           ]
         );
       } else {
-        Alert.alert('Error', response.data.message || 'Failed to change password');
+        Alert.alert(t('common.error'), response.data.message || t('changePassword.passwordChangeFailed'));
       }
     } catch (error: any) {
       console.log('Change password error:', error);
-      let errorMessage = 'Failed to change password. Please try again.';
+      let errorMessage = t('changePassword.passwordChangeFailed');
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.message) {
         errorMessage = error.message;
       }
-      Alert.alert('Error', errorMessage);
+      Alert.alert(t('common.error'), errorMessage);
     } finally {
       setLoading(false);
     }
@@ -125,9 +127,9 @@ const ChangePasswordScreen: React.FC<ChangePasswordScreenProps> = ({ navigation,
   };
 
   const getPasswordStrengthText = (strength: number) => {
-    if (strength <= 2) return { text: 'Weak', color: theme.colors.error };
-    if (strength <= 4) return { text: 'Medium', color: theme.colors.warning };
-    return { text: 'Strong', color: theme.colors.success };
+    if (strength <= 2) return { text: t('auth.weak'), color: theme.colors.error };
+    if (strength <= 4) return { text: t('auth.medium'), color: theme.colors.warning };
+    return { text: t('auth.strong'), color: theme.colors.success };
   };
 
   return (
@@ -155,9 +157,9 @@ const ChangePasswordScreen: React.FC<ChangePasswordScreenProps> = ({ navigation,
           </TouchableOpacity>
 
           <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>Create New Password</Text>
+            <Text style={styles.headerTitle}>{t('changePassword.createNewPassword')}</Text>
             <Text style={styles.headerSubtitle}>
-              Enter a strong password for your account
+              {t('changePassword.enterStrongPassword')}
             </Text>
           </View>
         </Animated.View>
@@ -171,17 +173,17 @@ const ChangePasswordScreen: React.FC<ChangePasswordScreenProps> = ({ navigation,
             <View style={styles.cardIconContainer}>
               <Icon name="lock-reset" size={32} color={theme.colors.primary} />
             </View>
-            <Text style={styles.cardTitle}>Reset Password</Text>
+            <Text style={styles.cardTitle}>{t('changePassword.resetPassword')}</Text>
             <Text style={styles.cardSubtitle}>
-              Verification successful! Now create your new password.
+              {t('changePassword.verificationSuccessful')}
             </Text>
           </View>
 
           {/* Form Fields */}
           <View style={styles.formContainer}>
             <InputCustom
-              label="New Password"
-              placeholder="Enter new password"
+              label={t('changePassword.newPassword')}
+              placeholder={t('changePassword.enterNewPassword')}
               value={newPassword}
               onChangeText={(text) => {
                 setNewPassword(text);
@@ -220,8 +222,8 @@ const ChangePasswordScreen: React.FC<ChangePasswordScreenProps> = ({ navigation,
             )}
 
             <InputCustom
-              label="Confirm Password"
-              placeholder="Confirm new password"
+              label={t('changePassword.confirmNewPassword')}
+              placeholder={t('changePassword.confirmNewPassword')}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry={!showConfirmPassword}
@@ -235,7 +237,7 @@ const ChangePasswordScreen: React.FC<ChangePasswordScreenProps> = ({ navigation,
 
             {/* Change Password Button */}
             <ButtonCustom
-              title="Change Password"
+              title={t('changePassword.changePassword')}
               onPress={handleChangePassword}
               style={styles.changePasswordButton}
               icon="check-circle"
@@ -245,7 +247,7 @@ const ChangePasswordScreen: React.FC<ChangePasswordScreenProps> = ({ navigation,
 
       </ScrollView>
 
-      <LoadingOverlay visible={loading} message="Changing password..." />
+      <LoadingOverlay visible={loading} message={t('changePassword.changingPassword')} />
     </SafeAreaView>
   );
 };

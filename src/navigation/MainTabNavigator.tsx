@@ -5,6 +5,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../theme/colors';
 import { RootStackParamList } from './types';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from '../hooks/useTranslation';
 
 import LoadingScreen from '../screens/LoadingScreen';
 import LoginScreen from '../screens/LoginScreen';
@@ -48,6 +49,7 @@ const Tab = createBottomTabNavigator<RootStackParamList>();
 
 const MainTabs = () => {
   const { userRole } = useAuth();
+  const { t } = useTranslation();
 
   const tabScreenOptions = {
     headerShown: false,
@@ -78,7 +80,7 @@ const MainTabs = () => {
         name="Home"
         component={HomeScreen}
         options={{
-          title: 'Home',
+          title: t('tabs.home'),
           tabBarIcon: ({ color, size }) => (
             <Icon name="home" size={size} color={color} />
           ),
@@ -88,7 +90,7 @@ const MainTabs = () => {
         name="History"
         component={HistoryScreen}
         options={{
-          title: 'History',
+          title: t('tabs.history'),
           tabBarIcon: ({ color, size }) => (
             <Icon name="history" size={size} color={color} />
           ),
@@ -98,7 +100,7 @@ const MainTabs = () => {
         name="Profile"
         component={ProfileScreen}
         options={{
-          title: 'Profile',
+          title: t('tabs.profile'),
           tabBarIcon: ({ color, size }) => (
             <Icon name="account" size={size} color={color} />
           ),

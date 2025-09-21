@@ -26,6 +26,7 @@ import { saveToken, saveUser } from '../utils/TokenManager';
 import LanguageSelector from '../components/LanguageSelector';
 import CountryCodePicker from '../components/CountryCodePicker';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface LoginScreenProps {
   navigation: any;
@@ -35,6 +36,7 @@ const { width, height } = Dimensions.get('window');
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const { signIn } = useAuth();
+  const { t, getCurrentLanguage } = useTranslation();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -53,21 +55,21 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     const newErrors: { identifier?: string; password?: string } = {};
 
     if (!identifier) {
-      newErrors.identifier = 'Email or phone number is required';
+      newErrors.identifier = isPhoneNumber ? t('auth.phoneRequired') : t('auth.emailRequired');
     } else if (isPhoneNumber) {
       if (!/^\d{9,10}$/.test(identifier)) {
-        newErrors.identifier = 'Please enter a valid phone number';
+        newErrors.identifier = t('auth.validPhone');
       }
     } else {
       if (!/\S+@\S+\.\S+/.test(identifier)) {
-        newErrors.identifier = 'Please enter a valid email';
+        newErrors.identifier = t('auth.validEmail');
       }
     }
 
     if (!password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = t('auth.passwordRequired');
     } else if (password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = t('auth.passwordMinLength');
     }
 
     setErrors(newErrors);
@@ -126,7 +128,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         errorMessage = error.message;
       }
       
-      Alert.alert('Login Failed', errorMessage);
+      Alert.alert(t('auth.loginFailed'), errorMessage);
     } finally {
       setLoading(false);
     }
@@ -151,7 +153,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             style={styles.headerIconButton}
             onPress={() => setShowLanguageSelector(true)}
           >
-            <Icon name="translate" size={24} color={theme.colors.text} />
+            <Image 
+              source={getCurrentLanguage() === 'vi' 
+                ? require('../assets/images/logo_vietnam.jpg')
+                : require('../assets/images/logo_eng.png')
+              }
+              style={styles.languageFlag}
+            />
           </TouchableOpacity>
           
           <TouchableOpacity
@@ -169,7 +177,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             // Handle language change
             console.log('Selected language:', code);
           }}
-          currentLanguage="vi"
+          currentLanguage={getCurrentLanguage()}
         />
 
         <CountryCodePicker
@@ -198,7 +206,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               style={styles.welcomeText}
               entering={FadeInDown.duration(800).delay(200).springify()}
             >
-              Welcome Back
+              {t('auth.welcomeBack')}
             </Animated.Text>
 
             <Animated.Text
@@ -215,9 +223,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             entering={SlideInDown.duration(800).delay(800).springify()}
           >
             <View style={styles.formHeader}>
-              <Text style={styles.formTitle}>Sign In</Text>
+              <Text style={styles.formTitle}>{t('auth.signIn')}</Text>
               <Text style={styles.formSubtitle}>
-                Enter your credentials to access your MIMO account
+                {t('auth.signInToAccount')}
               </Text>
             </View>
 
@@ -240,7 +248,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                     styles.inputTypeText,
                     !isPhoneNumber && styles.inputTypeTextActive
                   ]}>
-                    Email
+                    {t('auth.email')}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
@@ -259,7 +267,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                     styles.inputTypeText,
                     isPhoneNumber && styles.inputTypeTextActive
                   ]}>
-                    Phone
+                    {t('auth.phone')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -276,8 +284,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                   </TouchableOpacity> */}
                   <View style={styles.phoneInputWrapper}>
                     <InputCustom
-                      label="Phone Number"
-                      placeholder="Enter your phone number"
+                      label={t('auth.phoneNumber')}
+                      placeholder={t('auth.enterPhoneNumber')}
                       value={identifier}
                       onChangeText={setIdentifier}
                       keyboardType="phone-pad"
@@ -291,8 +299,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                 </View>
               ) : (
                 <InputCustom
-                  label="Email Address"
-                  placeholder="Enter your email address"
+                  label={t('auth.emailAddress')}
+                  placeholder={t('auth.enterEmail')}
                   value={identifier}
                   onChangeText={setIdentifier}
                   keyboardType="email-address"
@@ -305,8 +313,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               )}
 
               <InputCustom
-                label="Password"
-                placeholder="Enter your password"
+                label={t('auth.password')}
+                placeholder={t('auth.enterPassword')}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry={!showPassword}
@@ -319,7 +327,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               />
 
               <ButtonCustom
-                title="Sign In"
+                title={t('auth.signIn')}
                 onPress={handleLogin}
                 style={styles.loginButton}
                 icon="login"
@@ -330,7 +338,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
                 onPress={() => navigation.navigate('ForgotPassword')}
                 style={styles.forgotPasswordContainer}
               >
-                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+                <Text style={styles.forgotPasswordText}>{t('auth.forgotPassword')}</Text>
               </TouchableOpacity>
 
               {/* Social Login */}
@@ -374,8 +382,8 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               style={styles.registerLink}
             >
               <Text style={styles.registerText}>
-                Don't have an account?{' '}
-                <Text style={styles.registerLinkText}>Create Account</Text>
+                {t('auth.dontHaveAccount')}{' '}
+                <Text style={styles.registerLinkText}>{t('auth.createAccountLink')}</Text>
               </Text>
             </TouchableOpacity>
 
@@ -385,14 +393,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             <View style={styles.securityBadge}>
               <Icon name="shield-check" size={16} color={theme.colors.success} />
               <Text style={styles.securityText}>
-                Your data is protected with enterprise-grade security
+                {t('auth.dataProtected')}
               </Text>
             </View>
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <LoadingOverlay visible={loading} message="Signing in..." />
+      <LoadingOverlay visible={loading} message={t('auth.signingIn')} />
     </SafeAreaView>
   );
 };
@@ -431,6 +439,11 @@ const styles = StyleSheet.create({
         elevation: 4,
       },
     }),
+  },
+  languageFlag: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
   },
   decorativeCircle1: {
     position: 'absolute',

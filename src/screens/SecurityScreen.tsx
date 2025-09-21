@@ -17,6 +17,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { theme } from '../theme/colors';
 import api from '../utils/Api';
 import { getUser } from '../utils/TokenManager';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface UserProfile {
   full_name: string;
@@ -38,6 +39,7 @@ const SecurityScreen = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const { t } = useTranslation();
 
   // Fetch user profile
   const fetchUserProfile = async (isRefresh = false) => {
@@ -54,7 +56,7 @@ const SecurityScreen = () => {
       }
     } catch (error: any) {
       console.log('Profile fetch error:', error);
-      Alert.alert('Error', 'Failed to load profile data');
+      Alert.alert(t('security.error'), t('security.failedToLoadProfile'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -94,7 +96,7 @@ const SecurityScreen = () => {
         "otp": "119069"
       });
       if (response?.data?.status) {
-        Alert.alert('Success', 'Verify eKYC example successfully', [
+        Alert.alert(t('security.verifyEkycSuccess'), t('security.verifyEkycSuccess'), [
           {
             text: 'OK',
             // onPress: () => {
@@ -103,13 +105,13 @@ const SecurityScreen = () => {
           },
         ]);
       } else {
-        Alert.alert('Error', response?.data?.message || 'Failed to verify eKYC example');
+        Alert.alert(t('security.error'), response?.data?.message || t('security.verifyEkycError'));
       }
     } catch (error: any) {
       console.log('Verify eKYC example error:', error.response);
       Alert.alert(
-        'Error',
-        error?.response?.data?.message || 'Failed to verify eKYC example. Please try again.'
+        t('security.error'),
+        error?.response?.data?.message || t('security.verifyEkycError')
       );
     }
   };
@@ -119,8 +121,8 @@ const SecurityScreen = () => {
   const VERIFICATION_ITEMS = [
     {
       id: 'ekyc',
-      title: 'Identity Verification (eKYC)',
-      description: isEkycVerified ? 'Identity verified successfully' : 'Verify your identity to unlock all features',
+      title: t('security.identityVerification'),
+      description: isEkycVerified ? t('security.identityVerified') : t('security.verifyIdentity'),
       icon: 'shield-check',
       iconColor: isEkycVerified ? '#34C759' : '#7B68EE',
       iconBg: isEkycVerified ? '#34C75915' : '#7B68EE15',
@@ -131,8 +133,8 @@ const SecurityScreen = () => {
     },
     {
       id: 'email',
-      title: 'Email Verification',
-      description: isEmailVerified ? 'Email verified successfully' : 'Confirm your email address',
+      title: t('security.emailVerification'),
+      description: isEmailVerified ? t('security.emailVerified') : t('security.confirmEmail'),
       icon: 'email',
       iconColor: isEmailVerified ? '#34C759' : '#4A90E2',
       iconBg: isEmailVerified ? '#34C75915' : '#4A90E215',
@@ -141,8 +143,8 @@ const SecurityScreen = () => {
     },
     {
       id: 'phone',
-      title: 'Phone Verification',
-      description: isPhoneVerified ? 'Phone verified successfully' : 'Secure your account with phone verification',
+      title: t('security.phoneVerification'),
+      description: isPhoneVerified ? t('security.phoneVerified') : t('security.secureAccount'),
       icon: 'phone',
       iconColor: isPhoneVerified ? '#34C759' : '#34C759',
       iconBg: isPhoneVerified ? '#34C75915' : '#34C75915',
@@ -154,7 +156,7 @@ const SecurityScreen = () => {
   const SECURITY_ITEMS = [
     {
       id: 'password',
-      title: 'Change Password',
+      title: t('security.changePassword'),
       icon: 'lock',
       onPress: () => { },
     },
@@ -182,12 +184,12 @@ const SecurityScreen = () => {
           >
             <Icon name="arrow-left" size={24} color="#1C1C1E" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Security</Text>
+          <Text style={styles.headerTitle}>{t('security.title')}</Text>
           <View style={styles.headerRight} />
         </View>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#4A90E2" />
-          <Text style={styles.loadingText}>Loading security settings...</Text>
+          <Text style={styles.loadingText}>{t('security.loadingSettings')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -202,7 +204,7 @@ const SecurityScreen = () => {
         >
           <Icon name="arrow-left" size={24} color="#1C1C1E" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Security</Text>
+        <Text style={styles.headerTitle}>{t('security.title')}</Text>
         <View style={styles.headerRight} />
       </View>
 
@@ -216,10 +218,10 @@ const SecurityScreen = () => {
         <View style={styles.statusCard}>
           <View style={styles.statusHeader}>
             <Icon name="shield-check" size={20} color="#34C759" />
-            <Text style={styles.statusTitle}>Security Status</Text>
+            <Text style={styles.statusTitle}>{t('security.securityStatus')}</Text>
           </View>
           <Text style={styles.statusText}>
-            {verificationCount} of 3 verifications completed
+            {t('security.verificationsCompleted', { count: verificationCount })}
           </Text>
           <View style={styles.progressContainer}>
             <View style={styles.progressBar}>
@@ -236,7 +238,7 @@ const SecurityScreen = () => {
 
         {/* Verification Hub */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Verifications</Text>
+          <Text style={styles.sectionTitle}>{t('security.verifications')}</Text>
           <View style={styles.optionsList}>
             {VERIFICATION_ITEMS.map(item => (
               <TouchableOpacity
@@ -256,7 +258,7 @@ const SecurityScreen = () => {
                   {item.status === 'verified' && (
                     <View style={styles.verifiedTag}>
                       <Icon name="check" size={16} color="#34C759" />
-                      <Text style={styles.verifiedText}>Verified</Text>
+                      <Text style={styles.verifiedText}>{t('security.verified')}</Text>
                     </View>
                   )}
                   <Icon name="chevron-right" size={24} color="#8E8E93" />
@@ -268,7 +270,7 @@ const SecurityScreen = () => {
 
         {/* Security Options */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Security Options</Text>
+          <Text style={styles.sectionTitle}>{t('security.securityOptions')}</Text>
           <View style={styles.optionsList}>
             {SECURITY_ITEMS.map(item => (
               <TouchableOpacity
@@ -328,20 +330,20 @@ const SecurityScreen = () => {
 
         {/* Device Info */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Device Information</Text>
+          <Text style={styles.sectionTitle}>{t('security.deviceInformation')}</Text>
           <View style={styles.optionsList}>
             <View style={styles.optionItem}>
               <View style={styles.optionIcon}>
                 <Icon name="cellphone" size={24} color="#4A90E2" />
               </View>
               <View style={styles.optionInfo}>
-                <Text style={styles.optionTitle}>Current Device</Text>
+                <Text style={styles.optionTitle}>{t('security.currentDevice')}</Text>
                 <Text style={styles.optionDescription}>
                   {Platform.OS === 'ios' ? 'iPhone' : 'Android'} • {Platform.OS === 'ios' ? 'iOS' : 'Android'} {Platform.Version}
                 </Text>
               </View>
               <View style={styles.activeTag}>
-                <Text style={styles.activeText}>Active</Text>
+                <Text style={styles.activeText}>{t('security.active')}</Text>
               </View>
             </View>
           </View>

@@ -10,6 +10,7 @@ import {
   SafeAreaView,
   Dimensions,
   Alert,
+  Image,
 } from 'react-native';
 import Animated, { FadeInDown, FadeInUp, SlideInDown } from 'react-native-reanimated';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -24,6 +25,7 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface ForgotPasswordScreenProps {
   navigation: any;
@@ -32,6 +34,7 @@ interface ForgotPasswordScreenProps {
 const { width, height } = Dimensions.get('window');
 
 const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation }) => {
+  const { t, getCurrentLanguage } = useTranslation();
   const [identifier, setIdentifier] = useState('');
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ identifier?: string; otp?: string }>({});
@@ -52,14 +55,14 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
     const newErrors: { identifier?: string } = {};
 
     if (!identifier) {
-      newErrors.identifier = 'Email or phone number is required';
+      newErrors.identifier = isPhoneNumber ? t('auth.phoneRequired') : t('auth.emailRequired');
     } else if (isPhoneNumber) {
       if (!/^\d{9,10}$/.test(identifier)) {
-        newErrors.identifier = 'Please enter a valid phone number';
+        newErrors.identifier = t('auth.validPhone');
       }
     } else {
       if (!/\S+@\S+\.\S+/.test(identifier)) {
-        newErrors.identifier = 'Please enter a valid email';
+        newErrors.identifier = t('auth.validEmail');
       }
     }
 
@@ -141,7 +144,13 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
             style={styles.headerIconButton}
             onPress={() => setShowLanguageSelector(true)}
           >
-            <Icon name="translate" size={24} color={theme.colors.text} />
+            <Image 
+              source={getCurrentLanguage() === 'vi' 
+                ? require('../assets/images/logo_vietnam.jpg')
+                : require('../assets/images/logo_eng.png')
+              }
+              style={styles.languageFlag}
+            />
           </TouchableOpacity>
 
           <TouchableOpacity
@@ -158,7 +167,7 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
           onSelect={(code) => {
             console.log('Selected language:', code);
           }}
-          currentLanguage="vi"
+          currentLanguage={getCurrentLanguage()}
         />
 
         <CountryCodePicker
@@ -201,10 +210,10 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
             </View>
 
             <Text style={styles.title}>
-              {'Forgot Password?'}
+              {t('auth.forgotPasswordTitle')}
             </Text>
             <Text style={styles.subtitle}>
-              {"Don't worry! Enter your email or phone number and we'll send you a verification code."}
+              {t('auth.forgotPasswordSubtitle')}
             </Text>
           </Animated.View>
 
@@ -232,7 +241,7 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
                     styles.inputTypeText,
                     !isPhoneNumber && styles.inputTypeTextActive
                   ]}>
-                    Email
+                    {t('auth.email')}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -251,7 +260,7 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
                     styles.inputTypeText,
                     isPhoneNumber && styles.inputTypeTextActive
                   ]}>
-                    Phone
+                    {t('auth.phone')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -260,8 +269,8 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
                 <View style={styles.phoneInputContainer}>
                   <View style={styles.phoneInputWrapper}>
                     <InputCustom
-                      label="Phone Number"
-                      placeholder="Enter your phone number"
+                      label={t('auth.phoneNumber')}
+                      placeholder={t('auth.enterPhoneNumber')}
                       value={identifier}
                       onChangeText={setIdentifier}
                       keyboardType="phone-pad"
@@ -275,8 +284,8 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
                 </View>
               ) : (
                 <InputCustom
-                  label="Email Address"
-                  placeholder="Enter your email address"
+                  label={t('auth.emailAddress')}
+                  placeholder={t('auth.enterEmail')}
                   value={identifier}
                   onChangeText={setIdentifier}
                   keyboardType="email-address"
@@ -289,7 +298,7 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
               )}
 
               <ButtonCustom
-                title="Send Verification Code"
+                title={t('auth.sendVerificationCode')}
                 onPress={handleSendOTPForgot}
                 style={styles.resetButton}
                 icon="send"
@@ -300,8 +309,8 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
                 style={styles.backToLoginContainer}
               >
                 <Text style={styles.backToLoginText}>
-                  Remember your password?{' '}
-                  <Text style={styles.backToLoginLinkText}>Sign In</Text>
+                  {t('auth.rememberPassword')}{' '}
+                  <Text style={styles.backToLoginLinkText}>{t('auth.signInLink')}</Text>
                 </Text>
               </TouchableOpacity>
             </View>
@@ -316,14 +325,14 @@ const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation 
             <View style={styles.securityBadge}>
               <Icon name="shield-check" size={16} color={theme.colors.success} />
               <Text style={styles.securityText}>
-                Your data is protected with enterprise-grade security
+                {t('auth.dataProtected')}
               </Text>
             </View>
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <LoadingOverlay visible={loading} message="Sending verification code..." />
+      <LoadingOverlay visible={loading} message={t('auth.sendingVerificationCode')} />
     </SafeAreaView>
   );
 };
@@ -362,6 +371,11 @@ const styles = StyleSheet.create({
         elevation: 4,
       },
     }),
+  },
+  languageFlag: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
   },
   decorativeCircle1: {
     position: 'absolute',

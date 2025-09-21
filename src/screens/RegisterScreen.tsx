@@ -21,6 +21,7 @@ import InputCustom from '../component/InputCustom';
 import ButtonCustom from '../component/ButtonCustom';
 import LoadingOverlay from '../component/LoadingOverlay';
 import api from '../utils/Api';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface RegisterScreenProps {
   navigation: any;
@@ -30,7 +31,7 @@ const { width, height } = Dimensions.get('window');
 
 
 const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
-
+  const { t } = useTranslation();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -52,43 +53,41 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.name) {
-      newErrors.full_name = 'Name is required';
+      newErrors.full_name = t('auth.nameRequired');
     } else if (formData.name.length < 2) {
-      newErrors.full_name = 'Name must be at least 2 characters';
+      newErrors.full_name = t('auth.nameMinLength');
     }
 
     // Email validation
     if (!formData.email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = t('auth.emailRequired');
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email';
+      newErrors.email = t('auth.validEmail');
     }
 
     // Phone validation
     if (!formData.phone) {
-      newErrors.number_phone = 'Phone number is required';
+      newErrors.number_phone = t('auth.phoneRequired');
     } else if (!/^[0-9+().\-\s]{7,15}$/.test(formData.phone)) {
-      newErrors.number_phone = 'Please enter a valid phone number';
+      newErrors.number_phone = t('auth.validPhone');
     }
 
     // Password validation
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = t('auth.passwordRequired');
     } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+      newErrors.password = t('auth.passwordMinLength');
     }
 
     // Password confirmation
     if (!formData.re_password) {
-      newErrors.re_password = 'Please confirm your password';
+      newErrors.re_password = t('auth.confirmPasswordRequired');
     } else if (formData.password !== formData.re_password) {
-      newErrors.re_password = 'Passwords do not match';
+      newErrors.re_password = t('auth.passwordsNotMatch');
     }
-    // Password confirmation
+    // Address validation
     if (!formData.address) {
-      newErrors.address = 'Please confirm your address';
-    } else if (formData.address !== formData.address) {
-      newErrors.address = 'Address do not match';
+      newErrors.address = t('auth.addressRequired');
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -109,13 +108,13 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
         re_password: formData.re_password,
       });
       if (response.data.status === false) {
-        Alert.alert('Registration Failed', response.data.message);
+        Alert.alert(t('auth.registrationFailed'), response.data.message);
         return;
       }
-      Alert.alert('Registration Successful', response.data.message,
+      Alert.alert(t('auth.registrationSuccessful'), response.data.message,
         [
           {
-            text: 'OK',
+            text: t('common.confirm'),
             onPress: () => navigation.navigate('OTPVerification', {
               identifier: formData.email,
               type: 'email',
@@ -142,7 +141,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
         });
       } else {
         setErrors({
-          email: 'Registration failed. Please try again.'
+          email: t('auth.registrationFailed')
         });
       }
     } finally {
@@ -169,9 +168,9 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
   };
 
   const getPasswordStrengthText = (strength: number) => {
-    if (strength <= 2) return { text: 'Weak', color: theme.colors.error };
-    if (strength <= 4) return { text: 'Medium', color: theme.colors.warning };
-    return { text: 'Strong', color: theme.colors.success };
+    if (strength <= 2) return { text: t('auth.weak'), color: theme.colors.error };
+    if (strength <= 4) return { text: t('auth.medium'), color: theme.colors.warning };
+    return { text: t('auth.strong'), color: theme.colors.success };
   };
 
 
@@ -183,14 +182,14 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
     >
       <View style={styles.formHeader}>
         <Text style={styles.formSubtitle}>
-          Sign up to start your trading journey
+          {t('auth.signUpJourney')}
         </Text>
       </View>
 
       <View style={styles.form}>
         <InputCustom
-          label="Full Name"
-          placeholder="Enter your full name"
+          label={t('auth.fullName')}
+          placeholder={t('auth.enterFullName')}
           value={formData.name}
           onChangeText={value => updateFormData('name', value)}
           error={errors.full_name}
@@ -200,8 +199,8 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
         />
 
         <InputCustom
-          label="Phone Number"
-          placeholder="Enter your phone number"
+          label={t('auth.phoneNumber')}
+          placeholder={t('auth.enterPhoneNumber')}
           value={formData.phone}
           onChangeText={value => updateFormData('phone', value)}
           keyboardType="phone-pad"
@@ -212,8 +211,8 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
         />
 
         <InputCustom
-          label="Email Address"
-          placeholder="Enter your email address"
+          label={t('auth.emailAddress')}
+          placeholder={t('auth.enterEmail')}
           value={formData.email}
           onChangeText={value => updateFormData('email', value)}
           keyboardType="email-address"
@@ -225,8 +224,8 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
         />
 
         <InputCustom
-          label="Password"
-          placeholder="Create a password"
+          label={t('auth.password')}
+          placeholder={t('auth.createPassword')}
           value={formData.password}
           onChangeText={(text) => {
             updateFormData('password', text);
@@ -265,8 +264,8 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
         )}
 
         <InputCustom
-          label="Confirm Password"
-          placeholder="Confirm your password"
+          label={t('auth.confirmPassword')}
+          placeholder={t('auth.confirmYourPassword')}
           value={formData.re_password}
           onChangeText={value => updateFormData('re_password', value)}
           secureTextEntry={!showConfirmPassword}
@@ -279,8 +278,8 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
         />
 
         <InputCustom
-          label="Address"
-          placeholder="Enter your address"
+          label={t('auth.address')}
+          placeholder={t('auth.enterAddress')}
           value={formData.address}
           onChangeText={value => updateFormData('address', value)}
           error={errors.address}
@@ -290,7 +289,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
         />
 
         <ButtonCustom
-          title="Create Account"
+          title={t('auth.createAccount')}
           onPress={handleRegister}
           style={styles.registerButton}
           icon="account-plus"
@@ -352,7 +351,7 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
               style={styles.title}
               entering={FadeInDown.duration(800).delay(400).springify()}
             >
-              Create Account
+              {t('auth.createAccount')}
             </Animated.Text>
           </Animated.View>
 
@@ -369,8 +368,8 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
               style={styles.loginLink}
             >
               <Text style={styles.loginText}>
-                Already have an account?{' '}
-                <Text style={styles.loginLinkText}>Sign In</Text>
+                {t('auth.alreadyHaveAccount')}{' '}
+                <Text style={styles.loginLinkText}>{t('auth.signInLink')}</Text>
               </Text>
             </TouchableOpacity>
 
@@ -378,14 +377,14 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
             <View style={styles.securityBadge}>
               <Icon name="shield-check" size={16} color={theme.colors.success} />
               <Text style={styles.securityText}>
-                Your data is protected with enterprise-grade security
+                {t('auth.dataProtected')}
               </Text>
             </View>
           </Animated.View>
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <LoadingOverlay visible={loading} message="Sending code OTP..." />
+      <LoadingOverlay visible={loading} message={t('auth.sendingCode')} />
     </SafeAreaView>
   );
 };

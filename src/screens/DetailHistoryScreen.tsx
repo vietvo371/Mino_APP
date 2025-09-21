@@ -20,6 +20,7 @@ import {
 import QRCode from '../component/QRCode';
 import api from '../utils/Api';
 import { getUser } from '../utils/TokenManager';
+import { useTranslation } from '../hooks/useTranslation';
 
 type TransactionDetail = {
   id: string;
@@ -53,6 +54,7 @@ const DetailHistoryScreen = () => {
   const transactionParam = params.transaction as TransactionDetail | undefined;
   const idTransaction = params.idTransaction as number | undefined;
   const typeParam = params.type as 'buy' | 'sell' | undefined;
+  const { t } = useTranslation();
 
   const [transaction, setTransaction] = React.useState<TransactionDetail | undefined>(transactionParam);
   const [loading, setLoading] = useState<boolean>(!!idTransaction && !transactionParam);
@@ -201,18 +203,18 @@ const DetailHistoryScreen = () => {
           >
             <Icon name="arrow-left" size={24} color="#000" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Transaction Detail</Text>
+          <Text style={styles.headerTitle}>{t('detailHistory.title')}</Text>
           <View style={styles.headerRight} />
         </View>
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#4A90E2" />
-            <Text style={styles.loadingText}>Đang tải giao dịch...</Text>
+            <Text style={styles.loadingText}>{t('detailHistory.loadingTransaction')}</Text>
           </View>
         ) : (
           <View style={styles.errorContainer}>
             <Icon name="alert-circle" size={48} color="#FF3B30" />
-            <Text style={styles.errorText}>Transaction not found</Text>
+            <Text style={styles.errorText}>{t('detailHistory.transactionNotFound')}</Text>
           </View>
         )}
       </SafeAreaView>
@@ -237,19 +239,19 @@ const DetailHistoryScreen = () => {
   const getStatusText = () => {
     switch (transaction.status) {
       case 1:
-        return 'Success';
+        return t('detailHistory.success');
       case 2:
-        return 'Failed';
+        return t('detailHistory.failed');
       case 0:
       default:
-        return 'Pending';
+        return t('detailHistory.pending');
     }
   };
 
 
   const copyToClipboard = (text: string, message: string) => {
     Clipboard.setString(text);
-    Alert.alert('Copied', message);
+    Alert.alert(t('detailHistory.copied'), message);
   };
 
   // Render Buy USDT Transaction
@@ -262,7 +264,7 @@ const DetailHistoryScreen = () => {
         >
           <Icon name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Buy USDT Transaction</Text>
+        <Text style={styles.headerTitle}>{t('detailHistory.buyTransaction')}</Text>
         <View style={styles.headerRight} />
       </View>
 
@@ -271,7 +273,7 @@ const DetailHistoryScreen = () => {
         <View style={[styles.validityBar, { backgroundColor: isExpired ? '#FFEBEE' : '#FFF4E6', borderColor: isExpired ? '#FF3B30' : '#FF9500' }]}>
           <Icon name={isExpired ? 'timer-off' : 'timer'} size={18} color={isExpired ? '#FF3B30' : '#FF9500'} />
           <Text style={[styles.validityText, { color: isExpired ? '#FF3B30' : '#FF9500' }]}>
-            {isExpired ? 'This transaction has expired.' : `This transaction is valid for 5 minutes. Time left: ${formatTime(secondsLeft)}`}
+            {isExpired ? t('detailHistory.expired') : t('detailHistory.validFor5Minutes', { time: formatTime(secondsLeft) })}
           </Text>
         </View>
 
@@ -282,7 +284,7 @@ const DetailHistoryScreen = () => {
               <Icon name="arrow-down" size={24} color={getStatusColor()} />
             </View>
             <View style={styles.statusInfo}>
-              <Text style={styles.transactionType}>Buy USDT</Text>
+              <Text style={styles.transactionType}>{t('detailHistory.buyUsdt')}</Text>
               <Text style={styles.transactionDate}>
                 {transaction.createdAt ? formatCreatedAt(transaction.createdAt) : `${transaction.date} • ${transaction.time}`}
               </Text>
@@ -298,14 +300,14 @@ const DetailHistoryScreen = () => {
 
         {/* Transaction Info */}
         <View style={styles.infoCard}>
-          <Text style={styles.cardTitle}>Transaction Information</Text>
+          <Text style={styles.cardTitle}>{t('detailHistory.transactionInformation')}</Text>
           
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Transaction ID</Text>
+            <Text style={styles.infoLabel}>{t('detailHistory.transactionId')}</Text>
             <View style={styles.infoValueContainer}>
               <Text style={styles.infoValue}>{transaction.transactionId}</Text>
               <TouchableOpacity
-                onPress={() => copyToClipboard(transaction.transactionId, 'Transaction ID copied')}
+                onPress={() => copyToClipboard(transaction.transactionId, t('detailHistory.transactionIdCopied'))}
                 style={styles.copyButton}
               >
                 <Icon name="content-copy" size={16} color="#4A90E2" />
@@ -314,28 +316,28 @@ const DetailHistoryScreen = () => {
           </View>
 
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>USDT to Receive</Text>
+            <Text style={styles.infoLabel}>{t('detailHistory.usdtToReceive')}</Text>
             <Text style={[styles.infoValue, { color: '#4A90E2' }]}>
               {transaction.usdt} USDT
             </Text>
           </View>
 
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>VND to Pay</Text>
+            <Text style={styles.infoLabel}>{t('detailHistory.vndToPay')}</Text>
             <Text style={styles.infoValue}>
               {transaction.amount} VND
             </Text>
           </View>
 
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Exchange Rate</Text>
+            <Text style={styles.infoLabel}>{t('detailHistory.exchangeRate')}</Text>
             <Text style={styles.infoValue}>
               {transaction.exchangeRate} VND/USDT
             </Text>
           </View>
 
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Transaction Fee</Text>
+            <Text style={styles.infoLabel}>{t('detailHistory.transactionFee')}</Text>
             <Text style={styles.infoValue}>
               {transaction.fee}
             </Text>
@@ -344,7 +346,7 @@ const DetailHistoryScreen = () => {
           <View style={styles.divider} />
           
           <View style={styles.infoRow}>
-            <Text style={styles.totalLabel}>Total to Pay</Text>
+            <Text style={styles.totalLabel}>{t('detailHistory.totalToPay')}</Text>
             <Text style={styles.totalValue}>
               {transaction.totalAmount}
             </Text>
@@ -353,7 +355,7 @@ const DetailHistoryScreen = () => {
 
         {/* QR Code Section */}
         <View style={[styles.qrCard, isExpired && { opacity: 0.5 }]}>
-          <Text style={styles.qrCardTitle}>Payment QR Code</Text>
+          <Text style={styles.qrCardTitle}>{t('detailHistory.paymentQrCode')}</Text>
           <View style={styles.qrContainer}>
             <QRCode
               value={transaction.qrPayload || ''}
@@ -367,25 +369,25 @@ const DetailHistoryScreen = () => {
             <Icon name={isExpired ? 'alert' : 'qrcode-scan'} size={18} color={isExpired ? '#FF3B30' : '#666'} />
             <Text style={styles.qrInfoText}>
               {isExpired 
-                ? 'This QR code is no longer valid. Please create a new transaction.'
-                : 'Scan QR code with banking app to make payment'}
+                ? t('detailHistory.qrCodeInvalid')
+                : t('detailHistory.scanQrCode')}
             </Text>
           </View>
         </View>
 
         {/* Bank Transfer Information */}
         <View style={styles.infoCard}>
-          <Text style={styles.cardTitle}>Bank Transfer Information</Text>
+          <Text style={styles.cardTitle}>{t('detailHistory.bankTransferInformation')}</Text>
           
           {transaction.transferInfo ? (
             <>
               <View style={styles.transferCard}>
                 <View style={styles.transferRow}>
-                  <Text style={styles.transferLabel}>Bank Name</Text>
+                  <Text style={styles.transferLabel}>{t('detailHistory.bankName')}</Text>
                   <View style={styles.transferValueContainer}>
                     <Text style={styles.transferValue}>{transaction.transferInfo.bankName}</Text>
                     <TouchableOpacity
-                      onPress={() => copyToClipboard(transaction.transferInfo!.bankName, 'Bank name copied')}
+                      onPress={() => copyToClipboard(transaction.transferInfo!.bankName, t('detailHistory.bankNameCopied'))}
                       style={styles.copyButton}
                     >
                       <Icon name="content-copy" size={16} color="#4A90E2" />
@@ -394,11 +396,11 @@ const DetailHistoryScreen = () => {
                 </View>
 
                 <View style={styles.transferRow}>
-                  <Text style={styles.transferLabel}>Account Name</Text>
+                  <Text style={styles.transferLabel}>{t('detailHistory.accountName')}</Text>
                   <View style={styles.transferValueContainer}>
                     <Text style={styles.transferValue}>{transaction.transferInfo.accountName}</Text>
                     <TouchableOpacity
-                      onPress={() => copyToClipboard(transaction.transferInfo!.accountName, 'Account name copied')}
+                      onPress={() => copyToClipboard(transaction.transferInfo!.accountName, t('detailHistory.accountNameCopied'))}
                       style={styles.copyButton}
                     >
                       <Icon name="content-copy" size={16} color="#4A90E2" />
@@ -407,11 +409,11 @@ const DetailHistoryScreen = () => {
                 </View>
 
                 <View style={styles.transferRow}>
-                  <Text style={styles.transferLabel}>Account Number</Text>
+                  <Text style={styles.transferLabel}>{t('detailHistory.accountNumber')}</Text>
                   <View style={styles.transferValueContainer}>
                     <Text style={styles.transferValue}>{transaction.transferInfo.accountNumber}</Text>
                     <TouchableOpacity
-                      onPress={() => copyToClipboard(transaction.transferInfo!.accountNumber, 'Account number copied')}
+                      onPress={() => copyToClipboard(transaction.transferInfo!.accountNumber, t('detailHistory.accountNumberCopied'))}
                       style={styles.copyButton}
                     >
                       <Icon name="content-copy" size={16} color="#4A90E2" />
@@ -420,13 +422,13 @@ const DetailHistoryScreen = () => {
                 </View>
 
                 <View style={styles.transferRow}>
-                  <Text style={styles.transferLabel}>Amount to Transfer</Text>
+                  <Text style={styles.transferLabel}>{t('detailHistory.amountToTransfer')}</Text>
                   <View style={styles.transferValueContainer}>
                     <Text style={[styles.transferValue, { color: '#4A90E2', fontWeight: '600' }]}>
                       {transaction.transferInfo.amount} VND
                     </Text>
                     <TouchableOpacity
-                      onPress={() => copyToClipboard(transaction.transferInfo!.amount.replace(/\./g, ''), 'Amount copied')}
+                      onPress={() => copyToClipboard(transaction.transferInfo!.amount.replace(/\./g, ''), t('detailHistory.amountCopied'))}
                       style={styles.copyButton}
                     >
                       <Icon name="content-copy" size={16} color="#4A90E2" />
@@ -435,13 +437,13 @@ const DetailHistoryScreen = () => {
                 </View>
 
                 <View style={styles.transferRow}>
-                  <Text style={styles.transferLabel}>Transfer Content</Text>
+                  <Text style={styles.transferLabel}>{t('detailHistory.transferContent')}</Text>
                   <View style={styles.transferValueContainer}>
                     <Text style={[styles.transferValue, { color: '#4A90E2', fontWeight: '600' }]}>
                       {transaction.transferInfo.transferContent}
                     </Text>
                     <TouchableOpacity
-                      onPress={() => copyToClipboard(transaction.transferInfo!.transferContent, 'Transfer content copied')}
+                      onPress={() => copyToClipboard(transaction.transferInfo!.transferContent, t('detailHistory.transferContentCopied'))}
                       style={styles.copyButton}
                     >
                       <Icon name="content-copy" size={16} color="#4A90E2" />
@@ -455,18 +457,18 @@ const DetailHistoryScreen = () => {
                 onPress={() => {
                   if (transaction.transferInfo) {
                     const allInfo = `Bank Name: ${transaction.transferInfo.bankName}\nAccount Name: ${transaction.transferInfo.accountName}\nAccount Number: ${transaction.transferInfo.accountNumber}\nAmount: ${transaction.transferInfo.amount} VND\nTransfer Content: ${transaction.transferInfo.transferContent}`;
-                    copyToClipboard(allInfo, 'All transfer information copied');
+                    copyToClipboard(allInfo, t('detailHistory.allInfoCopied'));
                   }
                 }}
               >
                 <Icon name="content-copy" size={18} color="#FFFFFF" />
-                <Text style={styles.copyAllText}>Copy All Information</Text>
+                <Text style={styles.copyAllText}>{t('detailHistory.copyAllInformation')}</Text>
               </TouchableOpacity>
             </>
           ) : (
             <View style={styles.noDataContainer}>
               <Icon name="bank" size={48} color="#666" />
-              <Text style={styles.noDataText}>No transfer information available</Text>
+              <Text style={styles.noDataText}>{t('detailHistory.noTransferInfo')}</Text>
             </View>
           )}
         </View>
@@ -476,8 +478,8 @@ const DetailHistoryScreen = () => {
           <Icon name="information" size={20} color="#666" />
           <Text style={styles.noteText}>
             {isPending 
-              ? 'Please transfer the exact amount to the bank account above. Your USDT will be sent to your wallet after payment confirmation.'
-              : 'This transaction has been completed. No further action required.'
+              ? t('detailHistory.pendingNote')
+              : t('detailHistory.completedNote')
             }
           </Text>
         </View>
@@ -495,7 +497,7 @@ const DetailHistoryScreen = () => {
         >
           <Icon name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Sell USDT Transaction</Text>
+        <Text style={styles.headerTitle}>{t('detailHistory.sellTransaction')}</Text>
         <View style={styles.headerRight} />
       </View>
 
@@ -504,7 +506,7 @@ const DetailHistoryScreen = () => {
         <View style={[styles.validityBar, { backgroundColor: isExpired ? '#FFEBEE' : '#FFF4E6', borderColor: isExpired ? '#FF3B30' : '#FF9500' }]}>
           <Icon name={isExpired ? 'timer-off' : 'timer'} size={18} color={isExpired ? '#FF3B30' : '#FF9500'} />
           <Text style={[styles.validityText, { color: isExpired ? '#FF3B30' : '#FF9500' }]}>
-            {isExpired ? 'This transaction has expired.' : `This transaction is valid for 5 minutes. Time left: ${formatTime(secondsLeft)}`}
+            {isExpired ? t('detailHistory.expired') : t('detailHistory.validFor5Minutes', { time: formatTime(secondsLeft) })}
           </Text>
         </View>
 
@@ -515,7 +517,7 @@ const DetailHistoryScreen = () => {
               <Icon name="arrow-up" size={24} color={getStatusColor()} />
             </View>
             <View style={styles.statusInfo}>
-              <Text style={styles.transactionType}>Sell USDT</Text>
+              <Text style={styles.transactionType}>{t('detailHistory.sellUsdt')}</Text>
               <Text style={styles.transactionDate}>
                 {transaction.createdAt ? formatCreatedAt(transaction.createdAt) : `${transaction.date} • ${transaction.time}`}
               </Text>
@@ -531,31 +533,31 @@ const DetailHistoryScreen = () => {
 
         {/* Transaction Info */}
         <View style={styles.infoCard}>
-          <Text style={styles.cardTitle}>Transaction Information</Text>
+          <Text style={styles.cardTitle}>{t('detailHistory.transactionInformation')}</Text>
           
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>USDT to Sell</Text>
+            <Text style={styles.infoLabel}>{t('detailHistory.usdtToSell')}</Text>
             <Text style={[styles.infoValue, { color: '#7B68EE' }]}>
               {transaction.usdt} USDT
             </Text>
           </View>
 
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>VND to Receive</Text>
+            <Text style={styles.infoLabel}>{t('detailHistory.vndToReceive')}</Text>
             <Text style={styles.infoValue}>
               {transaction.amount} VND
             </Text>
           </View>
 
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Exchange Rate</Text>
+            <Text style={styles.infoLabel}>{t('detailHistory.exchangeRate')}</Text>
             <Text style={styles.infoValue}>
               {transaction.exchangeRate} VND/USDT
             </Text>
           </View>
 
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Transaction Fee</Text>
+            <Text style={styles.infoLabel}>{t('detailHistory.transactionFee')}</Text>
             <Text style={styles.infoValue}>
               {transaction.fee}
             </Text>
@@ -564,7 +566,7 @@ const DetailHistoryScreen = () => {
           <View style={styles.divider} />
           
           <View style={styles.infoRow}>
-            <Text style={styles.totalLabel}>Total to Receive</Text>
+            <Text style={styles.totalLabel}>{t('detailHistory.totalToReceive')}</Text>
             <Text style={styles.totalValue}>
               {transaction.totalAmount}
             </Text>
@@ -573,7 +575,7 @@ const DetailHistoryScreen = () => {
 
         {/* QR Code for USDT Transfer */}
         <View style={styles.infoCard}>
-          <Text style={styles.cardTitle}>QR Code for USDT Transfer</Text>
+          <Text style={styles.cardTitle}>{t('detailHistory.qrCodeForUsdtTransfer')}</Text>
           
           {transaction.receiveAddress && transaction.receiveAddress.trim() !== '' ? (
             <View style={styles.qrContainer}>
@@ -588,27 +590,27 @@ const DetailHistoryScreen = () => {
           ) : (
             <View style={styles.noDataContainer}>
               <Icon name="qr-code" size={48} color="#666" />
-              <Text style={styles.noDataText}>No QR code available</Text>
+              <Text style={styles.noDataText}>{t('detailHistory.noQrCode')}</Text>
             </View>
           )}
         </View>
 
         {/* TRC20 Wallet Information */}
         <View style={styles.infoCard}>
-          <Text style={styles.cardTitle}>TRC20 Wallet Information</Text>
+          <Text style={styles.cardTitle}>{t('detailHistory.trc20WalletInformation')}</Text>
           
           {transaction.receiveAddress && transaction.receiveAddress.trim() !== '' ? (
             <>
               <View style={styles.walletCard}>
                 <View style={styles.walletHeader}>
                   <Icon name="wallet" size={20} color="#7B68EE" />
-                  <Text style={styles.walletTitle}>Send USDT To</Text>
+                  <Text style={styles.walletTitle}>{t('detailHistory.sendUsdtTo')}</Text>
                 </View>
                 
                 <View style={styles.walletAddressContainer}>
                   <Text style={styles.walletAddress}>{transaction.receiveAddress}</Text>
                   <TouchableOpacity
-                    onPress={() => copyToClipboard(transaction.receiveAddress!, 'Wallet address copied')}
+                    onPress={() => copyToClipboard(transaction.receiveAddress!, t('detailHistory.walletAddressCopied'))}
                     style={styles.copyButton}
                   >
                     <Icon name="content-copy" size={16} color="#4A90E2" />
@@ -618,12 +620,12 @@ const DetailHistoryScreen = () => {
                 <View style={styles.usdtAmountContainer}>
                   <View style={styles.usdtAmountHeader}>
                     <Icon name="currency-usd" size={16} color="#7B68EE" />
-                    <Text style={styles.usdtAmountLabel}>USDT to Send</Text>
+                    <Text style={styles.usdtAmountLabel}>{t('detailHistory.usdtToSend')}</Text>
                   </View>
                   <View style={styles.usdtAmountValueContainer}>
                     <Text style={styles.usdtAmountValue}>{transaction.usdt} USDT</Text>
                     <TouchableOpacity
-                      onPress={() => copyToClipboard(`${transaction.usdt} USDT`, 'USDT amount copied')}
+                      onPress={() => copyToClipboard(`${transaction.usdt} USDT`, t('detailHistory.usdtAmountCopied'))}
                       style={styles.copyButton}
                     >
                       <Icon name="content-copy" size={16} color="#4A90E2" />
@@ -632,14 +634,14 @@ const DetailHistoryScreen = () => {
                 </View>
 
                 <Text style={styles.walletNote}>
-                  Send {transaction.usdt} USDT to this address to complete the transaction
+                  {t('detailHistory.sendUsdtNote', { amount: transaction.usdt })}
                 </Text>
               </View>
             </>
           ) : (
             <View style={styles.noDataContainer}>
               <Icon name="wallet" size={48} color="#666" />
-              <Text style={styles.noDataText}>No wallet information available</Text>
+              <Text style={styles.noDataText}>{t('detailHistory.noWalletInfo')}</Text>
             </View>
           )}
         </View>
@@ -649,8 +651,8 @@ const DetailHistoryScreen = () => {
           <Icon name="information" size={20} color="#666" />
           <Text style={styles.noteText}>
             {isPending 
-              ? 'Please send USDT to the wallet address above. Your VND will be transferred to your bank account after confirmation.'
-              : 'This transaction has been completed. No further action required.'
+              ? t('detailHistory.sellPendingNote')
+              : t('detailHistory.completedNote')
             }
           </Text>
         </View>

@@ -17,6 +17,7 @@ import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import api from '../utils/Api';
+import { useTranslation } from '../hooks/useTranslation';
 
 interface BankAccountData {
   id: number;
@@ -42,6 +43,7 @@ type BankAccount = {
 
 const BankAccountsScreen = () => {
   const navigation = useNavigation();
+  const { t } = useTranslation();
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
   const [banks, setBanks] = useState<{[key: number]: { name: string; code: string; }}>({});
   const [loading, setLoading] = useState(true);
@@ -98,13 +100,13 @@ const BankAccountsScreen = () => {
       }
     } catch (error: any) {
       console.log('Fetch bank accounts error:', error);
-      let errorMessage = 'Failed to load bank accounts. Please try again.';
+      let errorMessage = t('bankAccounts.loadAccountsError');
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.message) {
         errorMessage = error.message;
       }
-      Alert.alert('Error', errorMessage);
+      Alert.alert(t('common.error'), errorMessage);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -158,7 +160,7 @@ const BankAccountsScreen = () => {
 
   const handleCopyAccount = (accountNumber: string) => {
     // Copy account number to clipboard
-    Alert.alert('Copied', 'Account number copied to clipboard');
+    Alert.alert(t('bankAccounts.copied'), t('bankAccounts.accountNumberCopied'));
   };
 
   const renderVerificationRequired = () => (
@@ -166,15 +168,15 @@ const BankAccountsScreen = () => {
       <View style={styles.verificationIconContainer}>
         <Icon name="shield-check" size={64} color="#FF9500" />
       </View>
-      <Text style={styles.verificationTitle}>Verification Required</Text>
+      <Text style={styles.verificationTitle}>{t('bankAccounts.verificationRequired')}</Text>
       <Text style={styles.verificationDescription}>
-        Please complete eKYC, email and phone verification before managing bank accounts.
+        {t('bankAccounts.verificationDescription')}
       </Text>
       <TouchableOpacity 
         style={styles.verificationButton}
         onPress={() => (navigation as any).navigate('Security')}
       >
-        <Text style={styles.verificationButtonText}>Go to verification</Text>
+        <Text style={styles.verificationButtonText}>{t('bankAccounts.goToVerification')}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -188,7 +190,7 @@ const BankAccountsScreen = () => {
         >
           <Icon name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Bank Accounts</Text>
+        <Text style={styles.headerTitle}>{t('bankAccounts.title')}</Text>
         <TouchableOpacity 
           style={styles.addButton}
           onPress={handleAddAccount}
@@ -206,26 +208,26 @@ const BankAccountsScreen = () => {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        <Text style={styles.sectionTitle}>Account List</Text>
+        <Text style={styles.sectionTitle}>{t('bankAccounts.accountList')}</Text>
         
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#4A90E2" />
-            <Text style={styles.loadingText}>Loading bank accounts...</Text>
+            <Text style={styles.loadingText}>{t('bankAccounts.loadingAccounts')}</Text>
           </View>
         ) : accounts.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Icon name="bank-outline" size={64} color="#CCCCCC" />
-            <Text style={styles.emptyTitle}>No bank accounts</Text>
+            <Text style={styles.emptyTitle}>{t('bankAccounts.noBankAccounts')}</Text>
             <Text style={styles.emptyDescription}>
-              Add your first bank account to start withdrawing funds
+              {t('bankAccounts.noAccountsDescription')}
             </Text>
             <TouchableOpacity 
               style={styles.addFirstButton}
               onPress={handleAddAccount}
             >
               <Icon name="plus" size={20} color="#FFFFFF" />
-              <Text style={styles.addFirstText}>Add Account</Text>
+              <Text style={styles.addFirstText}>{t('bankAccounts.addAccount')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -237,14 +239,14 @@ const BankAccountsScreen = () => {
                 ellipsizeMode="tail">{account.bank}</Text>
                 {account.isDefault && (
                   <View style={styles.defaultBadge}>
-                    <Text style={styles.defaultText}>Default</Text>
+                    <Text style={styles.defaultText}>{t('bankAccounts.default')}</Text>
                   </View>
                 )}
               </View>
 
               <View style={styles.accountInfo}>
                 <View>
-                  <Text style={styles.accountLabel}>Account Number</Text>
+                  <Text style={styles.accountLabel}>{t('bankAccounts.accountNumber')}</Text>
                   <Text style={styles.accountNumber}>{account.accountNumber}</Text>
                 </View>
                 <TouchableOpacity 
@@ -256,20 +258,20 @@ const BankAccountsScreen = () => {
               </View>
 
               <View style={styles.accountNameContainer}>
-                <Text style={styles.accountLabel}>Account Holder</Text>
+                <Text style={styles.accountLabel}>{t('bankAccounts.accountHolder')}</Text>
                 <Text style={styles.accountName}>{account.accountName}</Text>
               </View>
 
               <View style={styles.accountFooter}>
                 <Text style={styles.createdDate}>
-                  Created: {new Date(account.createdAt).toLocaleDateString()}
+                  {t('bankAccounts.created')} {new Date(account.createdAt).toLocaleDateString()}
                 </Text>
                 <TouchableOpacity 
                   style={styles.editButton}
                   onPress={() => handleEditAccount(account)}
                 >
                   <Icon name="pencil" size={16} color="#666" />
-                  <Text style={styles.editText}>Edit</Text>
+                  <Text style={styles.editText}>{t('bankAccounts.edit')}</Text>
                 </TouchableOpacity>
               </View>
             </View>

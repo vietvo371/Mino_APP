@@ -13,6 +13,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import MainNavigator from './src/navigation/MainTabNavigator';
 import { theme } from './src/theme/colors';
 import { AuthProvider } from './src/contexts/AuthContext';
+import './src/i18n'; // Initialize i18n
 
 const App = () => {
   const isDarkMode = useColorScheme() === 'dark';

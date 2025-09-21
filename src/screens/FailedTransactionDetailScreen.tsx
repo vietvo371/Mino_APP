@@ -19,6 +19,7 @@ import {
 } from 'react-native-responsive-screen';
 import { getUser } from '../utils/TokenManager';
 import api from '../utils/Api';
+import { useTranslation } from '../hooks/useTranslation';
 
 type FailedTransactionDetail = {
   id: string;
@@ -46,6 +47,7 @@ type FailedTransactionDetail = {
 };
 
 const FailedTransactionDetailScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const route = useRoute();
   const params: any = route.params || {};
@@ -186,18 +188,18 @@ const FailedTransactionDetailScreen = () => {
           >
             <Icon name="arrow-left" size={24} color="#000" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Failed Transaction</Text>
+          <Text style={styles.headerTitle}>{t('failedTransaction.title')}</Text>
           <View style={styles.headerRight} />
         </View>
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#4A90E2" />
-            <Text style={styles.loadingText}>Loading transaction...</Text>
+            <Text style={styles.loadingText}>{t('failedTransaction.loadingTransaction')}</Text>
           </View>
         ) : (
           <View style={styles.errorContainer}>
             <Icon name="alert-circle" size={48} color="#FF3B30" />
-            <Text style={styles.errorText}>Transaction not found</Text>
+            <Text style={styles.errorText}>{t('failedTransaction.transactionNotFound')}</Text>
           </View>
         )}
       </SafeAreaView>
@@ -225,7 +227,7 @@ const FailedTransactionDetailScreen = () => {
           <Icon name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
-          {isBuy ? 'Buy USDT' : 'Sell USDT'} - Failed
+          {isBuy ? t('failedTransaction.buyUsdtFailed') : t('failedTransaction.sellUsdtFailed')}
         </Text>
         <View style={styles.headerRight} />
       </View>
@@ -239,7 +241,7 @@ const FailedTransactionDetailScreen = () => {
             </View>
             <View style={styles.statusInfo}>
               <Text style={styles.transactionType}>
-                {isBuy ? 'Buy USDT' : 'Sell USDT'} - Failed
+                {isBuy ? t('failedTransaction.buyUsdtFailed') : t('failedTransaction.sellUsdtFailed')}
               </Text>
               <Text style={styles.transactionDate}>
                 {transaction.createdAt ? formatCreatedAt(transaction.createdAt) : `${transaction.date} • ${transaction.time}`}
@@ -249,17 +251,17 @@ const FailedTransactionDetailScreen = () => {
           <View style={styles.statusContainer}>
             <View style={[styles.statusDot, { backgroundColor: '#FF3B30' }]} />
             <Text style={[styles.statusText, { color: '#FF3B30' }]}>
-              Failed
+              {t('history.failed')}
             </Text>
           </View>
         </View>
 
         {/* Transaction Info */}
         <View style={styles.failedInfoCard}>
-          <Text style={styles.cardTitle}>Transaction Information</Text>
+          <Text style={styles.cardTitle}>{t('failedTransaction.transactionInformation')}</Text>
           
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Transaction ID</Text>
+            <Text style={styles.infoLabel}>{t('successTransaction.transactionId')}</Text>
             <View style={styles.infoValueContainer}>
               <Text style={styles.infoValue}>
                 {transaction.transactionId && transaction.transactionId.length > 16 
@@ -268,7 +270,7 @@ const FailedTransactionDetailScreen = () => {
                 }
               </Text>
               <TouchableOpacity
-                onPress={() => copyToClipboard(transaction.transactionId || '', 'Transaction ID copied')}
+                onPress={() => copyToClipboard(transaction.transactionId || '', t('successTransaction.transactionIdCopied'))}
                 style={styles.copyButton}
               >
                 <Icon name="content-copy" size={16} color="#4A90E2" />
@@ -280,14 +282,14 @@ const FailedTransactionDetailScreen = () => {
             // Buy USDT - Focus on what user would have received
             <>
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>USDT to Receive</Text>
+                <Text style={styles.infoLabel}>{t('failedTransaction.usdtToReceive')}</Text>
                 <Text style={[styles.infoValue, { color: '#FF3B30', fontSize: wp('4.2%'), fontWeight: '600' }]}>
                   {transaction.usdt} USDT
                 </Text>
               </View>
 
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Would Receive to Wallet</Text>
+                <Text style={styles.infoLabel}>{t('failedTransaction.wouldReceiveToWallet')}</Text>
                 <View style={styles.infoValueContainer}>
                   <Text style={[styles.infoValue, { color: '#FF3B30', fontSize: wp('3.5%') }]}>
                     {transaction.receiveAddress && transaction.receiveAddress.length > 16 
@@ -297,7 +299,7 @@ const FailedTransactionDetailScreen = () => {
                   </Text>
                   {transaction.receiveAddress && (
                     <TouchableOpacity
-                      onPress={() => copyToClipboard(transaction.receiveAddress!, 'Wallet address copied')}
+                      onPress={() => copyToClipboard(transaction.receiveAddress!, t('successTransaction.walletAddressCopied'))}
                       style={styles.copyButton}
                     >
                       <Icon name="content-copy" size={16} color="#4A90E2" />
@@ -307,21 +309,21 @@ const FailedTransactionDetailScreen = () => {
               </View>
 
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Amount to Pay</Text>
+                <Text style={styles.infoLabel}>{t('failedTransaction.amountToPay')}</Text>
                 <Text style={styles.infoValue}>
                   {transaction.amount} VND
                 </Text>
               </View>
 
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Exchange Rate</Text>
+                <Text style={styles.infoLabel}>{t('successTransaction.exchangeRate')}</Text>
                 <Text style={styles.infoValue}>
                   {transaction.exchangeRate} VND/USDT
                 </Text>
               </View>
 
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Transaction Fee</Text>
+                <Text style={styles.infoLabel}>{t('successTransaction.transactionFee')}</Text>
                 <Text style={styles.infoValue}>
                   {transaction.fee}
                 </Text>
@@ -330,7 +332,7 @@ const FailedTransactionDetailScreen = () => {
               <View style={styles.divider} />
               
               <View style={styles.infoRow}>
-                <Text style={styles.totalLabel}>Total to Pay</Text>
+                <Text style={styles.totalLabel}>{t('failedTransaction.totalToPay')}</Text>
                 <Text style={[styles.totalValue, { color: '#FF3B30' }]}>
                   {transaction.totalAmount}
                 </Text>
@@ -340,14 +342,14 @@ const FailedTransactionDetailScreen = () => {
             // Sell USDT - Focus on what user would have received
             <>
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>USDT to Sell</Text>
+                <Text style={styles.infoLabel}>{t('failedTransaction.usdtToSell')}</Text>
                 <Text style={[styles.infoValue, { color: '#FF3B30', fontSize: wp('4.2%'), fontWeight: '600' }]}>
                   {transaction.usdt} USDT
                 </Text>
               </View>
 
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Would Sell from Wallet</Text>
+                <Text style={styles.infoLabel}>{t('failedTransaction.wouldSellFromWallet')}</Text>
                 <View style={styles.infoValueContainer}>
                   <Text style={[styles.infoValue, { color: '#FF3B30', fontSize: wp('3.5%') }]}>
                     {transaction.receiveAddress && transaction.receiveAddress.length > 16 
@@ -357,7 +359,7 @@ const FailedTransactionDetailScreen = () => {
                   </Text>
                   {transaction.receiveAddress && (
                     <TouchableOpacity
-                      onPress={() => copyToClipboard(transaction.receiveAddress!, 'Wallet address copied')}
+                      onPress={() => copyToClipboard(transaction.receiveAddress!, t('successTransaction.walletAddressCopied'))}
                       style={styles.copyButton}
                     >
                       <Icon name="content-copy" size={16} color="#4A90E2" />
@@ -367,21 +369,21 @@ const FailedTransactionDetailScreen = () => {
               </View>
 
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Amount to Receive</Text>
+                <Text style={styles.infoLabel}>{t('failedTransaction.amountToReceive')}</Text>
                 <Text style={[styles.infoValue, { color: '#FF3B30', fontSize: wp('4.2%'), fontWeight: '600' }]}>
                   {transaction.amount} VND
                 </Text>
               </View>
 
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Would Receive to Bank</Text>
+                <Text style={styles.infoLabel}>{t('failedTransaction.wouldReceiveToBank')}</Text>
                 <View style={styles.infoValueContainer}>
                   <Text style={[styles.infoValue, { color: '#FF3B30', fontSize: wp('3.5%') }]}>
                     {transaction.transferInfo?.bankName || 'N/A'}
                   </Text>
                   {transaction.transferInfo?.bankName && (
                     <TouchableOpacity
-                      onPress={() => copyToClipboard(transaction.transferInfo!.bankName, 'Bank name copied')}
+                      onPress={() => copyToClipboard(transaction.transferInfo!.bankName, t('successTransaction.bankNameCopied'))}
                       style={styles.copyButton}
                     >
                       <Icon name="content-copy" size={16} color="#4A90E2" />
@@ -391,14 +393,14 @@ const FailedTransactionDetailScreen = () => {
               </View>
 
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Exchange Rate</Text>
+                <Text style={styles.infoLabel}>{t('successTransaction.exchangeRate')}</Text>
                 <Text style={styles.infoValue}>
                   {transaction.exchangeRate} VND/USDT
                 </Text>
               </View>
 
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Transaction Fee</Text>
+                <Text style={styles.infoLabel}>{t('successTransaction.transactionFee')}</Text>
                 <Text style={styles.infoValue}>
                   {transaction.fee}
                 </Text>
@@ -407,7 +409,7 @@ const FailedTransactionDetailScreen = () => {
               <View style={styles.divider} />
               
               <View style={styles.infoRow}>
-                <Text style={styles.totalLabel}>Total to Receive</Text>
+                <Text style={styles.totalLabel}>{t('failedTransaction.totalToReceive')}</Text>
                 <Text style={[styles.totalValue, { color: '#FF3B30' }]}>
                   {transaction.totalAmount}
                 </Text>
@@ -418,18 +420,18 @@ const FailedTransactionDetailScreen = () => {
 
         {/* Failure Reason */}
         <View style={styles.failedInfoCard}>
-          <Text style={styles.cardTitle}>Failure Reason</Text>
+          <Text style={styles.cardTitle}>{t('failedTransaction.failureReason')}</Text>
           <View style={styles.failureReasonContainer}>
             <Icon name="alert-circle" size={20} color="#FF3B30" />
             <Text style={styles.failureReasonText}>
-              This transaction could not be completed. This may be due to:
+              {t('failedTransaction.transactionNotCompleted')}
             </Text>
           </View>
           <View style={styles.failureReasonsList}>
-            <Text style={styles.failureReasonItem}>• Payment not received within time limit</Text>
-            <Text style={styles.failureReasonItem}>• Incorrect payment amount</Text>
-            <Text style={styles.failureReasonItem}>• Network congestion or technical issues</Text>
-            <Text style={styles.failureReasonItem}>• Invalid transaction details</Text>
+            <Text style={styles.failureReasonItem}>{t('failedTransaction.paymentNotReceived')}</Text>
+            <Text style={styles.failureReasonItem}>{t('failedTransaction.incorrectAmount')}</Text>
+            <Text style={styles.failureReasonItem}>{t('failedTransaction.networkIssues')}</Text>
+            <Text style={styles.failureReasonItem}>{t('failedTransaction.invalidDetails')}</Text>
           </View>
         </View>
 
@@ -438,8 +440,8 @@ const FailedTransactionDetailScreen = () => {
           <Icon name="close-circle" size={20} color="#FF3B30" />
           <Text style={[styles.noteText, { color: '#FF3B30' }]}>
             {isBuy 
-              ? `This transaction has failed. You would have received ${transaction.usdt} USDT to your wallet. Please create a new transaction if needed.`
-              : `This transaction has failed. You would have received ${transaction.amount} VND to your bank account. Please create a new transaction if needed.`
+              ? `${t('failedTransaction.transactionFailed')} ${transaction.usdt} USDT ${t('failedTransaction.toWallet')}`
+              : `${t('failedTransaction.transactionFailed')} ${transaction.amount} VND ${t('failedTransaction.toBankAccount')}`
             }
           </Text>
         </View>

@@ -11,59 +11,60 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { theme } from '../theme/colors';
+import { useTranslation } from '../hooks/useTranslation';
 
-const FAQ_ITEMS = [
+const getFaqItems = (t: any) => [
   {
     id: '1',
-    category: 'Account',
+    category: t('help.account'),
     questions: [
       {
         id: '1-1',
-        question: 'How to verify account?',
-        answer: 'To verify your account, you need to provide ID card and take a selfie.',
+        question: t('help.howToVerify'),
+        answer: t('help.verifyAnswer'),
       },
       {
         id: '1-2',
-        question: 'What to do if forgot password?',
-        answer: 'You can use the Forgot Password feature and follow the instructions.',
+        question: t('help.forgotPassword'),
+        answer: t('help.forgotPasswordAnswer'),
       },
     ],
   },
   {
     id: '2',
-    category: 'Trading',
+    category: t('help.trading'),
     questions: [
       {
         id: '2-1',
-        question: 'What are the transaction fees?',
-        answer: 'Transaction fees are calculated based on transaction type and amount.',
+        question: t('help.transactionFees'),
+        answer: t('help.feesAnswer'),
       },
       {
         id: '2-2',
-        question: 'Transaction processing time?',
-        answer: 'Normal processing time is 5-10 minutes depending on transaction type.',
+        question: t('help.processingTime'),
+        answer: t('help.processingAnswer'),
       },
     ],
   },
 ];
 
-const CONTACT_METHODS = [
+const getContactMethods = (t: any) => [
   {
     id: 'email',
-    title: 'Email',
-    description: 'support@mimo.com',
+    title: t('help.email'),
+    description: 'dzfullstack@gmail.com',
     icon: 'email',
   },
   {
     id: 'phone',
-    title: 'Hotline',
-    description: '1900 xxxx',
+    title: t('help.hotline'),
+    description: '0388824999',
     icon: 'phone',
   },
   {
     id: 'chat',
-    title: 'Live Chat',
-    description: '24/7 Support',
+    title: t('help.liveChat'),
+    description: t('help.support24'),
     icon: 'message-text',
   },
 ];
@@ -72,6 +73,7 @@ const HelpScreen = () => {
   const navigation = useNavigation();
   const [expandedCategory, setExpandedCategory] = React.useState<string | null>(null);
   const [expandedQuestion, setExpandedQuestion] = React.useState<string | null>(null);
+  const { t } = useTranslation();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -82,7 +84,7 @@ const HelpScreen = () => {
         >
           <Icon name="arrow-left" size={24} color="#1C1C1E" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Help</Text>
+        <Text style={styles.headerTitle}>{t('help.title')}</Text>
         <View style={styles.headerRight} />
       </View>
 
@@ -90,11 +92,11 @@ const HelpScreen = () => {
         {/* Search Bar */}
         <TouchableOpacity style={styles.searchBar}>
           <Icon name="magnify" size={20} color="#8E8E93" />
-          <Text style={styles.searchPlaceholder}>Search questions...</Text>
+          <Text style={styles.searchPlaceholder}>{t('help.searchPlaceholder')}</Text>
         </TouchableOpacity>
 
         {/* FAQ Sections */}
-        {FAQ_ITEMS.map(category => (
+        {getFaqItems(t).map(category => (
           <View key={category.id} style={styles.section}>
             <TouchableOpacity
               style={styles.categoryHeader}
@@ -141,9 +143,9 @@ const HelpScreen = () => {
 
         {/* Contact Methods */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Contact Support</Text>
+          <Text style={styles.sectionTitle}>{t('help.contactSupport')}</Text>
           <View style={styles.contactList}>
-            {CONTACT_METHODS.map(method => (
+            {getContactMethods(t).map(method => (
               <TouchableOpacity key={method.id} style={styles.contactItem}>
                 <View style={[styles.contactIcon, { backgroundColor: '#4A90E215' }]}>
                   <Icon name={method.icon} size={24} color="#4A90E2" />

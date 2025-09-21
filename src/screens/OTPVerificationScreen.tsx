@@ -22,11 +22,13 @@ import {
 } from 'react-native-responsive-screen';
 
 import { StackScreen } from '../navigation/types';
+import { useTranslation } from '../hooks/useTranslation';
 
 const { width, height } = Dimensions.get('window');
 const OTP_LENGTH = 6;
 
 const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, route }) => {
+  const { t } = useTranslation();
   const { identifier, type, flow = 'forgot' } = route.params;
 
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -146,7 +148,7 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
   const handleVerifyOTP = async () => {
     const otpString = otp.join('');
     if (otpString.length !== OTP_LENGTH) {
-      Alert.alert('Notification', 'Please enter complete OTP code');
+      Alert.alert(t('common.error'), t('otp.invalidOtp'));
       return;
     }
 
@@ -183,11 +185,11 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
       
       if (response.data.status === false) {
         Alert.alert(
-          'Verification Failed!', 
+          t('otp.verificationFailed'), 
           response.data.message,
           [
             {
-              text: 'OK',
+              text: t('common.confirm'),
               onPress: () => {
                 // Reset verification state to allow retry
                 setHasVerified(false);
@@ -201,10 +203,10 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
       } else {
         if (flow === 'forgot') {
           // Navigate to ChangePassword screen for forgot password flow
-          Alert.alert('Verification Successful!', response.data.message,
+          Alert.alert(t('otp.verificationSuccessful'), response.data.message,
             [
               {
-                text: 'OK',
+                text: t('common.confirm'),
                 onPress: () => navigation.navigate('ChangePassword', {
                   identifier: identifier,
                   type: type,
@@ -215,10 +217,10 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
           );
         } else {
           // Navigate to Login for register flow
-          Alert.alert('Verification Successful!', response.data.message,
+          Alert.alert(t('otp.verificationSuccessful'), response.data.message,
             [
               {
-                text: 'OK',
+                text: t('common.confirm'),
                 onPress: () => navigation.replace('Login')
               }
             ]
@@ -229,18 +231,18 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
       console.log('OTP verification error:', error);
       
       // Handle different error types
-      let errorMessage = 'Invalid OTP code. Please try again.';
+      let errorMessage = t('otp.invalidOtp');
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.response?.data?.status === false) {
-        errorMessage = error.response.data.message || 'Xác thực email thất bại, vui lòng thử lại!';
+        errorMessage = error.response.data.message || t('otp.invalidOtp');
       } else if (error.message) {
         errorMessage = error.message;
       }
       
-      Alert.alert('Verification Failed', errorMessage, [
+      Alert.alert(t('otp.verificationFailed'), errorMessage, [
         {
-          text: 'OK',
+          text: t('common.confirm'),
           onPress: () => {
             // Reset verification state to allow retry
             setHasVerified(false);
@@ -286,20 +288,20 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
       setCurrentInputIndex(0);
       setOtpString('');
       setHasVerified(false);
-      Alert.alert('Success', 'OTP code has been resent');
+      Alert.alert(t('common.success'), t('otp.otpResent'));
     } catch (error: any) {
       console.log('Resend OTP error:', error);
       
-      let errorMessage = 'Failed to resend OTP. Please try again.';
+      let errorMessage = t('otp.failedResend');
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.response?.data?.status === false) {
-        errorMessage = error.response.data.message || 'Failed to resend OTP. Please try again.';
+        errorMessage = error.response.data.message || t('otp.failedResend');
       } else if (error.message) {
         errorMessage = error.message;
       }
       
-      Alert.alert('Error', errorMessage);
+      Alert.alert(t('common.error'), errorMessage);
     } finally {
       setLoading(false);
     }
@@ -342,14 +344,14 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
 
             <View style={styles.headerContent}>
               <Text style={styles.headerTitle}>
-                {flow === 'register' ? 'Verify Your Account' : flow === 'forgot' ? 'Reset Password' : 'OTP Verification'}
+                {flow === 'register' ? t('otp.verifyAccount') : flow === 'forgot' ? t('otp.resetPassword') : t('otp.otpVerification')}
               </Text>
               <Text style={styles.headerSubtitle}>
                 {flow === 'register' 
-                  ? `Enter verification code sent to ${formatIdentifier(identifier)} to complete your registration`
+                  ? t('otp.enterCodeRegister', { identifier: formatIdentifier(identifier) })
                   : flow === 'forgot'
-                  ? `Enter verification code sent to ${formatIdentifier(identifier)} to reset your password`
-                  : `Enter verification code sent to ${formatIdentifier(identifier)}`
+                  ? t('otp.enterCodeReset', { identifier: formatIdentifier(identifier) })
+                  : t('otp.enterCodeGeneric', { identifier: formatIdentifier(identifier) })
                 }
               </Text>
             </View>
@@ -430,7 +432,7 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
               {!canResend ? (
                 <Animated.View entering={FadeInDown.duration(400).delay(600)}>
                   <Text style={styles.timerText}>
-                    Resend code after <Text style={styles.timer}>{timer}s</Text>
+                    {t('otp.resendAfter')} <Text style={styles.timer}>{timer}s</Text>
                   </Text>
                 </Animated.View>
               ) : (
@@ -439,7 +441,7 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
                     onPress={handleResendOTP}
                     style={styles.resendButton}
                     activeOpacity={0.7}>
-                    <Text style={styles.resendButtonText}>Resend Code</Text>
+                    <Text style={styles.resendButtonText}>{t('otp.resendCode')}</Text>
                   </TouchableOpacity>
                 </Animated.View>
               )}
@@ -493,10 +495,10 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
         visible={loading} 
         message={
           flow === 'register' 
-            ? "Verifying your account..." 
+            ? t('otp.verifyingAccount')
             : flow === 'forgot' 
-            ? "Verifying reset code..." 
-            : "Verifying OTP..."
+            ? t('otp.verifyingReset')
+            : t('otp.verifyingOtp')
         } 
       />
     </SafeAreaView>

@@ -8,32 +8,33 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import EventCard from '../component/EventCard';
 import Marquee from '../component/Marquee';
 import { theme } from '../theme/colors';
+import { useTranslation } from '../hooks/useTranslation';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-const onboardingData = [
+const getOnboardingData = (t: any) => [
   {
     id: 1,
-    title: 'Welcome to MIMO',
-    description: 'Your trusted digital wallet for secure and seamless transactions.',
+    title: t('onboarding.welcomeTitle'),
+    description: t('onboarding.welcomeDescription'),
     image: require('../assets/images/started/welcome.jpg'),
   },
   {
     id: 2,
-    title: 'Fast eKYC',
-    description: 'Quick and secure identity verification for your peace of mind.',
+    title: t('onboarding.ekycTitle'),
+    description: t('onboarding.ekycDescription'),
     image: require('../assets/images/started/ekyc.jpg'),
   },
   {
     id: 3,
-    title: 'USDT & VND',
-    description: 'Easily deposit and withdraw USDT and VND with competitive rates.',
+    title: t('onboarding.usdtVndTitle'),
+    description: t('onboarding.usdtVndDescription'),
     image: require('../assets/images/started/deposit.jpg'),
   },
   {
     id: 4,
-    title: 'Security First',
-    description: 'Advanced encryption and multi-layer security to protect your assets.',
+    title: t('onboarding.securityTitle'),
+    description: t('onboarding.securityDescription'),
     image: require('../assets/images/started/security.jpg'),
   },
 ];
@@ -43,7 +44,9 @@ interface OnboardingScreenProps {
 }
 
 const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
+  const { t } = useTranslation();
   const [activeIndex, setActiveIndex] = useState(0);
+  const onboardingData = getOnboardingData(t);
 
   const handleComplete = async () => {
     try {
@@ -127,7 +130,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
               entering={FadeInUp.springify().mass(1).damping(30).delay(500)}
             >
               <Animated.Text style={styles.buttonText}>
-                Get Started
+                {t('onboarding.getStarted')}
               </Animated.Text>
             </AnimatedPressable>
           </View>

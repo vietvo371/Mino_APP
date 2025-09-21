@@ -11,36 +11,39 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { theme } from '../theme/colors';
+import { useTranslation } from '../hooks/useTranslation';
 
-const NOTIFICATIONS = [
+const getNotifications = (t: any) => [
   {
     id: '1',
     type: 'transaction',
-    title: 'Transaction Successful',
-    message: 'You have successfully deposited 100 USDT to your wallet',
-    time: '2 hours ago',
+    title: t('notifications.transactionSuccessful'),
+    message: t('notifications.transactionMessage'),
+    time: `2 ${t('notifications.hoursAgo')}`,
     read: false,
   },
   {
     id: '2',
     type: 'security',
-    title: 'New Login',
-    message: 'Login detected from new device',
-    time: '1 day ago',
+    title: t('notifications.newLogin'),
+    message: t('notifications.loginMessage'),
+    time: `1 ${t('notifications.daysAgo')}`,
     read: true,
   },
   {
     id: '3',
     type: 'system',
-    title: 'System Maintenance',
-    message: 'System will be under maintenance from 22:00 - 23:00',
-    time: '2 days ago',
+    title: t('notifications.systemMaintenance'),
+    message: t('notifications.maintenanceMessage'),
+    time: `2 ${t('notifications.daysAgo')}`,
     read: true,
   },
 ];
 
 const NotificationsScreen = () => {
   const navigation = useNavigation();
+  const { t } = useTranslation();
+  const notifications = getNotifications(t);
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -64,7 +67,7 @@ const NotificationsScreen = () => {
         >
           <Icon name="arrow-left" size={24} color="#1C1C1E" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Notifications</Text>
+        <Text style={styles.headerTitle}>{t('notifications.title')}</Text>
         <TouchableOpacity style={styles.headerRight}>
           <Icon name="dots-horizontal" size={24} color="#1C1C1E" />
         </TouchableOpacity>
@@ -73,9 +76,9 @@ const NotificationsScreen = () => {
       <ScrollView style={styles.content}>
         {/* Today Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Today</Text>
+          <Text style={styles.sectionTitle}>{t('notifications.today')}</Text>
           <View style={styles.notificationList}>
-            {NOTIFICATIONS.filter(n => n.time.includes('hour')).map(notification => (
+            {notifications.filter(n => n.time.includes(t('notifications.hoursAgo'))).map(notification => (
               <TouchableOpacity
                 key={notification.id}
                 style={[
@@ -106,9 +109,9 @@ const NotificationsScreen = () => {
 
         {/* Earlier Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Earlier</Text>
+          <Text style={styles.sectionTitle}>{t('notifications.earlier')}</Text>
           <View style={styles.notificationList}>
-            {NOTIFICATIONS.filter(n => n.time.includes('day')).map(notification => (
+            {notifications.filter(n => n.time.includes(t('notifications.daysAgo'))).map(notification => (
               <TouchableOpacity
                 key={notification.id}
                 style={[

@@ -24,6 +24,7 @@ import InputCustom from '../component/InputCustom';
 import ButtonCustom from '../component/ButtonCustom';
 import LoadingOverlay from '../component/LoadingOverlay';
 import api from '../utils/Api';
+import { useTranslation } from '../hooks/useTranslation';
 
 const { width, height } = Dimensions.get('window');
 
@@ -40,6 +41,7 @@ interface UserProfile {
 }
 
 const EditProfileScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -95,27 +97,27 @@ const EditProfileScreen = () => {
     // Only validate full name if not eKYC verified
     if (!isEkycVerified) {
       if (!fullName.trim()) {
-        newErrors.full_name = 'Full name is required';
+        newErrors.full_name = t('editProfile.fullNameRequired');
       } else if (fullName.trim().length < 2) {
-        newErrors.full_name = 'Full name must be at least 2 characters';
+        newErrors.full_name = t('editProfile.fullNameMinLength');
       }
     }
 
     if (!address.trim()) {
-      newErrors.address = 'Address is required';
+      newErrors.address = t('editProfile.addressRequired');
     }
 
     // Only validate email if not verified and has value
     if (!isEmailVerified && email.trim()) {
       if (!/\S+@\S+\.\S+/.test(email.trim())) {
-        newErrors.email = 'Please enter a valid email';
+        newErrors.email = t('editProfile.validEmail');
       }
     }
 
     // Only validate phone if not verified and has value
     if (!isPhoneVerified && phone.trim()) {
       if (!/^[0-9+().\-\s]{7,15}$/.test(phone.trim())) {
-        newErrors.number_phone = 'Please enter a valid phone number';
+        newErrors.number_phone = t('editProfile.validPhone');
       }
     }
 
@@ -153,14 +155,14 @@ const EditProfileScreen = () => {
       const response = await api.post('/client/update-profile',   );
       
       if (response.data.status) {
-        Alert.alert('Success', 'Update profile successfully!', [
+        Alert.alert(t('common.success'), t('editProfile.updateSuccess'), [
           {
-            text: 'OK',
+            text: t('common.confirm'),
             onPress: () => navigation.goBack()
           }
         ]);
       } else {
-        Alert.alert('Error', response.data.message || 'Update profile failed');
+        Alert.alert(t('common.error'), response.data.message || t('editProfile.updateFailed'));
       }
     } catch (error: any) {
       console.log('Update profile error:', error);
@@ -171,11 +173,11 @@ const EditProfileScreen = () => {
         });
         setErrors(newErrors);
       } else {
-        let errorMessage = 'Update profile failed. Please try again.';
+        let errorMessage = t('editProfile.updateFailed');
         if (error.response?.data?.message) {
           errorMessage = error.response.data.message;
         }
-        Alert.alert('Error', errorMessage);
+        Alert.alert(t('common.error'), errorMessage);
       }
     } finally {
       setSaving(false);
@@ -218,7 +220,7 @@ const EditProfileScreen = () => {
         {isVerified && (
           <View style={styles.verifiedBadge}>
             <Icon name="check-circle" size={14} color={theme.colors.success || '#34C759'} />
-            <Text style={styles.verifiedText}>Verified</Text>
+            <Text style={styles.verifiedText}>{t('editProfile.verified')}</Text>
           </View>
         )}
       </View>
@@ -239,8 +241,8 @@ const EditProfileScreen = () => {
       {isVerified && (
         <Text style={styles.disabledText}>
           {fieldKey === 'full_name' 
-            ? 'This field has been verified through eKYC and cannot be edited'
-            : 'This field has been verified and cannot be edited'
+            ? t('editProfile.ekycVerifiedDesc')
+            : t('editProfile.verifiedDesc')
           }
         </Text>
       )}
@@ -252,7 +254,7 @@ const EditProfileScreen = () => {
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
-          <Text style={styles.loadingText}>Loading information...</Text>
+          <Text style={styles.loadingText}>{t('editProfile.loadingInfo')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -283,7 +285,7 @@ const EditProfileScreen = () => {
             </TouchableOpacity>
 
             <View style={styles.headerContent}>
-              <Text style={styles.headerTitle}>Edit Profile</Text>
+              <Text style={styles.headerTitle}>{t('editProfile.title')}</Text>
             </View>
           </Animated.View>
 
@@ -302,9 +304,9 @@ const EditProfileScreen = () => {
               <View style={styles.formContainer}>
                 {renderInputField(
                   'full_name',
-                  'Full Name',
+                  t('editProfile.fullName'),
                   fullName,
-                  'Enter your full name',
+                  t('editProfile.enterFullName'),
                   isEkycVerified, // Not editable if eKYC verified
                   'default',
                   'account-outline'
@@ -312,9 +314,9 @@ const EditProfileScreen = () => {
 
                 {renderInputField(
                   'email',
-                  'Email',
+                  t('editProfile.email'),
                   email,
-                  'Enter your email',
+                  t('editProfile.enterEmail'),
                   isEmailVerified,
                   'email-address',
                   'email-outline'
@@ -322,9 +324,9 @@ const EditProfileScreen = () => {
 
                 {renderInputField(
                   'number_phone',
-                  'Phone',
+                  t('editProfile.phone'),
                   phone,
-                  'Enter your phone',
+                  t('editProfile.enterPhone'),
                   isPhoneVerified,
                   'phone-pad',
                   'phone-outline'
@@ -332,9 +334,9 @@ const EditProfileScreen = () => {
 
                 {renderInputField(
                   'address',
-                  'Address',
+                  t('editProfile.address'),
                   address,
-                  'Enter your address',
+                  t('editProfile.enterAddress'),
                   false, // Always editable
                   'default',
                   'map-marker-outline'
@@ -343,7 +345,7 @@ const EditProfileScreen = () => {
 
               {/* Save Button */}
               <ButtonCustom
-                title="Save Changes"
+                title={t('editProfile.saveChanges')}
                 onPress={handleSave}
                 style={styles.saveButton}
                 icon="content-save"
@@ -354,7 +356,7 @@ const EditProfileScreen = () => {
         </View>
       </KeyboardAvoidingView>
 
-      <LoadingOverlay visible={saving} message="Saving changes..." />
+      <LoadingOverlay visible={saving} message={t('editProfile.savingChanges')} />
     </SafeAreaView>
   );
 };
