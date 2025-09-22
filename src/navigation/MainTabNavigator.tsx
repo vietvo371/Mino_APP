@@ -113,7 +113,7 @@ const MainTabs = () => {
 const MainNavigator = () => {
   return (
     <Stack.Navigator
-      initialRouteName="Loading" 
+      initialRouteName="EkycReview" 
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',

@@ -4,11 +4,21 @@ import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { EkycService } from '../services/EkycService';
 
 export const EkycReviewScreen: React.FC = () => {
+  // Flow: chạy Full eKYC xong Verify Face so khớp với ảnh tham chiếu
   const handleEkycFull = async () => {
     try {
-      const result = await EkycService.startEkycFull();
-      console.log('eKYC Full Result:', result);
-      // Xử lý kết quả
+      const fullResult = await EkycService.startEkycFull();
+      console.log('eKYC Full Result:', fullResult);
+      // Lấy hash ảnh tham chiếu (ví dụ near_img) từ kết quả full
+      const full: any = fullResult;
+      const nearImg = full?.LOG_LIVENESS_FACE ? (JSON.parse(full.LOG_LIVENESS_FACE)?.imgs?.near_img || '') : '';
+      // Gọi verify face với ảnh tham chiếu
+      if (nearImg) {
+        const verifyResult = await EkycService.verifyFace(nearImg);
+        console.log('eKYC Verify Face Result:', verifyResult);
+      } else {
+        console.log('No reference hash found to verify face');
+      }
     } catch (error) {
       console.error('eKYC Full Error:', error);
     }

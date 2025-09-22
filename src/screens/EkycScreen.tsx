@@ -16,9 +16,6 @@ import { useAuth } from '../contexts/AuthContext';
 import LoadingOverlay from '../component/LoadingOverlay';
 import { theme } from '../theme/colors';
 
-const TOKEN_ID = 'RE83MXptNWtHblp1WUpnMGxPM3luSW1ZSHlqeDQyWWw=';
-const TOKEN_KEY = 'SKNw9desYvKTAQDCXMgc2iQLmjksVUKNsW';
-const ACCESS_TOKEN = 'eyjhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...'; // Thay bằng access token thật
 
 const EkycScreen = () => {
   const navigation = useNavigation();
@@ -49,7 +46,6 @@ const EkycScreen = () => {
 
   const initializeSDK = async () => {
     try {
-      await initialize(TOKEN_ID, TOKEN_KEY, ACCESS_TOKEN);
     } catch (err) {
       Alert.alert('Lỗi', 'Không thể khởi tạo SDK eKYC. Vui lòng thử lại sau.');
     }

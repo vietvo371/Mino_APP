@@ -258,6 +258,49 @@ RCT_EXPORT_METHOD(startEkycFace:(RCTPromiseResolveBlock)resolve rejecter:(RCTPro
 };
 
 
+// Verify face against a reference hash (compare with stored face)
+RCT_EXPORT_METHOD(startEkycFaceWithReference:(NSString *)referenceHash resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
+  NSLog(@"startEkycFaceWithReference");
+  self._resolve = resolve;
+  self._reject = reject;
+
+  ICEkycCameraViewController *camera = (ICEkycCameraViewController *) [ICEkycCameraRouter createModule];
+  camera.cameraDelegate = self;
+  [self initParamSdkForCamera:camera];
+
+  camera.documentType = IdentityCard;
+  camera.flowType = face;
+  camera.versionSdk = ProOval;
+
+  // Enable liveness & mask checks (safety)
+  camera.isCheckMaskedFace = YES;
+
+  // Enable compare against provided reference hash
+  camera.isEnableCompare = YES;
+  camera.isCompareGeneral = YES;
+  camera.hashImageCompare = referenceHash ?: @"";
+  camera.thresLevel = @"normal";
+
+  camera.challengeCode = @"INNOVATIONCENTER";
+  camera.languageSdk = @"vi";
+  camera.isShowTutorial = YES;
+  camera.isEnableGotIt = YES;
+  camera.cameraPositionForPortrait = PositionFront;
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+    UIViewController *root = [[[UIApplication sharedApplication] delegate] window].rootViewController;
+    BOOL modalPresent = (BOOL) (root.presentedViewController);
+    if (modalPresent) {
+      UIViewController *parent = root.presentedViewController;
+      [parent setModalPresentationStyle:UIModalPresentationFullScreen];
+      [parent showViewController:camera sender:parent];
+    } else {
+      [camera setModalPresentationStyle:UIModalPresentationFullScreen];
+      [root showDetailViewController:camera sender:root];
+    }
+  });
+};
+
 -(void) initParamSdkForCamera:(ICEkycCameraViewController *)camera {
   camera.tokenKey = @"MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKDkNJECt3ow2jyClCKo3r2gJ+0zBhS0T3CPvjnWbdfhgCwO19R7bmhzLGFKuMfumnmnnxK73KnQfppt/jKsGWcCAwEAAQ==";
   camera.tokenId = @"3e87ddb5-25d2-06ce-e063-63199f0afe5b";

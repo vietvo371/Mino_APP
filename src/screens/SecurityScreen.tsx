@@ -116,6 +116,21 @@ const SecurityScreen = () => {
     }
   };
 
+  // Start eKYC full flow via native SDK
+  const handleStartEkyc = async () => {
+    try {
+      const result = await EkycService.startEkycFull();
+      // TODO: send result to backend for verification if required
+      console.log('eKYC Full Result:', result);
+      Alert.alert(t('security.identityVerification'), t('security.eKycCompleted'));
+      // refresh profile to reflect is_ekyc flag if backend updates it asynchronously
+      fetchUserProfile();
+    } catch (error: any) {
+      console.log('eKYC Full Error:', error);
+      Alert.alert(t('security.error'), t('security.eKycFailed'));
+    }
+  };
+
 
   // Verification items (hub) with dynamic status
   const VERIFICATION_ITEMS = [
