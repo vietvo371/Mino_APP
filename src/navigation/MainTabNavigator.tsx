@@ -22,7 +22,7 @@ import EkycIntroScreen from '../screens/EkycIntroScreen';
 import EkycIDCardScreen from '../screens/EkycIDCardScreen';
 import EkycSelfieScreen from '../screens/EkycSelfieScreen';
 import EkycInformationScreen from '../screens/EkycInformationScreen';
-import EkycReviewScreen from '../screens/EkycReviewScreen';
+  import {EkycReviewScreen} from '../screens/EkycReviewScreen';
 import EkycSuccessScreen from '../screens/EkycSuccessScreen';
 import WalletScreen from '../screens/WalletScreen';
 import SecurityScreen from '../screens/SecurityScreen';
