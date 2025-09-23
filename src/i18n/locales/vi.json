@@ -374,7 +374,7 @@
     "transactionNotFound": "Không tìm thấy giao dịch",
     "loadingTransaction": "Đang tải giao dịch...",
     "expired": "Giao dịch này đã hết hạn.",
-    "validFor5Minutes": "Giao dịch này có hiệu lực trong 5 phút. Thời gian còn lại: {{time}}",
+    "validFor15Minutes": "Giao dịch này có hiệu lực trong 15 phút. Thời gian còn lại: {{time}}",
     "buyUsdt": "Mua USDT",
     "sellUsdt": "Bán USDT",
     "success": "Thành công",
@@ -403,7 +403,7 @@
     "trc20WalletInformation": "Thông tin ví Polygon",
     "sendUsdtTo": "Gửi USDT đến",
     "usdtToSend": "USDT cần gửi",
-    "sendUsdtNote": "Gửi {{amount}} USDT đến địa chỉ này để hoàn tất giao dịch",
+    "sendUsdtNote": "Quý khách sẽ chịu phí giao dịch qua mạng. Số tiền {{amount}} USDT là số tiền chúng tôi nhận được sau khi đã trừ phí giao dịch",
     "noWalletInfo": "Không có thông tin ví",
     "noQrCode": "Không có mã QR",
     "scanQrCode": "Quét mã QR bằng ứng dụng ngân hàng để thanh toán",
@@ -697,5 +697,21 @@
       "copiedTitle": "Đã sao chép",
       "copiedAddress": "Địa chỉ ví đã được sao chép vào bộ nhớ tạm"
     }
+  },
+  "verifyOtpBottomSheet": {
+    "verifyAccount": "Xác minh tài khoản",
+    "verifyResetPassword": "Xác minh để đặt lại mật khẩu",
+    "verifyOtp": "Xác minh OTP",
+    "enterCodeRegister": "Nhập mã 6 số đã gửi tới {{identifier}}",
+    "enterCodeReset": "Nhập mã 6 số đã gửi tới {{identifier}}",
+    "enterCodeGeneric": "Nhập mã 6 số để tiếp tục",
+    "resendAfter": "Gửi lại sau",
+    "resendCode": "Gửi lại mã",
+    "verifying": "Đang xác minh...",
+    "verificationFailed": "Xác minh thất bại",
+    "verificationError": "Lỗi xác minh",
+    "failedToSendOtp": "Không thể gửi OTP",
+    "otpResent": "Mã xác thực đã được gửi lại",
+    "ok": "OK"
   }
 }

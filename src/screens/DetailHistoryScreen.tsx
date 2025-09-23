@@ -71,8 +71,8 @@ const DetailHistoryScreen = () => {
     }
   }, []);
 
-  // 5-minute validity timer
-  const [secondsLeft, setSecondsLeft] = React.useState(300);
+  // 15-minute validity timer
+  const [secondsLeft, setSecondsLeft] = React.useState(900);
   const isExpired = secondsLeft <= 0;
 
   React.useEffect(() => {
@@ -80,7 +80,7 @@ const DetailHistoryScreen = () => {
     const interval = setInterval(() => {
       if (transaction?.createdAt) {
         const created = new Date(transaction.createdAt).getTime();
-        const expiresAt = created + 5 * 60 * 1000;
+        const expiresAt = created + 15 * 60 * 1000;
         const remainingMs = Math.max(0, expiresAt - Date.now());
         setSecondsLeft(Math.floor(remainingMs / 1000));
       } else {
@@ -273,7 +273,7 @@ const DetailHistoryScreen = () => {
         <View style={[styles.validityBar, { backgroundColor: isExpired ? '#FFEBEE' : '#FFF4E6', borderColor: isExpired ? '#FF3B30' : '#FF9500' }]}>
           <Icon name={isExpired ? 'timer-off' : 'timer'} size={18} color={isExpired ? '#FF3B30' : '#FF9500'} />
           <Text style={[styles.validityText, { color: isExpired ? '#FF3B30' : '#FF9500' }]}>
-            {isExpired ? t('detailHistory.expired') : t('detailHistory.validFor5Minutes', { time: formatTime(secondsLeft) })}
+            {isExpired ? t('detailHistory.expired') : t('detailHistory.validFor15Minutes', { time: formatTime(secondsLeft) })}
           </Text>
         </View>
 
@@ -506,7 +506,7 @@ const DetailHistoryScreen = () => {
         <View style={[styles.validityBar, { backgroundColor: isExpired ? '#FFEBEE' : '#FFF4E6', borderColor: isExpired ? '#FF3B30' : '#FF9500' }]}>
           <Icon name={isExpired ? 'timer-off' : 'timer'} size={18} color={isExpired ? '#FF3B30' : '#FF9500'} />
           <Text style={[styles.validityText, { color: isExpired ? '#FF3B30' : '#FF9500' }]}>
-            {isExpired ? t('detailHistory.expired') : t('detailHistory.validFor5Minutes', { time: formatTime(secondsLeft) })}
+            {isExpired ? t('detailHistory.expired') : t('detailHistory.validFor15Minutes', { time: formatTime(secondsLeft) })}
           </Text>
         </View>
 
@@ -633,9 +633,12 @@ const DetailHistoryScreen = () => {
                   </View>
                 </View>
 
-                <Text style={styles.walletNote}>
-                  {t('detailHistory.sendUsdtNote', { amount: transaction.usdt })}
-                </Text>
+                <View style={styles.walletNoteContainer}>
+                  <Icon name="information" size={16} color="#FF9500" />
+                  <Text style={styles.walletNote}>
+                    {t('detailHistory.sendUsdtNote', { amount: transaction.usdt })}
+                  </Text>
+                </View>
               </View>
             </>
           ) : (
@@ -1053,11 +1056,23 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#7B68EE',
   },
+  walletNoteContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#FFF4E6',
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#FF9500',
+  },
   walletNote: {
     fontSize: wp('3.2%'),
-    color: '#666',
-    textAlign: 'center',
-    fontStyle: 'italic',
+    color: '#E65100',
+    flex: 1,
+    marginLeft: 8,
+    lineHeight: wp('4.2%'),
+    fontWeight: '500',
   },
 });
 

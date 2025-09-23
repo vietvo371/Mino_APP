@@ -38,6 +38,7 @@ const PhoneVerificationScreen = () => {
   const [isAlreadyVerified, setIsAlreadyVerified] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
   const [otpString, setOtpString] = useState('');
+  const [hasVerified, setHasVerified] = useState(false);
 
   // Ref for hidden TextInput to support copy-paste
   const hiddenTextInputRef = useRef<TextInput>(null);
@@ -89,6 +90,7 @@ const PhoneVerificationScreen = () => {
         setIsCodeSent(true);
         setCountdown(60); // 60 seconds countdown
         startCountdown();
+        setHasVerified(false); // Reset verification state when new code is sent
         Alert.alert('', response.data.message || t('phoneVerification.sendOtpSuccess'));
       } else {
         Alert.alert(t('common.error'), response.data.message || t('phoneVerification.sendOtpError'));
@@ -123,6 +125,11 @@ const PhoneVerificationScreen = () => {
   const handleNumberPress = (num: string) => {
     if (currentInputIndex >= 6) return;
 
+    // Reset verification state when user starts typing
+    if (hasVerified) {
+      setHasVerified(false);
+    }
+
     const newOtp = [...otp];
     newOtp[currentInputIndex] = num;
     setOtp(newOtp);
@@ -136,6 +143,11 @@ const PhoneVerificationScreen = () => {
   };
 
   const handleDelete = () => {
+    // Reset verification state when user deletes
+    if (hasVerified) {
+      setHasVerified(false);
+    }
+
     if (currentInputIndex > 0) {
       const newOtp = [...otp];
       newOtp[currentInputIndex - 1] = '';
@@ -157,6 +169,11 @@ const PhoneVerificationScreen = () => {
   const handlePaste = (text: string) => {
     const numericText = text.replace(/[^0-9]/g, '');
     if (numericText.length > 0) {
+      // Reset verification state when user pastes
+      if (hasVerified) {
+        setHasVerified(false);
+      }
+
       const newOtp = [...otp];
       const startIndex = currentInputIndex;
       for (let i = 0; i < Math.min(numericText.length, 6 - startIndex); i++) {
@@ -181,13 +198,13 @@ const PhoneVerificationScreen = () => {
   // Auto verify when OTP is complete
   useEffect(() => {
     const otpString = otp.join('');
-    if (otpString.length === 6 && !verifying) {
+    if (otpString.length === 6 && !verifying && !hasVerified) {
       const timer = setTimeout(() => {
         handleVerify();
-      }, 0);
+      }, 500); // Delay 500ms to avoid race condition
       return () => clearTimeout(timer);
     }
-  }, [otp, verifying]);
+  }, [otp, verifying, hasVerified]);
 
   const handleVerify = async () => {
     const otpString = otp.join('');
@@ -196,14 +213,19 @@ const PhoneVerificationScreen = () => {
       return;
     }
 
+    // Prevent multiple calls - same logic as OTPVerificationScreen
+    if (hasVerified || verifying) {
+      console.log('Already verified or verifying, skipping duplicate call');
+      return;
+    }
+
+    setHasVerified(true);
     setVerifying(true);
     try {
       const response = await api.post('/client/verify-phone', {
         number_phone: phone,
         otp: otpString
       });
-
-      console.log('Verify OTP response:', response.data);
       
       if (response.data.status) {
         Alert.alert(t('common.success'), t('phoneVerification.phoneVerifiedSuccess'), [
@@ -220,6 +242,7 @@ const PhoneVerificationScreen = () => {
         setOtp(['', '', '', '', '', '']);
         setCode('');
         setCurrentInputIndex(0);
+        setHasVerified(false);
       }
       
     } catch (error: any) {
@@ -230,11 +253,12 @@ const PhoneVerificationScreen = () => {
       } else if (error.message) {
         errorMessage = error.message;
       }
-      Alert.alert(t('common.error'), errorMessage);
+      // Alert.alert(t('common.error'), errorMessage);
       // Reset OTP on error
       setOtp(['', '', '', '', '', '']);
       setCode('');
       setCurrentInputIndex(0);
+      setHasVerified(false);
     } finally {
       setVerifying(false);
     }

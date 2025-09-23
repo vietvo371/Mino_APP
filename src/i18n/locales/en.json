@@ -374,7 +374,7 @@
     "transactionNotFound": "Transaction not found",
     "loadingTransaction": "Loading transaction...",
     "expired": "This transaction has expired.",
-    "validFor5Minutes": "This transaction is valid for 5 minutes. Time left: {{time}}",
+    "validFor15Minutes": "This transaction is valid for 15 minutes. Time left: {{time}}",
     "buyUsdt": "Buy USDT",
     "sellUsdt": "Sell USDT",
     "success": "Success",
@@ -403,7 +403,7 @@
     "trc20WalletInformation": "Polygon Wallet Information",
     "sendUsdtTo": "Send USDT To",
     "usdtToSend": "USDT to Send",
-    "sendUsdtNote": "Send {{amount}} USDT to this address to complete the transaction",
+    "sendUsdtNote": "You will bear the network transaction fee. The amount {{amount}} USDT is the amount we receive after deducting the transaction fee",
     "noWalletInfo": "No wallet information available",
     "noQrCode": "No QR code available",
     "scanQrCode": "Scan QR code with banking app to make payment",
@@ -697,5 +697,21 @@
       "copiedTitle": "Copied",
       "copiedAddress": "Wallet address copied to clipboard"
     }
+  },
+  "verifyOtpBottomSheet": {
+    "verifyAccount": "Verify Account",
+    "verifyResetPassword": "Verify to Reset Password",
+    "verifyOtp": "Verify OTP",
+    "enterCodeRegister": "Enter 6-digit code sent to {{identifier}}",
+    "enterCodeReset": "Enter 6-digit code sent to {{identifier}}",
+    "enterCodeGeneric": "Enter 6-digit code to continue",
+    "resendAfter": "Resend after",
+    "resendCode": "Resend Code",
+    "verifying": "Verifying...",
+    "verificationFailed": "Verification Failed",
+    "verificationError": "Verification Error",
+    "failedToSendOtp": "Failed to send OTP",
+    "otpResent": "Verification code has been resent",
+    "ok": "OK"
   }
 }

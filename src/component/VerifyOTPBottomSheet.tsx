@@ -10,11 +10,13 @@ import {
   Easing,
   Dimensions,
   Alert,
+  Keyboard,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../theme/colors';
 import LoadingOverlay from './LoadingOverlay';
 import api from '../utils/Api';
+import { useTranslation } from '../hooks/useTranslation';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const OTP_LENGTH = 6;
@@ -29,10 +31,10 @@ type EndpointBuilder = {
 export interface VerifyOTPBottomSheetProps {
   visible: boolean;
   onClose: () => void;
-  identifier: string; // email or phone based on type
+  identifier: string;
   type: 'email' | 'phone';
   typeEnpoints?: 'bank' | 'wallet';
-  mode?: OtpMode; // defaults to 'action'
+  mode?: OtpMode;
   onVerified: (payload: { otp: string; token?: string; response?: any }) => void;
   title?: string;
   message?: string;
@@ -56,6 +58,7 @@ const VerifyOTPBottomSheet: React.FC<VerifyOTPBottomSheetProps> = ({
   resendDisabledSeconds = 60,
   endpoints,
 }) => {
+  const { t } = useTranslation();
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [slideAnim] = useState(new Animated.Value(SCREEN_HEIGHT));
   const [otp, setOtp] = useState<string[]>(Array.from({ length: OTP_LENGTH }, () => ''));
@@ -66,11 +69,12 @@ const VerifyOTPBottomSheet: React.FC<VerifyOTPBottomSheetProps> = ({
   const [canResend, setCanResend] = useState<boolean>(false);
   const [hasVerified, setHasVerified] = useState<boolean>(false);
   const hiddenInputRef = useRef<TextInput>(null);
+  const [openId, setOpenId] = useState<number>(0);
 
   // Compute default endpoints if not provided
   const verifyEndpoint: EndpointBuilder = useMemo(() => {
     if (endpoints?.verify) return endpoints.verify;
-    // Custom business flow: verify bank/wallet action
+    
     if (typeEnpoints) {
       return {
         url: '/client/verify-otp-bank-wallet',
@@ -81,18 +85,20 @@ const VerifyOTPBottomSheet: React.FC<VerifyOTPBottomSheetProps> = ({
         ),
       };
     }
+    
     return {
-        url: '/client/verify-otp-bank-wallet',
-        buildBody: ({ identifier, type, otp }) => (
-          type === 'email'
-            ? { email: identifier, type: typeEnpoints, otp }
-            : { phone: identifier, type: typeEnpoints, otp }
-        ),
+      url: '/client/verify-otp-bank-wallet',
+      buildBody: ({ identifier, type, otp }) => (
+        type === 'email'
+          ? { email: identifier, type: typeEnpoints, otp }
+          : { phone: identifier, type: typeEnpoints, otp }
+      ),
     };
   }, [endpoints?.verify, mode, typeEnpoints]);
 
   const resendEndpoint: EndpointBuilder = useMemo(() => {
     if (endpoints?.resend) return endpoints.resend;
+    
     if (typeEnpoints) {
       return {
         url: '/client/send-otp-bank-wallet',
@@ -103,88 +109,117 @@ const VerifyOTPBottomSheet: React.FC<VerifyOTPBottomSheetProps> = ({
         ),
       };
     }
+    
     return {
       url: '/auth/resend-otp',
       buildBody: ({ identifier, type }) => ({ username: identifier, type }),
     };
   }, [endpoints?.resend, typeEnpoints]);
 
+  // Reset state when modal opens
+  const resetState = () => {
+    setOtp(Array.from({ length: OTP_LENGTH }, () => ''));
+    setCurrentIndex(0);
+    setOtpString('');
+    setTimer(resendDisabledSeconds);
+    setCanResend(false);
+    setHasVerified(false);
+  };
+
   useEffect(() => {
     if (visible) {
+      setOpenId(prev => prev + 1);
       setModalVisible(true);
+      resetState();
+      
       Animated.spring(slideAnim, {
         toValue: 0,
         useNativeDriver: true,
         tension: 65,
         friction: 8,
       }).start();
-      // reset state
-      setOtp(Array.from({ length: OTP_LENGTH }, () => ''));
-      setCurrentIndex(0);
-      setOtpString('');
-      setTimer(resendDisabledSeconds);
-      setCanResend(false);
-      setHasVerified(false);
+      
       // Auto send OTP on open for action flows
-      // Don't await to keep opening smooth
-      setTimeout(() => {
+      const timeoutId = setTimeout(() => {
         sendOtp(true).catch(() => undefined);
-      }, 50);
+      }, 300);
+      
+      return () => clearTimeout(timeoutId);
     } else if (modalVisible) {
-      Animated.timing(slideAnim, {
-        toValue: SCREEN_HEIGHT,
-        duration: 150,
-        easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
-      }).start(() => setModalVisible(false));
+      closeModal();
     }
   }, [visible]);
 
   useEffect(() => {
-    let interval: number | undefined;
+    let interval: any;
+    
     if (modalVisible && timer > 0 && !canResend) {
-      interval = setInterval(() => setTimer(prev => prev - 1), 1000);
-    } else if (modalVisible) {
-      setCanResend(true);
+      interval = setInterval(() => {
+        setTimer(prev => {
+          if (prev <= 1) {
+            setCanResend(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
     }
+    
     return () => {
       if (interval) clearInterval(interval);
     };
   }, [modalVisible, timer, canResend]);
 
   useEffect(() => {
-    const v = otp.join('');
-    if (v.length === OTP_LENGTH && !loading && !hasVerified) {
-      // small delay for UX
-      const t = setTimeout(() => handleVerify(), 400);
-      return () => clearTimeout(t);
+    const otpValue = otp.join('');
+    if (otpValue.length === OTP_LENGTH && !loading && !hasVerified) {
+      const timeoutId = setTimeout(() => {
+        handleVerify();
+      }, 400);
+      return () => clearTimeout(timeoutId);
     }
   }, [otp, loading, hasVerified]);
 
-  const close = () => {
-    if (loading) return;
+  const closeModal = () => {
     Animated.timing(slideAnim, {
       toValue: SCREEN_HEIGHT,
-      duration: 150,
+      duration: 200,
       easing: Easing.out(Easing.quad),
       useNativeDriver: true,
     }).start(() => {
       setModalVisible(false);
-      onClose();
+      resetState();
     });
   };
 
-  const handleKey = (digit: string) => {
-    if (currentIndex >= OTP_LENGTH) return;
+  const handleClose = () => {
+    if (loading) return;
+    
+    Keyboard.dismiss();
+    hiddenInputRef.current?.blur();
+    closeModal();
+    onClose();
+  };
+
+  const handleKeyPress = (digit: string) => {
+    if (currentIndex >= OTP_LENGTH || loading) return;
+    
     if (hasVerified) setHasVerified(false);
+    
     const newOtp = [...otp];
     newOtp[currentIndex] = digit;
     setOtp(newOtp);
-    if (currentIndex < OTP_LENGTH - 1) setCurrentIndex(currentIndex + 1);
+    
+    if (currentIndex < OTP_LENGTH - 1) {
+      setCurrentIndex(currentIndex + 1);
+    }
   };
 
   const handleDelete = () => {
+    if (loading) return;
+    
     if (hasVerified) setHasVerified(false);
+    
     if (currentIndex > 0) {
       const newOtp = [...otp];
       newOtp[currentIndex - 1] = '';
@@ -199,13 +234,17 @@ const VerifyOTPBottomSheet: React.FC<VerifyOTPBottomSheetProps> = ({
 
   const handlePasteText = (text: string) => {
     const numeric = text.replace(/[^0-9]/g, '');
-    if (!numeric) return;
+    if (!numeric || loading) return;
+    
     if (hasVerified) setHasVerified(false);
+    
     const newOtp = [...otp];
     const start = currentIndex;
+    
     for (let i = 0; i < Math.min(numeric.length, OTP_LENGTH - start); i++) {
       newOtp[start + i] = numeric[i];
     }
+    
     setOtp(newOtp);
     const nextIndex = Math.min(start + numeric.length, OTP_LENGTH - 1);
     setCurrentIndex(nextIndex);
@@ -213,45 +252,45 @@ const VerifyOTPBottomSheet: React.FC<VerifyOTPBottomSheetProps> = ({
 
   const handleHiddenTextChange = (text: string) => {
     setOtpString(text);
-    if (text.length > otp.filter(Boolean).length) handlePasteText(text);
+    if (text.length > otp.filter(Boolean).length) {
+      handlePasteText(text);
+    }
   };
 
   const handleVerify = async () => {
     const code = otp.join('');
-    if (code.length !== OTP_LENGTH) return;
-    if (hasVerified || loading) return;
+    if (code.length !== OTP_LENGTH || hasVerified || loading) return;
+    
     setHasVerified(true);
     setLoading(true);
+    
     try {
       const body = verifyEndpoint.buildBody({ identifier, type, otp: code });
-      const res = await api.post(verifyEndpoint.url, body);
-      if (res?.data?.status === false) {
-        Alert.alert('OTP', res?.data?.message || 'Verification failed', [
+      const response = await api.post(verifyEndpoint.url, body);
+      
+      if (response?.data?.status === false) {
+        const errorMessage = response?.data?.message || t('verifyOtpBottomSheet.verificationFailed');
+        Alert.alert('OTP', errorMessage, [
           {
-            text: 'OK',
+            text: t('verifyOtpBottomSheet.ok'),
             onPress: () => {
-              setHasVerified(false);
-              setOtp(Array.from({ length: OTP_LENGTH }, () => ''));
-              setCurrentIndex(0);
-              setOtpString('');
+              resetOtpInput();
             },
           },
         ]);
         return;
       }
-      const token = res?.data?.data?.token;
-      onVerified({ otp: code, token, response: res?.data });
-      close();
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || err?.message || 'Verification error';
-      Alert.alert('OTP', msg, [
+      
+      const token = response?.data?.data?.token;
+      onVerified({ otp: code, token, response: response?.data });
+      handleClose();
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || error?.message || t('verifyOtpBottomSheet.verificationError');
+      Alert.alert('OTP', errorMessage, [
         {
-          text: 'OK',
+          text: t('verifyOtpBottomSheet.ok'),
           onPress: () => {
-            setHasVerified(false);
-            setOtp(Array.from({ length: OTP_LENGTH }, () => ''));
-            setCurrentIndex(0);
-            setOtpString('');
+            resetOtpInput();
           },
         },
       ]);
@@ -260,62 +299,118 @@ const VerifyOTPBottomSheet: React.FC<VerifyOTPBottomSheetProps> = ({
     }
   };
 
-  const sendOtp = async (force?: boolean) => {
-    if (loading) return;
-    if (!force && !canResend) return;
+  const resetOtpInput = () => {
+    setHasVerified(false);
+    setOtp(Array.from({ length: OTP_LENGTH }, () => ''));
+    setCurrentIndex(0);
+    setOtpString('');
+  };
+
+  const sendOtp = async (isInitial?: boolean) => {
+    if (loading || (!isInitial && !canResend)) return;
+    
     setLoading(true);
+    
     try {
       const body = resendEndpoint.buildBody({ identifier, type });
-      const res = await api.post(resendEndpoint.url, body);
-      if (res?.data?.status === false) {
-        Alert.alert('OTP', res?.data?.message || 'Failed to send');
+      const response = await api.post(resendEndpoint.url, body);
+      
+      if (response?.data?.status === false) {
+        const errorMessage = response?.data?.message || t('verifyOtpBottomSheet.failedToSendOtp');
+        Alert.alert('OTP', errorMessage);
       } else {
-        if (!force) {
-          Alert.alert('OTP', 'Code resent');
+        if (!isInitial) {
+          Alert.alert('OTP', t('verifyOtpBottomSheet.otpResent'));
         }
         setTimer(resendDisabledSeconds);
         setCanResend(false);
-        setOtp(Array.from({ length: OTP_LENGTH }, () => ''));
-        setCurrentIndex(0);
-        setOtpString('');
+        resetOtpInput();
       }
-    } catch (err: any) {
-      const msg = err?.response?.data?.message || err?.message || 'Failed to send';
-      Alert.alert('OTP', msg);
+    } catch (error: any) {
+      const errorMessage = error?.response?.data?.message || error?.message || t('verifyOtpBottomSheet.failedToSendOtp');
+      Alert.alert('OTP', errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleResend = () => sendOtp(false);
+  const handleResend = () => {
+    if (!canResend || loading) return;
+    sendOtp(false);
+  };
 
-  const headerTitle = title || (mode === 'register' ? 'Xác minh tài khoản' : mode === 'forgot' ? 'Xác minh để đặt lại mật khẩu' : 'Xác minh OTP');
-  const headerMessage = message || (mode === 'register' ? `Nhập mã 6 số đã gửi tới ${identifier}` : mode === 'forgot' ? `Nhập mã 6 số đã gửi tới ${identifier}` : `Nhập mã 6 số để tiếp tục`);
+  const focusHiddenInput = () => {
+    if (!loading) {
+      hiddenInputRef.current?.focus();
+    }
+  };
+
+  const headerTitle = title || (
+    mode === 'register' 
+      ? t('verifyOtpBottomSheet.verifyAccount') 
+      : mode === 'forgot' 
+        ? t('verifyOtpBottomSheet.verifyResetPassword') 
+        : t('verifyOtpBottomSheet.verifyOtp')
+  );
+
+  const headerMessage = message || (
+    mode === 'register' 
+      ? t('verifyOtpBottomSheet.enterCodeRegister', { identifier }) 
+      : mode === 'forgot' 
+        ? t('verifyOtpBottomSheet.enterCodeReset', { identifier }) 
+        : t('verifyOtpBottomSheet.enterCodeGeneric')
+  );
+
+  const isOtpComplete = otp.join('').length === OTP_LENGTH;
+
+  if (!modalVisible) return null;
 
   return (
     <Modal
+      key={`otp-modal-${openId}`}
       visible={modalVisible}
       animationType="fade"
       transparent={true}
-      onRequestClose={close}
+      onRequestClose={handleClose}
       statusBarTranslucent={true}
+      presentationStyle="overFullScreen"
     >
-      <View style={styles.modalOverlay}>
-        <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={close} />
+      <View style={styles.modalContainer}>
+        {/* Backdrop - chỉ chiếm phần trống phía trên modal */}
+        <TouchableOpacity 
+          style={styles.backdrop} 
+          activeOpacity={1} 
+          onPress={handleClose}
+          disabled={loading}
+        />
 
-        <Animated.View style={[styles.modalContent, { transform: [{ translateY: slideAnim }] }]}>
-          <View style={styles.modalHeader}>
+        {/* Modal Content */}
+        <Animated.View 
+          style={[
+            styles.modalContent, 
+            { transform: [{ translateY: slideAnim }] }
+          ]}
+        >
+          {/* Header */}
+          <View style={styles.header}>
             <View style={styles.grabber} />
-            <View style={styles.modalTitleContainer}>
-              <Text style={styles.modalTitle}>{headerTitle}</Text>
-              <TouchableOpacity onPress={close} style={styles.closeButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            
+            <View style={styles.titleContainer}>
+              <Text style={styles.title}></Text>
+              <TouchableOpacity 
+                onPress={handleClose} 
+                style={styles.closeButton}
+                disabled={loading}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
                 <Icon name="close" size={24} color={theme.colors.textLight} />
               </TouchableOpacity>
             </View>
+            
             <Text style={styles.subtitle}>{headerMessage}</Text>
           </View>
 
-          {/* Hidden input for paste */}
+          {/* Hidden Input for Paste Functionality */}
           <TextInput
             ref={hiddenInputRef}
             style={styles.hiddenInput}
@@ -327,69 +422,125 @@ const VerifyOTPBottomSheet: React.FC<VerifyOTPBottomSheetProps> = ({
             caretHidden={true}
             contextMenuHidden={false}
             selectTextOnFocus={true}
+            editable={!loading}
           />
 
-          {/* OTP Boxes */}
-          <TouchableOpacity style={styles.otpContainer} onPress={() => hiddenInputRef.current?.focus()} activeOpacity={1}>
+          {/* OTP Input Boxes */}
+          <TouchableOpacity 
+            style={styles.otpContainer} 
+            onPress={focusHiddenInput}
+            activeOpacity={1}
+            disabled={loading}
+          >
             {otp.map((digit, index) => {
               const isActive = index === currentIndex;
               const isFilled = Boolean(digit);
+              
               return (
-                <View key={index} style={[styles.otpBox, isActive && styles.otpBoxActive, isFilled && styles.otpBoxFilled]}>
-                  <Text style={[styles.otpText, isFilled && styles.otpTextFilled]}>{digit || (isActive ? '|' : '')}</Text>
+                <View 
+                  key={index} 
+                  style={[
+                    styles.otpBox,
+                    isActive && styles.otpBoxActive,
+                    isFilled && styles.otpBoxFilled
+                  ]}
+                >
+                  <Text style={[styles.otpText, isFilled && styles.otpTextFilled]}>
+                    {digit || (isActive ? '|' : '')}
+                  </Text>
                 </View>
               );
             })}
           </TouchableOpacity>
 
-          {/* Timer / Resend */}
-          <View style={styles.resendRow}>
+          {/* Timer and Resend Button */}
+          <View style={styles.resendContainer}>
             {!canResend ? (
-              <Text style={styles.timerText}>Resend after <Text style={styles.timerValue}>{timer}s</Text></Text>
+              <Text style={styles.timerText}>
+                {t('verifyOtpBottomSheet.resendAfter')} <Text style={styles.timerValue}>{timer}s</Text>
+              </Text>
             ) : (
-              <TouchableOpacity onPress={handleResend} style={styles.resendButton} activeOpacity={0.7}>
-                <Text style={styles.resendButtonText}>Resend code</Text>
+              <TouchableOpacity 
+                onPress={handleResend} 
+                style={styles.resendButton}
+                disabled={loading}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.resendButtonText}>{t('verifyOtpBottomSheet.resendCode')}</Text>
               </TouchableOpacity>
             )}
           </View>
 
           {/* Number Pad */}
-          <View style={styles.pad}>
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
-              <TouchableOpacity key={n} style={styles.padKey} onPress={() => handleKey(String(n))} activeOpacity={0.7}>
-                <Text style={styles.padKeyText}>{n}</Text>
+          <View style={styles.numberPad}>
+            {/* Numbers 1-9 */}
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((number) => (
+              <TouchableOpacity 
+                key={number} 
+                style={styles.padButton} 
+                onPress={() => handleKeyPress(String(number))}
+                disabled={loading}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.padButtonText}>{number}</Text>
               </TouchableOpacity>
             ))}
-            <TouchableOpacity style={styles.padKey} onPress={handleDelete} activeOpacity={0.7}>
+
+            {/* Delete Button */}
+            <TouchableOpacity 
+              style={styles.padButton} 
+              onPress={handleDelete}
+              disabled={loading}
+              activeOpacity={0.7}
+            >
               <Icon name="backspace-outline" size={20} color={theme.colors.textLight} />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.padKey} onPress={() => handleKey('0')} activeOpacity={0.7}>
-              <Text style={styles.padKeyText}>0</Text>
+
+            {/* Zero Button */}
+            <TouchableOpacity 
+              style={styles.padButton} 
+              onPress={() => handleKeyPress('0')}
+              disabled={loading}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.padButtonText}>0</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.padKey, styles.padKeyPrimary]} onPress={handleVerify} disabled={otp.join('').length !== OTP_LENGTH} activeOpacity={0.7}>
-              <Icon name="check" size={22} color={theme.colors.white} />
+
+            {/* Verify Button */}
+            <TouchableOpacity 
+              style={[
+                styles.padButton, 
+                styles.verifyButton,
+                (!isOtpComplete || loading) && styles.verifyButtonDisabled
+              ]} 
+              onPress={handleVerify}
+              disabled={!isOtpComplete || loading}
+              activeOpacity={0.7}
+            >
+              <Icon 
+                name="check" 
+                size={22} 
+                color={(!isOtpComplete || loading) ? theme.colors.textLight : theme.colors.white} 
+              />
             </TouchableOpacity>
           </View>
         </Animated.View>
       </View>
 
-      <LoadingOverlay visible={loading} message="Verifying..." />
+      {/* Loading Overlay */}
+      <LoadingOverlay visible={loading} message={t('verifyOtpBottomSheet.verifying')} />
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  modalOverlay: {
+  modalContainer: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
   },
-  modalBackdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+  backdrop: {
+    flex: 1,
   },
   modalContent: {
     backgroundColor: theme.colors.white,
@@ -403,7 +554,7 @@ const styles = StyleSheet.create({
     elevation: 8,
     paddingBottom: 16,
   },
-  modalHeader: {
+  header: {
     paddingTop: theme.spacing.md,
     paddingBottom: theme.spacing.sm,
     alignItems: 'center',
@@ -415,19 +566,20 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.border,
     marginBottom: theme.spacing.md,
   },
-  modalTitleContainer: {
+  titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
     paddingHorizontal: theme.spacing.lg,
   },
-  modalTitle: {
+  title: {
     fontFamily: theme.typography.fontFamily,
     fontSize: theme.typography.fontSize.lg,
     fontWeight: '600',
     color: theme.colors.text,
     letterSpacing: 0.3,
+    textAlign: 'center',
   },
   closeButton: {
     padding: theme.spacing.xs,
@@ -443,10 +595,10 @@ const styles = StyleSheet.create({
   },
   hiddenInput: {
     position: 'absolute',
-    left: -9999,
     opacity: 0,
-    width: 1,
-    height: 1,
+    width: 0,
+    height: 0,
+    left: -1000,
   },
   otpContainer: {
     flexDirection: 'row',
@@ -482,9 +634,11 @@ const styles = StyleSheet.create({
   otpTextFilled: {
     color: theme.colors.primary,
   },
-  resendRow: {
+  resendContainer: {
     alignItems: 'center',
     marginBottom: theme.spacing.md,
+    minHeight: 32,
+    justifyContent: 'center',
   },
   timerText: {
     fontFamily: theme.typography.fontFamily,
@@ -496,7 +650,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   resendButton: {
-    paddingVertical: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: theme.borderRadius.sm,
   },
   resendButtonText: {
     fontFamily: theme.typography.fontFamily,
@@ -504,13 +660,14 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
     fontWeight: '600',
   },
-  pad: {
+  numberPad: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     paddingHorizontal: theme.spacing.lg,
+    flex: 1,
   },
-  padKey: {
+  padButton: {
     width: '30%',
     aspectRatio: 1.2,
     justifyContent: 'center',
@@ -521,11 +678,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
-  padKeyPrimary: {
+  verifyButton: {
     backgroundColor: theme.colors.primary,
     borderWidth: 0,
   },
-  padKeyText: {
+  verifyButtonDisabled: {
+    backgroundColor: theme.colors.border,
+  },
+  padButtonText: {
     fontSize: 20,
     color: theme.colors.text,
     fontFamily: theme.typography.fontFamily,
@@ -534,5 +694,3 @@ const styles = StyleSheet.create({
 });
 
 export default VerifyOTPBottomSheet;
-
-
