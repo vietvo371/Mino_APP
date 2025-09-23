@@ -591,7 +591,9 @@
     "title": "Edit Bank Account",
     "update": "Update",
     "bank": "Bank",
+    "setDefault": "Set as default account",
     "selectBank": "Select bank",
+    "info": "Please check account information carefully before updating to ensure accurate transaction processing",
     "searchBank": "Search by name, code...",
     "accountNumber": "Account Number",
     "enterAccountNumber": "Enter account number",
@@ -624,6 +626,7 @@
     }
   },
   "trc20Addresses": {
+    "walletName": "Wallet Name",
     "title": "Polygon Addresses", 
     "verificationRequired": "Verification Required",
     "verificationDescription": "Please complete eKYC, email and phone verification before managing Polygon addresses.",
@@ -672,5 +675,27 @@
     "unknownError": "Unknown error",
     "validationError": "Data validation error",
     "timeoutError": "Request timeout"
+  },
+  "editTrc20Address": {
+    "title": "Edit Address",
+    "walletNameLabel": "Wallet Name",
+    "walletNamePlaceholder": "Enter wallet name",
+    "polygonAddressLabel": "Polygon Address",
+    "setDefaultTitle": "Set as default address",
+    "setDefaultDescription": "This address will be selected by default when receiving USDT",
+    "deleteButton": "Delete this address",
+    "infoText": "To change Polygon address, please delete and add a new address",
+    "alerts": {
+      "enterWalletName": "Please enter wallet name",
+      "invalidWalletData": "Invalid wallet data",
+      "updateSuccess": "Wallet updated successfully",
+      "updateFailed": "Failed to update wallet",
+      "deleteConfirmTitle": "Delete Address",
+      "deleteConfirmMessage": "Are you sure you want to delete this TRC20 address? This action cannot be undone.",
+      "deleteSuccess": "Wallet deleted successfully",
+      "deleteFailed": "Failed to delete wallet",
+      "copiedTitle": "Copied",
+      "copiedAddress": "Wallet address copied to clipboard"
+    }
   }
 }

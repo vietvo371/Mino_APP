@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import {
 } from 'react-native-responsive-screen';
 import api from '../utils/Api';
 import { useTranslation } from '../hooks/useTranslation';
+import VerifyOTPBottomSheet from '../component/VerifyOTPBottomSheet';
 
 const AddTRC20AddressScreen = () => {
   const navigation = useNavigation();
@@ -28,6 +29,31 @@ const AddTRC20AddressScreen = () => {
   const [isDefault, setIsDefault] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [showOtp, setShowOtp] = useState(false);
+  const [identifier, setIdentifier] = useState<string>('');
+  const [identifierType, setIdentifierType] = useState<'email' | 'phone'>('email');
+
+  // Prefill identifier from profile
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await api.get('/client/profile');
+        if (response.data?.status) {
+          const data = response.data.data || {};
+          if (data.email) {
+            setIdentifier(data.email);
+            setIdentifierType('email');
+          } else if (data.phone) {
+            setIdentifier(String(data.phone));
+            setIdentifierType('phone');
+          }
+        }
+      } catch (e) {
+        // silent
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const validateForm = () => {
     const newErrors: {[key: string]: string} = {};
@@ -43,65 +69,47 @@ const AddTRC20AddressScreen = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = async () => {
-    // Clear previous errors
-    setErrors({});
-    
-    // Validate form
-    if (!validateForm()) {
-      return;
-    }
-
+  const performSave = async () => {
     setLoading(true);
-    
     try {
       const response = await api.post('/client/wallet/create', {
         name: name.trim(),
         address_wallet: address.trim(),
-        is_default: isDefault ? 1 : 0
+        is_default: isDefault ? 1 : 0,
       });
 
       console.log('Create wallet response:', response.data);
-      
+
       if (response.data.status) {
         Alert.alert(
-          t('common.success'), 
+          t('common.success'),
           response.data.message || t('trc20Addresses.createSuccess'),
           [
             {
               text: 'OK',
-              onPress: () => navigation.goBack()
-            }
+              onPress: () => navigation.goBack(),
+            },
           ]
         );
       } else {
         Alert.alert(t('common.error'), response.data.message || t('trc20Addresses.createFailed'));
       }
-      
     } catch (error: any) {
       console.log('Create wallet error:', error);
-      
-      // Handle Laravel 422 validation errors
       if (error.response?.status === 422) {
         const validationErrors = error.response.data.errors || {};
-        const formattedErrors: {[key: string]: string} = {};
-        
-        // Format Laravel validation errors
-        Object.keys(validationErrors).forEach(key => {
+        const formattedErrors: { [key: string]: string } = {};
+        Object.keys(validationErrors).forEach((key) => {
           if (Array.isArray(validationErrors[key])) {
             formattedErrors[key] = validationErrors[key][0];
           } else {
             formattedErrors[key] = validationErrors[key];
           }
         });
-        
         setErrors(formattedErrors);
-        
-        // Show first error in alert
         const firstError = Object.values(formattedErrors)[0];
         Alert.alert(t('trc20Addresses.validation.validationError'), String(firstError));
       } else {
-        // Handle other errors
         let errorMessage = t('trc20Addresses.createFailed');
         if (error.response?.data?.message) {
           errorMessage = error.response.data.message;
@@ -113,6 +121,12 @@ const AddTRC20AddressScreen = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSave = () => {
+    setErrors({});
+    if (!validateForm()) return;
+    setShowOtp(true);
   };
 
   const handlePaste = () => {
@@ -218,18 +232,20 @@ const AddTRC20AddressScreen = () => {
             {t('trc20Addresses.saveWarning')}
           </Text>
         </View>
-
-        <View style={styles.supportedBox}>
-          <Text style={styles.supportedTitle}>{t('trc20Addresses.supportedExchanges')}</Text>
-          <Text style={styles.supportedText}>
-            • Binance{'\n'}
-            • Huobi{'\n'}
-            • OKX{'\n'}
-            • MEXC{'\n'}
-            • Gate.io
-          </Text>
-        </View>
+       
       </ScrollView>
+      <VerifyOTPBottomSheet
+        visible={showOtp}
+        onClose={() => setShowOtp(false)}
+        identifier={identifier}
+        typeEnpoints="wallet"
+        type="email"
+        mode="action"
+        onVerified={() => {
+          setShowOtp(false);
+          performSave();
+        }}
+      />
     </SafeAreaView>
   );
 };

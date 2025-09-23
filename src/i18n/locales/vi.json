@@ -331,7 +331,7 @@
     "accountHolder": "Chủ tài khoản",
     "bankName": "Tên ngân hàng",
     "addAccountTitle": "Thêm tài khoản ngân hàng",
-    "editAccountTitle": "Chỉnh sửa tài khoản ngân hàng",
+    "editAccountTitle": "Chỉnh sửa tài khoản",
     "bankRequired": "Cần tài khoản ngân hàng",
     "bankRequiredMessage": "Để bán USDT, bạn cần thêm tài khoản ngân hàng trước",
     "addAccountButton": "Thêm tài khoản",
@@ -588,9 +588,11 @@
     "createFailed": "Không thể tạo tài khoản ngân hàng. Vui lòng thử lại."
   },
   "editBankAccount": {
-    "title": "Chỉnh sửa tài khoản ngân hàng",
+    "title": "Chỉnh sửa tài khoản",
     "update": "Cập nhật",
     "bank": "Ngân hàng",
+    "setDefault": "Đặt làm tài khoản mặc định",
+    "info": "Vui lòng kiểm tra kỹ thông tin tài khoản trước khi cập nhật để đảm bảo xử lý giao dịch chính xác",
     "selectBank": "Chọn ngân hàng",
     "searchBank": "Tìm kiếm theo tên, mã...",
     "accountNumber": "Số tài khoản",
@@ -624,6 +626,7 @@
     }
   },
   "trc20Addresses": {
+    "walletName": "Tên ví",
     "title": "Địa chỉ Polygon",
     "verificationRequired": "Xác thực cần thiết",
     "verificationDescription": "Vui lòng hoàn thành xác thực eKYC, email và số điện thoại trước khi quản lý địa chỉ Polygon.",
@@ -672,5 +675,27 @@
     "unknownError": "Lỗi không xác định",
     "validationError": "Lỗi xác thực dữ liệu",
     "timeoutError": "Hết thời gian chờ"
+  },
+  "editTrc20Address": {
+    "title": "Chỉnh sửa địa chỉ",
+    "walletNameLabel": "Tên ví",
+    "walletNamePlaceholder": "Nhập tên ví",
+    "polygonAddressLabel": "Địa chỉ Polygon",
+    "setDefaultTitle": "Đặt làm địa chỉ mặc định",
+    "setDefaultDescription": "Địa chỉ này sẽ được chọn mặc định khi nhận USDT",
+    "deleteButton": "Xóa địa chỉ này",
+    "infoText": "Để thay đổi địa chỉ Polygon, vui lòng xóa và thêm địa chỉ mới",
+    "alerts": {
+      "enterWalletName": "Vui lòng nhập tên ví",
+      "invalidWalletData": "Dữ liệu ví không hợp lệ",
+      "updateSuccess": "Cập nhật ví thành công",
+      "updateFailed": "Không thể cập nhật ví",
+      "deleteConfirmTitle": "Xóa địa chỉ",
+      "deleteConfirmMessage": "Bạn có chắc chắn muốn xóa địa chỉ TRC20 này? Hành động này không thể hoàn tác.",
+      "deleteSuccess": "Xóa ví thành công",
+      "deleteFailed": "Không thể xóa ví",
+      "copiedTitle": "Đã sao chép",
+      "copiedAddress": "Địa chỉ ví đã được sao chép vào bộ nhớ tạm"
+    }
   }
 }

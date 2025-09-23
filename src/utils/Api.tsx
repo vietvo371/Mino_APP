@@ -105,7 +105,7 @@ api.interceptors.response.use(
       status: error.response?.status,
       message: error.message,
     });
-    Alert.alert('Error', error.response?.data?.message || 'Lỗi Server');
+    // Alert.alert('Error', error.response?.data?.message || 'Lỗi Server');
     return Promise.reject(error);
   }
 );

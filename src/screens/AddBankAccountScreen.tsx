@@ -20,6 +20,7 @@ import {
 import api from '../utils/Api';
 import SelectCustom from '../component/SelectCustom';
 import { useTranslation } from '../hooks/useTranslation';
+import VerifyOTPBottomSheet from '../component/VerifyOTPBottomSheet';
 
 interface BankData {
   id: number;
@@ -43,6 +44,9 @@ const AddBankAccountScreen = () => {
   const [loading, setLoading] = useState(false);
   const [loadingBanks, setLoadingBanks] = useState(true);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [showOtp, setShowOtp] = useState(false);
+  const [identifier, setIdentifier] = useState<string>('');
+  const [identifierType, setIdentifierType] = useState<'email' | 'phone'>('email');
 
   // Convert to uppercase without diacritics
   const toUpperNoDiacritics = (value: string) => {
@@ -81,17 +85,28 @@ const AddBankAccountScreen = () => {
 
   // Prefill account holder name from profile and disable editing
   useEffect(() => {
-    const fetchProfileName = async () => {
+    const fetchProfile = async () => {
       try {
         const response = await api.get('/client/profile');
-        if (response.data?.status && response.data?.data?.full_name) {
-          setAccountName(toUpperNoDiacritics(response.data.data.full_name));
+        if (response.data?.status) {
+          const data = response.data.data || {};
+          if (data.full_name) {
+            setAccountName(toUpperNoDiacritics(data.full_name));
+          }
+          // Prefer email, fallback to phone if available
+          if (data.email) {
+            setIdentifier(data.email);
+            setIdentifierType('email');
+          } else if (data.phone) {
+            setIdentifier(String(data.phone));
+            setIdentifierType('phone');
+          }
         }
       } catch (e) {
         // silent fail
       }
     };
-    fetchProfileName();
+    fetchProfile();
   }, []);
 
   const validateForm = () => {
@@ -112,14 +127,7 @@ const AddBankAccountScreen = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = async () => {
-    // Clear previous errors
-    setErrors({});
-    
-    // Validate form
-    if (!validateForm()) {
-      return;
-    }
+  const performSave = async () => {
     setLoading(true);
     try {
       const response = await api.post('/client/bank/create', {
@@ -149,12 +157,9 @@ const AddBankAccountScreen = () => {
     } catch (error: any) {
       console.log('Create bank account error:', error);
       
-      // Handle Laravel 422 validation errors
       if (error.response?.status === 422) {
         const validationErrors = error.response.data.errors || {};
         const formattedErrors: {[key: string]: string} = {};
-        
-        // Format Laravel validation errors
         Object.keys(validationErrors).forEach(key => {
           if (Array.isArray(validationErrors[key])) {
             formattedErrors[key] = validationErrors[key][0];
@@ -162,14 +167,10 @@ const AddBankAccountScreen = () => {
             formattedErrors[key] = validationErrors[key];
           }
         });
-        
         setErrors(formattedErrors);
-        
-        // Show first error in alert
         const firstError = Object.values(formattedErrors)[0];
         Alert.alert(t('editBankAccount.alerts.validationError'), String(firstError));
       } else {
-        // Handle other errors
         let errorMessage = t('bankAccounts.createFailed');
         if (error.response?.data?.message) {
           errorMessage = error.response.data.message;
@@ -181,6 +182,13 @@ const AddBankAccountScreen = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSave = () => {
+    setErrors({});
+    if (!validateForm()) return;
+    // Yêu cầu OTP trước khi lưu
+    setShowOtp(true);
   };
 
   return (
@@ -209,7 +217,7 @@ const AddBankAccountScreen = () => {
       <ScrollView style={styles.content}>
         {/* Bank Selection */}
         <SelectCustom
-          label={t('bankAccounts.bank')}
+          label={t('editBankAccount.selectBank')}
           value={selectedBankId}
           onChange={(value) => {
             setSelectedBankId(value);
@@ -271,9 +279,9 @@ const AddBankAccountScreen = () => {
         {/* Default Account Toggle */}
         <View style={styles.defaultContainer}>
           <View>
-            <Text style={styles.defaultTitle}>{t('bankAccounts.setDefault')}</Text>
+            <Text style={styles.defaultTitle}>{t('editBankAccount.setDefault')}</Text>
             <Text style={styles.defaultDescription}>
-              {t('bankAccounts.defaultDescription')}
+              {t('editBankAccount.defaultDescription')}
             </Text>
           </View>
           <Switch
@@ -287,10 +295,22 @@ const AddBankAccountScreen = () => {
         <View style={styles.infoBox}>
           <Icon name="information" size={20} color="#666" />
           <Text style={styles.infoText}>
-            {t('bankAccounts.info')}
+            {t('editBankAccount.info')}
           </Text>
         </View>
       </ScrollView>
+      <VerifyOTPBottomSheet
+        visible={showOtp}
+        onClose={() => setShowOtp(false)}
+        identifier={identifier}
+        typeEnpoints="bank"
+        type="email"
+        mode="action"
+        onVerified={() => {
+          setShowOtp(false);
+          performSave();
+        }}
+      />
     </SafeAreaView>
   );
 };

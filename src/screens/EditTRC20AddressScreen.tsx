@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -18,7 +18,9 @@ import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import api from '../utils/Api';
+import VerifyOTPBottomSheet from '../component/VerifyOTPBottomSheet';
 import { getUser } from '../utils/TokenManager';
+import useTranslation from '../hooks/useTranslation';
 
 type TRC20Address = {
   id: string;
@@ -31,40 +33,61 @@ const EditTRC20AddressScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const addressData = (route.params as any)?.address as TRC20Address;
+  const { t } = useTranslation();
 
   const [name, setName] = useState(addressData?.name || '');
   const [isDefault, setIsDefault] = useState(addressData?.isDefault || false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showOtp, setShowOtp] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'update' | 'delete' | null>(null);
+  const [identifier, setIdentifier] = useState<string>('');
+  const [identifierType, setIdentifierType] = useState<'email' | 'phone'>('email');
 
-  const handleSave = async () => {
+  // Prefill identifier from stored user profile via API
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await api.get('/client/profile');
+        if (response.data?.status) {
+          const data = response.data.data || {};
+          if (data.email) {
+            setIdentifier(data.email);
+            setIdentifierType('email');
+          } else if (data.phone) {
+            setIdentifier(String(data.phone));
+            setIdentifierType('phone');
+          }
+        }
+      } catch (e) {
+        // silent
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  const performUpdate = async () => {
     if (!name.trim()) {
-      Alert.alert('Error', 'Please enter wallet name');
+      Alert.alert(t('common.error'), t('editTrc20Address.alerts.enterWalletName'));
       return;
     }
 
     if (!addressData?.id) {
-      Alert.alert('Error', 'Invalid wallet data');
+      Alert.alert(t('common.error'), t('editTrc20Address.alerts.invalidWalletData'));
       return;
     }
 
     setIsLoading(true);
     try {
-      const user = await getUser();
-      if (!user?.email) {
-        Alert.alert('Error', 'User not authenticated');
-        return;
-      }
-
       const response = await api.post('/client/wallet/update', {
         id: parseInt(addressData.id),
         name: name.trim(),
         address_wallet: addressData.address,
         is_default: isDefault ? 1 : 0,
-        email: user?.email,
+        email: identifier,
       });
 
       if (response?.data?.status) {
-        Alert.alert('Success', 'Wallet updated successfully', [
+        Alert.alert(t('common.success'), t('editTrc20Address.alerts.updateSuccess'), [
           {
             text: 'OK',
             onPress: () => {
@@ -74,30 +97,44 @@ const EditTRC20AddressScreen = () => {
           },
         ]);
       } else {
-        Alert.alert('Error', response?.data?.message || 'Failed to update wallet');
+        Alert.alert(t('common.error'), response?.data?.message || t('editTrc20Address.alerts.updateFailed'));
       }
     } catch (error: any) {
       console.log('Update wallet error:', error.response);
       Alert.alert(
-        'Error',
-        error?.response?.data?.message || 'Failed to update wallet. Please try again.'
+        t('common.error'),
+        error?.response?.data?.message || t('editTrc20Address.alerts.updateFailed')
       );
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleSave = () => {
+    if (!name.trim()) {
+      Alert.alert(t('common.error'), t('editTrc20Address.alerts.enterWalletName'));
+      return;
+    }
+    if (!addressData?.id) {
+      Alert.alert(t('common.error'), t('editTrc20Address.alerts.invalidWalletData'));
+      return;
+    }
+    setPendingAction('update');
+    setShowOtp(true);
+  };
+
   const handleDelete = () => {
     Alert.alert(
-      'Delete Address',
-      'Are you sure you want to delete this TRC20 address? This action cannot be undone.',
+      t('editTrc20Address.alerts.deleteConfirmTitle'),
+      t('editTrc20Address.alerts.deleteConfirmMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('common.delete'),
           style: 'destructive',
-          onPress: async () => {
-            await deleteWallet();
+          onPress: () => {
+            setPendingAction('delete');
+            setShowOtp(true);
           },
         },
       ]
@@ -106,26 +143,19 @@ const EditTRC20AddressScreen = () => {
 
   const deleteWallet = async () => {
     if (!addressData?.id) {
-      Alert.alert('Error', 'Invalid wallet data');
+      Alert.alert(t('common.error'), t('editTrc20Address.alerts.invalidWalletData'));
       return;
     }
 
     setIsLoading(true);
     try {
-      const user = await getUser();
-      if (!user?.email) {
-        Alert.alert('Error', 'User not authenticated');
-        return;
-      }
-      console.log('user', user?.email);
-      console.log('addressData', addressData.id);
       const response = await api.post('/client/wallet/delete', {
           id: parseInt(addressData.id),
-          email: user?.email,
+          email: identifier,
       });
 
       if (response?.data?.status) {
-        Alert.alert('Success', 'Wallet deleted successfully', [
+        Alert.alert(t('common.success'), t('editTrc20Address.alerts.deleteSuccess'), [
           {
             text: 'OK',
             onPress: () => {
@@ -134,23 +164,33 @@ const EditTRC20AddressScreen = () => {
           },
         ]);
       } else {
-        Alert.alert('Error', response?.data?.message || 'Failed to delete wallet');
+        Alert.alert(t('common.error'), response?.data?.message || t('editTrc20Address.alerts.deleteFailed'));
       }
     } catch (error: any) {
       console.log('Delete wallet error:', error.response);
       Alert.alert(
-        'Error',
-        error?.response?.data?.message || 'Failed to delete wallet. Please try again.'
+        t('common.error'),
+        error?.response?.data?.message || t('editTrc20Address.alerts.deleteFailed')
       );
     } finally {
       setIsLoading(false);
     }
   };
 
+  const onOtpVerified = async () => {
+    setShowOtp(false);
+    if (pendingAction === 'update') {
+      await performUpdate();
+    } else if (pendingAction === 'delete') {
+      await deleteWallet();
+    }
+    setPendingAction(null);
+  };
+
   const handleCopy = () => {
     if (addressData?.address) {
       Clipboard.setString(addressData.address);
-      Alert.alert('Copied', 'Wallet address copied to clipboard');
+      Alert.alert(t('editTrc20Address.alerts.copiedTitle'), t('editTrc20Address.alerts.copiedAddress'));
     }
   };
 
@@ -163,7 +203,7 @@ const EditTRC20AddressScreen = () => {
         >
           <Icon name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Edit Address</Text>
+        <Text style={styles.headerTitle}>{t('editTrc20Address.title')}</Text>
         <TouchableOpacity 
           style={[styles.saveButton, isLoading && styles.saveButtonDisabled]}
           onPress={handleSave}
@@ -172,24 +212,24 @@ const EditTRC20AddressScreen = () => {
           {isLoading ? (
             <Icon name="loading" size={16} color="#4A90E2" />
           ) : (
-            <Text style={styles.saveText}>Save</Text>
+            <Text style={styles.saveText}>{t('common.save')}</Text>
           )}
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content}>
         {/* Wallet Name */}
-        <Text style={styles.label}>Wallet Name</Text>
+        <Text style={styles.label}>{t('editTrc20Address.walletNameLabel')}</Text>
         <TextInput
           style={styles.input}
           value={name}
           onChangeText={setName}
-          placeholder="Enter wallet name"
+          placeholder={t('editTrc20Address.walletNamePlaceholder')}
           placeholderTextColor="#999"
         />
 
         {/* TRC20 Address (Non-editable) */}
-        <Text style={styles.label}>TRC20 Address</Text>
+        <Text style={styles.label}>{t('editTrc20Address.polygonAddressLabel')}</Text>
         <View style={styles.addressContainer}>
           <Text style={styles.addressText}>{addressData?.address}</Text>
           <TouchableOpacity 
@@ -203,9 +243,9 @@ const EditTRC20AddressScreen = () => {
         {/* Default Address Toggle */}
         <View style={styles.defaultContainer}>
           <View>
-            <Text style={styles.defaultTitle}>Set as default address</Text>
+            <Text style={styles.defaultTitle}>{t('editTrc20Address.setDefaultTitle')}</Text>
             <Text style={styles.defaultDescription}>
-              This address will be selected by default when receiving USDT
+              {t('editTrc20Address.setDefaultDescription')}
             </Text>
           </View>
           <Switch
@@ -227,16 +267,23 @@ const EditTRC20AddressScreen = () => {
           ) : (
             <Icon name="trash-can-outline" size={20} color="#FF3B30" />
           )}
-          <Text style={styles.deleteText}>Delete this address</Text>
+          <Text style={styles.deleteText}>{t('editTrc20Address.deleteButton')}</Text>
         </TouchableOpacity>
 
         <View style={styles.infoBox}>
           <Icon name="information" size={20} color="#666" />
-          <Text style={styles.infoText}>
-            To change TRC20 address, please delete and add a new address
-          </Text>
+          <Text style={styles.infoText}>{t('editTrc20Address.infoText')}</Text>
         </View>
       </ScrollView>
+      <VerifyOTPBottomSheet
+        visible={showOtp}
+        onClose={() => setShowOtp(false)}
+        identifier={identifier}
+        typeEnpoints="wallet"
+        type="email"
+        mode="action"
+        onVerified={onOtpVerified}
+      />
     </SafeAreaView>
   );
 };

@@ -22,6 +22,7 @@ import api from '../utils/Api';
 import SelectCustom from '../component/SelectCustom';
 import { getUser } from '../utils/TokenManager';
 import { useTranslation } from '../hooks/useTranslation';
+import VerifyOTPBottomSheet from '../component/VerifyOTPBottomSheet';
 
 interface BankData {
   id: number;
@@ -58,6 +59,9 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
   const [loading, setLoading] = useState(false);
   const [loadingBanks, setLoadingBanks] = useState(true);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
+  const [showOtp, setShowOtp] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'update' | 'delete' | null>(null);
+  const [identifier, setIdentifier] = useState<string>('');
 
   // Fetch banks data from API
   const fetchBanks = async () => {
@@ -83,6 +87,21 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
     fetchBanks();
   }, []);
 
+  // Prefill identifier for OTP (email preferred)
+  useEffect(() => {
+    const loadIdentifier = async () => {
+      try {
+        const user = await getUser();
+        if (user?.email) {
+          setIdentifier(user.email);
+        }
+      } catch (e) {
+        // silent
+      }
+    };
+    loadIdentifier();
+  }, []);
+
   const validateForm = () => {
     const newErrors: {[key: string]: string} = {};
     
@@ -102,17 +121,8 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleUpdate = async () => {
-    // Clear previous errors
-    setErrors({});
-    
-    // Validate form
-    if (!validateForm()) {
-      return;
-    }
-
+  const performUpdate = async () => {
     setLoading(true);
-    
     try {
       const user = await getUser();
       if (!user?.email) {
@@ -180,6 +190,14 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
     }
   };
 
+  const handleUpdate = () => {
+    // Clear previous errors
+    setErrors({});
+    if (!validateForm()) return;
+    setPendingAction('update');
+    setShowOtp(true);
+  };
+
   const handleDelete = () => {
     Alert.alert(
       t('editBankAccount.alerts.deleteConfirm'),
@@ -189,8 +207,9 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
         {
           text: t('editBankAccount.alerts.delete'),
           style: 'destructive',
-          onPress: async () => {
-            await deleteBankAccount();
+          onPress: () => {
+            setPendingAction('delete');
+            setShowOtp(true);
           },
         },
       ]
@@ -236,6 +255,17 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // After OTP verified, execute the pending action
+  const onOtpVerified = async () => {
+    setShowOtp(false);
+    if (pendingAction === 'update') {
+      await performUpdate();
+    } else if (pendingAction === 'delete') {
+      await deleteBankAccount();
+    }
+    setPendingAction(null);
   };
 
   return (
@@ -358,6 +388,16 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
           </Text>
         </View>
       </ScrollView>
+
+      <VerifyOTPBottomSheet
+        visible={showOtp}
+        onClose={() => setShowOtp(false)}
+        identifier={identifier}
+        typeEnpoints="bank"
+        type="email"
+        mode="action"
+        onVerified={onOtpVerified}
+      />
     </SafeAreaView>
   );
 };
