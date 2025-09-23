@@ -191,8 +191,10 @@ const BankAccountsScreen = () => {
           <Icon name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>{t('bankAccounts.title')}</Text>
-        <TouchableOpacity 
+        
+         <TouchableOpacity 
           style={styles.addButton}
+          disabled={needsVerification}
           onPress={handleAddAccount}
         >
           <Icon name="plus" size={24} color="#4A90E2" />

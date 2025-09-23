@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -37,6 +37,10 @@ const PhoneVerificationScreen = () => {
   const [currentInputIndex, setCurrentInputIndex] = useState(0);
   const [isAlreadyVerified, setIsAlreadyVerified] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
+  const [otpString, setOtpString] = useState('');
+
+  // Ref for hidden TextInput to support copy-paste
+  const hiddenTextInputRef = useRef<TextInput>(null);
 
   // Fetch phone number and verification status from profile when component mounts
   useEffect(() => {
@@ -123,6 +127,7 @@ const PhoneVerificationScreen = () => {
     newOtp[currentInputIndex] = num;
     setOtp(newOtp);
     setCode(newOtp.join(''));
+    setOtpString(newOtp.join(''));
 
     // Move to next input
     if (currentInputIndex < 5) {
@@ -136,6 +141,7 @@ const PhoneVerificationScreen = () => {
       newOtp[currentInputIndex - 1] = '';
       setOtp(newOtp);
       setCode(newOtp.join(''));
+      setOtpString(newOtp.join(''));
       setCurrentInputIndex(currentInputIndex - 1);
     } else if (otp[currentInputIndex]) {
       // If at first input and has digit, clear it
@@ -143,6 +149,32 @@ const PhoneVerificationScreen = () => {
       newOtp[currentInputIndex] = '';
       setOtp(newOtp);
       setCode(newOtp.join(''));
+      setOtpString(newOtp.join(''));
+    }
+  };
+
+  // Paste handling similar to OTPVerificationScreen
+  const handlePaste = (text: string) => {
+    const numericText = text.replace(/[^0-9]/g, '');
+    if (numericText.length > 0) {
+      const newOtp = [...otp];
+      const startIndex = currentInputIndex;
+      for (let i = 0; i < Math.min(numericText.length, 6 - startIndex); i++) {
+        newOtp[startIndex + i] = numericText[i];
+      }
+      setOtp(newOtp);
+      const joined = newOtp.join('');
+      setCode(joined);
+      setOtpString(joined);
+      const nextIndex = Math.min(startIndex + numericText.length, 5);
+      setCurrentInputIndex(nextIndex);
+    }
+  };
+
+  const handleTextChange = (text: string) => {
+    setOtpString(text);
+    if (text.length > otp.filter(d => d).length) {
+      handlePaste(text);
     }
   };
 
@@ -152,7 +184,7 @@ const PhoneVerificationScreen = () => {
     if (otpString.length === 6 && !verifying) {
       const timer = setTimeout(() => {
         handleVerify();
-      }, 500);
+      }, 0);
       return () => clearTimeout(timer);
     }
   }, [otp, verifying]);
@@ -336,8 +368,26 @@ const PhoneVerificationScreen = () => {
                 </Text>
               </View>
 
+              {/* Hidden TextInput for copy-paste support */}
+              <TextInput
+                ref={hiddenTextInputRef}
+                style={styles.hiddenTextInput}
+                value={otpString}
+                onChangeText={handleTextChange}
+                keyboardType="number-pad"
+                maxLength={6}
+                autoFocus={false}
+                caretHidden={true}
+                contextMenuHidden={false}
+                selectTextOnFocus={true}
+              />
+
               {/* OTP Input Display */}
-              <View style={styles.otpContainer}>
+              <TouchableOpacity
+                style={styles.otpContainer}
+                onPress={() => hiddenTextInputRef.current?.focus()}
+                activeOpacity={1}
+              >
                 {otp.map((digit, index) => {
                   const isActive = index === currentInputIndex;
                   const isFilled = Boolean(digit);
@@ -369,7 +419,7 @@ const PhoneVerificationScreen = () => {
                     </Animated.View>
                   );
                 })}
-              </View>
+              </TouchableOpacity>
 
               {/* Progress Bar */}
               <View style={styles.progressContainer}>
@@ -862,6 +912,15 @@ const styles = StyleSheet.create({
     fontFamily: theme.typography.fontFamily,
     fontSize: wp('3.5%'),
     color: theme.colors.textLight,
+  },
+
+  // Hidden TextInput for copy-paste
+  hiddenTextInput: {
+    position: 'absolute',
+    left: -9999,
+    opacity: 0,
+    width: 1,
+    height: 1,
   },
 
   // Resend Section Styles

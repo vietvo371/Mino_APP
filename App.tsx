@@ -14,6 +14,7 @@ import MainNavigator from './src/navigation/MainTabNavigator';
 import { theme } from './src/theme/colors';
 import { AuthProvider } from './src/contexts/AuthContext';
 import './src/i18n'; // Initialize i18n
+import { navigationRef } from './src/navigation/NavigationService';
 
 const App = () => {
   const isDarkMode = useColorScheme() === 'dark';
@@ -67,7 +68,7 @@ const App = () => {
             barStyle={isDarkMode ? 'light-content' : 'dark-content'}
             backgroundColor={theme.colors.background}
           />
-          <NavigationContainer theme={navigationTheme}>
+          <NavigationContainer theme={navigationTheme} ref={navigationRef}>
             <MainNavigator />
           </NavigationContainer>
         </SafeAreaProvider>

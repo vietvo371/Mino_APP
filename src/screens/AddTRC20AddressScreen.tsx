@@ -18,9 +18,11 @@ import {
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
 import api from '../utils/Api';
+import { useTranslation } from '../hooks/useTranslation';
 
 const AddTRC20AddressScreen = () => {
   const navigation = useNavigation();
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
   const [isDefault, setIsDefault] = useState(false);
@@ -31,15 +33,12 @@ const AddTRC20AddressScreen = () => {
     const newErrors: {[key: string]: string} = {};
     
     if (!name.trim()) {
-      newErrors.name = 'Wallet name is required';
+      newErrors.name = t('trc20Addresses.validation.nameRequired');
     }
     
     if (!address.trim()) {
-      newErrors.address = 'TRC20 address is required';
-    } else if (!address.startsWith('T') || address.length !== 34) {
-      newErrors.address = 'Invalid TRC20 address format';
-    }
-    
+      newErrors.address = t('trc20Addresses.validation.addressRequired');
+    } 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -66,8 +65,8 @@ const AddTRC20AddressScreen = () => {
       
       if (response.data.status) {
         Alert.alert(
-          'Success', 
-          response.data.message || 'Tạo ví thành công.',
+          t('common.success'), 
+          response.data.message || t('trc20Addresses.createSuccess'),
           [
             {
               text: 'OK',
@@ -76,7 +75,7 @@ const AddTRC20AddressScreen = () => {
           ]
         );
       } else {
-        Alert.alert('Error', response.data.message || 'Failed to create wallet');
+        Alert.alert(t('common.error'), response.data.message || t('trc20Addresses.createFailed'));
       }
       
     } catch (error: any) {
@@ -100,16 +99,16 @@ const AddTRC20AddressScreen = () => {
         
         // Show first error in alert
         const firstError = Object.values(formattedErrors)[0];
-        Alert.alert('Validation Error', firstError);
+        Alert.alert(t('trc20Addresses.validation.validationError'), String(firstError));
       } else {
         // Handle other errors
-        let errorMessage = 'Failed to create wallet. Please try again.';
+        let errorMessage = t('trc20Addresses.createFailed');
         if (error.response?.data?.message) {
           errorMessage = error.response.data.message;
         } else if (error.message) {
           errorMessage = error.message;
         }
-        Alert.alert('Error', errorMessage);
+        Alert.alert(t('common.error'), errorMessage);
       }
     } finally {
       setLoading(false);
@@ -133,7 +132,7 @@ const AddTRC20AddressScreen = () => {
         >
           <Icon name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Add TRC20 Address</Text>
+        <Text style={styles.headerTitle}>{t('trc20Addresses.title')}</Text>
         <TouchableOpacity 
           style={[styles.saveButton, loading && styles.saveButtonDisabled]}
           onPress={handleSave}
@@ -149,7 +148,7 @@ const AddTRC20AddressScreen = () => {
 
       <ScrollView style={styles.content}>
         {/* Wallet Name */}
-        <Text style={styles.label}>Wallet Name</Text>
+        <Text style={styles.label}>{t('trc20Addresses.walletName')}</Text>
         <TextInput
           style={[styles.input, errors.name && styles.inputError]}
           value={name}
@@ -159,13 +158,13 @@ const AddTRC20AddressScreen = () => {
               setErrors(prev => ({ ...prev, name: '' }));
             }
           }}
-          placeholder="Enter wallet name (e.g. Main Wallet)"
+          placeholder={t('trc20Addresses.enterWalletName')}
           placeholderTextColor="#999"
         />
         {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
 
         {/* TRC20 Address */}
-        <Text style={styles.label}>TRC20 Address</Text>
+        <Text style={styles.label}>{t('trc20Addresses.walletAddress')}</Text>
         <View style={[styles.addressInputContainer, errors.address && styles.inputError]}>
           <TextInput
             style={styles.addressInput}
@@ -176,7 +175,7 @@ const AddTRC20AddressScreen = () => {
                 setErrors(prev => ({ ...prev, address: '' }));
               }
             }}
-            placeholder="Enter or paste TRC20 address"
+            placeholder={t('trc20Addresses.enterWalletAddress')}
             placeholderTextColor="#999"
             autoCapitalize="none"
           />
@@ -200,9 +199,9 @@ const AddTRC20AddressScreen = () => {
         {/* Default Address Toggle */}
         <View style={styles.defaultContainer}>
           <View>
-            <Text style={styles.defaultTitle}>Set as default address</Text>
+            <Text style={styles.defaultTitle}>{t('trc20Addresses.setAsDefaultAddress')}</Text>
             <Text style={styles.defaultDescription}>
-              This address will be selected by default when receiving USDT
+              {t('trc20Addresses.defaultAddressDescription')}
             </Text>
           </View>
           <Switch
@@ -216,12 +215,12 @@ const AddTRC20AddressScreen = () => {
         <View style={styles.infoBox}>
           <Icon name="information" size={20} color="#666" />
           <Text style={styles.infoText}>
-            Please check TRC20 wallet address carefully before saving. Invalid addresses may result in loss of funds that cannot be recovered.
+            {t('trc20Addresses.saveWarning')}
           </Text>
         </View>
 
         <View style={styles.supportedBox}>
-          <Text style={styles.supportedTitle}>Supported exchanges:</Text>
+          <Text style={styles.supportedTitle}>{t('trc20Addresses.supportedExchanges')}</Text>
           <Text style={styles.supportedText}>
             • Binance{'\n'}
             • Huobi{'\n'}

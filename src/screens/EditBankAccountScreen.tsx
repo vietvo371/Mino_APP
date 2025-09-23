@@ -92,9 +92,7 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
     
     if (!accountNumber.trim()) {
       newErrors.accountNumber = t('editBankAccount.validationErrors.accountNumberRequired');
-    } else if (!/^\d{8,20}$/.test(accountNumber.trim())) {
-      newErrors.accountNumber = t('editBankAccount.validationErrors.accountNumberInvalid');
-    }
+    } 
     
     if (!accountName.trim()) {
       newErrors.accountName = t('editBankAccount.validationErrors.accountNameRequired');
@@ -130,8 +128,6 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
         email: user?.email,
       });
 
-      console.log('Update bank account response:', response.data);
-      
       if (response.data.status) {
         Alert.alert(
           t('common.success'), 
@@ -218,8 +214,6 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
         id: account.id,
         email: user?.email,
       });
-
-      console.log('Delete bank account response:', response.data);
 
       if (response?.data?.status) {
         Alert.alert(t('common.success'), t('editBankAccount.alerts.deleteSuccess'), [

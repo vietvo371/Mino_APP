@@ -152,7 +152,7 @@ const EditProfileScreen = () => {
         updateData.number_phone = phone.trim();
       }
 
-      const response = await api.post('/client/update-profile',   );
+      const response = await api.post('/client/update-profile', updateData);
       
       if (response.data.status) {
         Alert.alert(t('common.success'), t('editProfile.updateSuccess'), [

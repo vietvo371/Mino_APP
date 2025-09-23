@@ -177,7 +177,7 @@ const HomeScreen: StackScreen<'Home'> = () => {
         throw new Error('Invalid rate format');
       }
     } catch (error) {
-      console.log('API failed, using fallback rate:', error);
+      // console.log('API failed, using fallback rate:', error);
       setBinanceRate(FALLBACK_RATE);
     } finally {
       setIsLoadingRate(false);

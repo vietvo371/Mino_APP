@@ -1,7 +1,8 @@
 import axios from "axios";
 import { Alert, Platform } from 'react-native';
 import { deriveDashboardStats, deriveRecentBatches, mockUsers } from './mockData';
-import { getToken, saveToken } from "./TokenManager";
+import { getToken, removeToken, saveToken } from "./TokenManager";
+import { navigate, resetTo } from "../navigation/NavigationService";
 
 // Types
 export interface DashboardStats {
@@ -72,13 +73,40 @@ api.interceptors.response.use(
     return response;
   },
   (error: any) => {
+    // Timeout handling
+    if (error.code === 'ECONNABORTED' || /timeout/i.test(error.message)) {
+      Alert.alert('Timeout', 'Kết nối quá thời gian. Vui lòng thử lại.');
+      return Promise.reject(error);
+    }
+
+    // Validation error, bubble up to caller for field-level handling
     if (error.response?.status === 422) {
       return Promise.reject(error);
     }
-    else {
-      console.log('error', error.response?.data);
-      Alert.alert('Error', error.response?.data?.message);
+
+    // Unauthorized or token issues -> navigate to Login
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      removeToken(); // enable if you want to clear token
+      Alert.alert('Phiên đăng nhập', 'Phiên đã hết hạn, vui lòng đăng nhập lại.', [
+        {
+          text: 'OK',
+          onPress: () => {
+            resetTo('Login');
+          },
+        },
+      ]);
+      return Promise.reject(error);
     }
+
+    // Generic server/network error
+    console.log('API error:', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      message: error.message,
+    });
+    Alert.alert('Error', error.response?.data?.message || 'Lỗi Server');
+    return Promise.reject(error);
   }
 );
 

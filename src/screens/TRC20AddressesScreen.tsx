@@ -145,6 +145,7 @@ const TRC20AddressesScreen = () => {
         <Text style={styles.headerTitle}>{t('trc20Addresses.title')}</Text>
         <TouchableOpacity 
           style={styles.addButton}
+          disabled={needsVerification}
           onPress={handleAddAddress}
         >
           <Icon name="plus" size={24} color="#4A90E2" />
