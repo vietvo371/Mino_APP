@@ -52,4 +52,32 @@ export class EkycService {
       throw new Error(`Verify Face by ID failed: ${error}`);
     }
   }
+
+  // Language-aware variants (language: 'vi' | 'en')
+  static async startEkycFullWithLanguage(language: 'vi' | 'en'): Promise<LogResult> {
+    try {
+      const result = await EkycBridge.startEkycFullWithLanguage(language);
+      return JSON.parse(result);
+    } catch (error) {
+      throw new Error(`eKYC Full (lang) failed: ${error}`);
+    }
+  }
+
+  static async startEkycOcrWithLanguage(language: 'vi' | 'en'): Promise<LogResult> {
+    try {
+      const result = await EkycBridge.startEkycOcrWithLanguage(language);
+      return JSON.parse(result);
+    } catch (error) {
+      throw new Error(`eKYC OCR (lang) failed: ${error}`);
+    }
+  }
+
+  static async startEkycFaceWithLanguage(language: 'vi' | 'en'): Promise<LogResult> {
+    try {
+      const result = await EkycBridge.startEkycFaceWithLanguage(language);
+      return JSON.parse(result);
+    } catch (error) {
+      throw new Error(`eKYC Face (lang) failed: ${error}`);
+    }
+  }
 }

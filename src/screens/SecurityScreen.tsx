@@ -18,6 +18,8 @@ import { theme } from '../theme/colors';
 import api from '../utils/Api';
 import { getUser } from '../utils/TokenManager';
 import { useTranslation } from '../hooks/useTranslation';
+import { EkycService } from '../services/EkycService';
+import LoadingOverlay from '../component/LoadingOverlay';
 
 interface UserProfile {
   full_name: string;
@@ -39,7 +41,10 @@ const SecurityScreen = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const { t } = useTranslation();
+  const [isEkycLoading, setIsEkycLoading] = useState(false);
+  const [ekycLoadingMessage, setEkycLoadingMessage] = useState('');
+  const { t  , currentLanguage} = useTranslation();
+
 
   // Fetch user profile
   const fetchUserProfile = async (isRefresh = false) => {
@@ -71,6 +76,7 @@ const SecurityScreen = () => {
   useFocusEffect(
     React.useCallback(() => {
       fetchUserProfile();
+      
     }, [])
   );
 
@@ -87,47 +93,107 @@ const SecurityScreen = () => {
   const verificationCount = [isEkycVerified, isEmailVerified, isPhoneVerified].filter(Boolean).length;
   const verificationProgress = (verificationCount / 3) * 100;
 
-
-
-  const handlVerifiEKycExample = async () => {
-    try {
-      const response = await api.post('/client/verify-ekyc', {
-        "number_phone": "0708585120",
-        "otp": "119069"
-      });
-      if (response?.data?.status) {
-        Alert.alert(t('security.verifyEkycSuccess'), t('security.verifyEkycSuccess'), [
-          {
-            text: 'OK',
-            // onPress: () => {
-            //   navigation.goBack();
-            // },
-          },
-        ]);
-      } else {
-        Alert.alert(t('security.error'), response?.data?.message || t('security.verifyEkycError'));
-      }
-    } catch (error: any) {
-      console.log('Verify eKYC example error:', error.response);
-      Alert.alert(
-        t('security.error'),
-        error?.response?.data?.message || t('security.verifyEkycError')
-      );
-    }
-  };
-
   // Start eKYC full flow via native SDK
   const handleStartEkyc = async () => {
     try {
-      const result = await EkycService.startEkycFull();
-      // TODO: send result to backend for verification if required
-      console.log('eKYC Full Result:', result);
-      Alert.alert(t('security.identityVerification'), t('security.eKycCompleted'));
-      // refresh profile to reflect is_ekyc flag if backend updates it asynchronously
-      fetchUserProfile();
+      setEkycLoadingMessage(t('security.performingEkyc'));
+      
+      const lang = currentLanguage === 'vi' ? 'vi' : 'en';
+      const fullResult = await EkycService.startEkycFullWithLanguage(lang);
+      console.log('eKYC Full Result:', fullResult);
+      setIsEkycLoading(true);
+
+      const logs: any = fullResult;
+      const ocr = logs?.LOG_OCR ? JSON.parse(logs.LOG_OCR) : null;
+      const lcf = logs?.LOG_LIVENESS_CARD_FRONT ? JSON.parse(logs.LOG_LIVENESS_CARD_FRONT) : null;
+      const lcr = logs?.LOG_LIVENESS_CARD_REAR ? JSON.parse(logs.LOG_LIVENESS_CARD_REAR) : null;
+      const lf  = logs?.LOG_LIVENESS_FACE ? JSON.parse(logs.LOG_LIVENESS_FACE) : null;
+      const mask= logs?.LOG_MASK_FACE ? JSON.parse(logs.LOG_MASK_FACE) : null;
+      const cmp = logs?.LOG_COMPARE ? JSON.parse(logs.LOG_COMPARE) : null;
+
+      // Validate step by step with Alerts
+      if (!lcf || lcf?.object?.liveness !== 'success') {
+        setIsEkycLoading(false);
+        Alert.alert(t('security.cardFrontInvalid'), t('security.cardFrontInvalidMessage'));
+        return;
+      }
+      if (!lcr || lcr?.object?.liveness !== 'success') {
+        setIsEkycLoading(false);
+        Alert.alert(t('security.cardRearInvalid'), t('security.cardRearInvalidMessage'));
+        return;
+      }
+      if (!lf || lf?.object?.liveness !== 'success') {
+        setIsEkycLoading(false);
+        Alert.alert(t('security.faceInvalid'), t('security.faceInvalidMessage'));
+        return;
+      }
+      if (!mask || mask?.object?.masked !== 'no') {
+        setIsEkycLoading(false);
+        Alert.alert(t('security.maskDetected'), t('security.maskDetectedMessage'));
+        return;
+      }
+      if (!ocr || ocr?.statusCode !== 200) {
+        setIsEkycLoading(false);
+        Alert.alert(t('security.ocrFailed'), t('security.ocrFailedMessage'));
+        return;
+      }
+      if (cmp) {
+        const prob = Number(cmp?.object?.prob || 0);
+        if (!(cmp?.object?.msg === 'MATCH' && prob >= 95)) {
+          setIsEkycLoading(false);
+          Alert.alert(t('security.faceMatchFailed'), t('security.faceMatchFailedMessage'));
+          return;
+        }
+      }
+
+
+      // Collect hashes
+      const hash_front = ocr?.imgs?.img_front || '';
+      const hash_back  = ocr?.imgs?.img_back || '';
+      const hash_face_near = lf?.imgs?.near_img || '';
+      const hash_face_far  = lf?.imgs?.far_img || '';
+
+      // Get user email
+      let email = '';
+      try {
+        const user: any = await getUser();
+        email = user?.email || '';
+      } catch {}
+
+      // Send to backend
+      try {
+        console.log('hash_front', hash_front);
+        console.log('hash_back', hash_back);
+        console.log('hash_face_near', hash_face_near);
+        console.log('hash_face_far', hash_face_far);
+        console.log('email', email);
+        const response = await api.post('/client/verify-ekyc', {
+          hash_front : hash_front,
+          hash_back : hash_back,
+          hash_face_near : hash_face_near,
+          hash_face_far : hash_face_far,
+          email,
+        });
+        if (response.data.status) {
+          setIsEkycLoading(false);
+          Alert.alert('eKYC', t('security.ekycSuccess'));
+          fetchUserProfile();
+        } else {
+          Alert.alert('eKYC', response.data.message || t('security.ekycFailed'));
+          setIsEkycLoading(false);
+        }
+      } catch (error: any) {
+        if (error.response?.data?.errors) {
+          Object.keys(error.response.data.errors).forEach(field => {
+            Alert.alert('eKYC', error.response.data.errors[field][0] || t('security.ekycFailed'));
+          });
+        }
+      } finally {
+        setIsEkycLoading(false);
+      }
+      
     } catch (error: any) {
-      console.log('eKYC Full Error:', error);
-      Alert.alert(t('security.error'), t('security.eKycFailed'));
+      console.log('eKYC Full Error:', error.response);
     }
   };
 
@@ -143,7 +209,7 @@ const SecurityScreen = () => {
       iconBg: isEkycVerified ? '#34C75915' : '#7B68EE15',
       status: isEkycVerified ? 'verified' : 'pending',
       // onPress: () => navigation.navigate('EkycIntro' as never),
-      onPress: () => handlVerifiEKycExample(),
+      onPress: isEkycVerified ? () => {} : () => handleStartEkyc(),
 
     },
     {
@@ -364,6 +430,11 @@ const SecurityScreen = () => {
           </View>
         </View>
       </ScrollView>
+      
+      <LoadingOverlay 
+        visible={isEkycLoading} 
+        message={ekycLoadingMessage} 
+      />
     </SafeAreaView>
   );
 };

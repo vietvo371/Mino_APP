@@ -671,12 +671,6 @@ const HomeScreen: StackScreen<'Home'> = () => {
                 <Text style={styles.warningText}>
                   {t('wallet.walletRequiredMessage')}
                 </Text>
-                <TouchableOpacity 
-                  style={styles.warningButton}
-                  onPress={() => navigation.navigate('TRC20Addresses' as never)}
-                >
-                  <Text style={styles.warningButtonText}>{t('wallet.addWalletButton')}</Text>
-                </TouchableOpacity>
               </View>
             )}
             {activeTab === 'sell' && !hasBankAccount && (
@@ -685,12 +679,6 @@ const HomeScreen: StackScreen<'Home'> = () => {
                 <Text style={styles.warningText}>
                   {t('bank.bankRequiredMessage')}
                 </Text>
-                <TouchableOpacity 
-                  style={styles.warningButton}
-                  onPress={() => navigation.navigate('BankAccounts' as never)}
-                >
-                  <Text style={styles.warningButtonText}>{t('bank.addAccountButton')}</Text>
-                </TouchableOpacity>
               </View>
             )}
           </View>

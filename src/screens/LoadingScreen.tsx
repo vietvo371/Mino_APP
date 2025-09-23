@@ -20,9 +20,9 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ navigation }) => {
 
   const checkLogin = async () => {
     try {
-    const res = await api.get('/check-login');
+    const res = await api.get('/auth/check-login');
     if (res.data?.status) {
-      navigation.replace('Home');
+      navigation.replace('MainTabs');
       } else {
         navigation.replace('Login');
       }
@@ -44,8 +44,8 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ navigation }) => {
           // Lần đầu mở app -> Onboarding
           navigation.replace('Onboarding');
         } else {
-          // checkLogin();
-          navigation.replace('Login');
+          checkLogin();
+          // navigation.replace('Login');
         }
       } catch (error) {
         console.error('Error checking first launch:', error);

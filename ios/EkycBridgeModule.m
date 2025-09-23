@@ -15,6 +15,23 @@
 // To export a module named RCTCalendarModule
 RCT_EXPORT_MODULE(EkycBridge);
 
+// Helper: apply language code ("vi" | "en"), default "vi"
+static inline void RNSApplyLanguage(ICEkycCameraViewController *camera, NSString *language)
+{
+  if (language != nil && [language isKindOfClass:NSString.class]) {
+    NSString *lang = [language lowercaseString];
+    if ([lang isEqualToString:@"en"]) {
+      camera.languageSdk = @"en";
+      return;
+    }
+    if ([lang isEqualToString:@"vi"]) {
+      camera.languageSdk = @"vi";
+      return;
+    }
+  }
+  camera.languageSdk = @"vi";
+}
+
 RCT_EXPORT_METHOD(startEkycFull:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
   NSLog(@"Hello world");
   
@@ -106,6 +123,46 @@ RCT_EXPORT_METHOD(startEkycFull:(RCTPromiseResolveBlock)resolve rejecter:(RCTPro
 
 };
 
+// Start Full with language ("vi" | "en")
+RCT_EXPORT_METHOD(startEkycFullWithLanguage:(NSString *)language resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
+  NSLog(@"startEkycFullWithLanguage");
+  self._resolve = resolve;
+  self._reject = reject;
+
+  ICEkycCameraViewController *camera = (ICEkycCameraViewController *) [ICEkycCameraRouter createModule];
+  camera.cameraDelegate = self;
+  [self initParamSdkForCamera:camera];
+  // so khớp như startEkycFull
+  camera.isEnableCompare = YES;
+  camera.compareType = 1;
+  camera.documentType = IdentityCard;
+  camera.flowType = full;
+  camera.versionSdk = ProOval;
+  camera.isCheckMaskedFace = YES;
+  camera.isCheckLivenessCard = YES;
+  camera.validateDocumentType = Basic;
+  camera.isValidatePostcode = YES;
+  camera.checkLivenessFace = IBeta;
+  camera.challengeCode = @"INNOVATIONCENTER";
+  RNSApplyLanguage(camera, language);
+  camera.isShowTutorial = YES;
+  camera.isEnableGotIt = YES;
+  camera.cameraPositionForPortrait = PositionFront;
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+    UIViewController *root = [[[UIApplication sharedApplication] delegate] window].rootViewController;
+    BOOL modalPresent = (BOOL) (root.presentedViewController);
+    if (modalPresent) {
+      UIViewController *parent = root.presentedViewController;
+      [parent setModalPresentationStyle:UIModalPresentationFullScreen];
+      [parent showViewController:camera sender:parent];
+    } else {
+      [camera setModalPresentationStyle:UIModalPresentationFullScreen];
+      [root showDetailViewController:camera sender:root];
+    }
+  });
+}
+
 
 RCT_EXPORT_METHOD(startEkycOcr:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
   NSLog(@"Hello world");
@@ -179,6 +236,40 @@ RCT_EXPORT_METHOD(startEkycOcr:(RCTPromiseResolveBlock)resolve rejecter:(RCTProm
   });
 
 };
+
+// Start OCR with language
+RCT_EXPORT_METHOD(startEkycOcrWithLanguage:(NSString *)language resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
+  NSLog(@"startEkycOcrWithLanguage");
+  self._resolve = resolve;
+  self._reject = reject;
+
+  ICEkycCameraViewController *camera = (ICEkycCameraViewController *) [ICEkycCameraRouter createModule];
+  camera.cameraDelegate = self;
+  [self initParamSdkForCamera:camera];
+  camera.documentType = IdentityCard;
+  camera.flowType = ocr;
+  camera.isCheckLivenessCard = YES;
+  camera.validateDocumentType = Basic;
+  camera.isValidatePostcode = YES;
+  camera.challengeCode = @"INNOVATIONCENTER";
+  RNSApplyLanguage(camera, language);
+  camera.isShowTutorial = YES;
+  camera.isEnableGotIt = YES;
+  camera.cameraPositionForPortrait = PositionFront;
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+    UIViewController *root = [[[UIApplication sharedApplication] delegate] window].rootViewController;
+    BOOL modalPresent = (BOOL) (root.presentedViewController);
+    if (modalPresent) {
+      UIViewController *parent = root.presentedViewController;
+      [parent setModalPresentationStyle:UIModalPresentationFullScreen];
+      [parent showViewController:camera sender:parent];
+    } else {
+      [camera setModalPresentationStyle:UIModalPresentationFullScreen];
+      [root showDetailViewController:camera sender:root];
+    }
+  });
+}
 
 
 RCT_EXPORT_METHOD(startEkycFace:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
@@ -257,6 +348,39 @@ RCT_EXPORT_METHOD(startEkycFace:(RCTPromiseResolveBlock)resolve rejecter:(RCTPro
 
 };
 
+// Start Face with language
+RCT_EXPORT_METHOD(startEkycFaceWithLanguage:(NSString *)language resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
+  NSLog(@"startEkycFaceWithLanguage");
+  self._resolve = resolve;
+  self._reject = reject;
+
+  ICEkycCameraViewController *camera = (ICEkycCameraViewController *) [ICEkycCameraRouter createModule];
+  camera.cameraDelegate = self;
+  [self initParamSdkForCamera:camera];
+  camera.documentType = IdentityCard;
+  camera.flowType = face;
+  camera.versionSdk = ProOval;
+  camera.isCheckMaskedFace = YES;
+  camera.checkLivenessFace = IBeta;
+  camera.challengeCode = @"INNOVATIONCENTER";
+  RNSApplyLanguage(camera, language);
+  camera.isShowTutorial = YES;
+  camera.isEnableGotIt = YES;
+  camera.cameraPositionForPortrait = PositionFront;
+  dispatch_async(dispatch_get_main_queue(), ^{
+    UIViewController *root = [[[UIApplication sharedApplication] delegate] window].rootViewController;
+    BOOL modalPresent = (BOOL) (root.presentedViewController);
+    if (modalPresent) {
+      UIViewController *parent = root.presentedViewController;
+      [parent setModalPresentationStyle:UIModalPresentationFullScreen];
+      [parent showViewController:camera sender:parent];
+    } else {
+      [camera setModalPresentationStyle:UIModalPresentationFullScreen];
+      [root showDetailViewController:camera sender:root];
+    }
+  });
+}
+
 
 // Verify face against a reference hash (compare with stored face)
 RCT_EXPORT_METHOD(startEkycFaceWithReference:(NSString *)referenceHash resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
@@ -301,10 +425,52 @@ RCT_EXPORT_METHOD(startEkycFaceWithReference:(NSString *)referenceHash resolver:
   });
 };
 
+// VerifyFace flow (docs): nhập ID → chụp face → xác thực; log ra hash ảnh
+RCT_EXPORT_METHOD(startVerifyFaceWithId:(NSString *)verifyId resolver:(RCTPromiseResolveBlock)resolve rejecter:(RCTPromiseRejectBlock)reject) {
+  NSLog(@"startVerifyFaceWithId");
+  self._resolve = resolve;
+  self._reject = reject;
+
+  ICEkycCameraViewController *camera = (ICEkycCameraViewController *) [ICEkycCameraRouter createModule];
+  camera.cameraDelegate = self;
+  [self initParamSdkForCamera:camera];
+
+  // SDK hiện tại không có flow verifyFace riêng; dùng flow face và truyền ID qua headers
+  camera.flowType = face;
+  camera.versionSdk = ProOval;
+  camera.documentType = IdentityCard;
+  camera.isCheckMaskedFace = YES;
+  camera.checkLivenessFace = IBeta;
+  camera.languageSdk = @"vi";
+  camera.challengeCode = @"INNOVATIONCENTER";
+
+  // Truyền Verify ID cho BE qua headers
+  NSMutableDictionary *headers = [NSMutableDictionary new];
+  headers[@"X-Verify-Id"] = verifyId ?: @"";
+  // giữ Authorization đã set trong initParamSdkForCamera
+  if (camera.headersRequest != nil) {
+    [headers addEntriesFromDictionary:camera.headersRequest];
+  }
+  camera.headersRequest = headers;
+
+  dispatch_async(dispatch_get_main_queue(), ^{
+    UIViewController *root = [[[UIApplication sharedApplication] delegate] window].rootViewController;
+    BOOL modalPresent = (BOOL) (root.presentedViewController);
+    if (modalPresent) {
+      UIViewController *parent = root.presentedViewController;
+      [parent setModalPresentationStyle:UIModalPresentationFullScreen];
+      [parent showViewController:camera sender:parent];
+    } else {
+      [camera setModalPresentationStyle:UIModalPresentationFullScreen];
+      [root showDetailViewController:camera sender:root];
+    }
+  });
+};
+
 -(void) initParamSdkForCamera:(ICEkycCameraViewController *)camera {
   camera.tokenKey = @"MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKDkNJECt3ow2jyClCKo3r2gJ+0zBhS0T3CPvjnWbdfhgCwO19R7bmhzLGFKuMfumnmnnxK73KnQfppt/jKsGWcCAwEAAQ==";
   camera.tokenId = @"3e87ddb5-25d2-06ce-e063-63199f0afe5b";
-  camera.accessToken = @"bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0cmFuc2FjdGlvbl9pZCI6IjI5ZTljYWE0LTdiZjItNGFiMS1hNDNhLTkyNDA5NTJjNjJjMCIsInN1YiI6ImJjN2JmZDI2LThmMTYtMTFmMC1hNzY5LWY3MjI4MWE1OTJjOCIsImF1ZCI6WyJyZXN0c2VydmljZSJdLCJ1c2VyX25hbWUiOiJxdW9jbG9uZ2RuZ0BnbWFpbC5jb20iLCJzY29wZSI6WyJyZWFkIl0sImlzcyI6Imh0dHBzOi8vbG9jYWxob3N0IiwibmFtZSI6InF1b2Nsb25nZG5nQGdtYWlsLmNvbSIsImV4cCI6MTc1ODUzOTg0OSwidXVpZF9hY2NvdW50IjoiYmM3YmZkMjYtOGYxNi0xMWYwLWE3NjktZjcyMjgxYTU5MmM4IiwiYXV0aG9yaXRpZXMiOlsiVVNFUiJdLCJqdGkiOiI5YTE0NTlhZi0zNmIyLTRmODItYTViYy1kMmViZmJkN2Y2ODEiLCJjbGllbnRfaWQiOiI4X2hvdXIifQ.qVyJ6aURNnA_r1IjMPd3XYLjE_ynFuAUdnA8ZJy1iO84JXsDaGIIbMyXCbN58T_WZ7y7xa6430zk0cRCqBMToU5AjX2PHfHbxIGT5sCXA0tentGXeSL6XngMyl80MMNu2Xy1i5Up6fa8mt-iRC7JEmvdGoHXwrrF6o6NtXbWiXDMC58hlPYXd8wELhEPze2DxFDsZQ3MUOV1Y2XEHF6pZ7rbPQwhfOadtpj6lbQr3ToZQRE6Sbv4sM6VdYpA318UuxV-GqVOtIpkwZoVXjjWVSREHeBcCF1m6x3DUYmZc0VQBaleKNf2QBhuYhSEU0P3m48ydltahAgaUvE_HzvNjg";
+  camera.accessToken = @"bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0cmFuc2FjdGlvbl9pZCI6IjE2NDNiYTE5LTcwNDAtNGVmYy1hMWM1LTU1MTUzYzA5YTczNiIsInN1YiI6ImJjN2JmZDI2LThmMTYtMTFmMC1hNzY5LWY3MjI4MWE1OTJjOCIsImF1ZCI6WyJyZXN0c2VydmljZSJdLCJ1c2VyX25hbWUiOiJxdW9jbG9uZ2RuZ0BnbWFpbC5jb20iLCJzY29wZSI6WyJyZWFkIl0sImlzcyI6Imh0dHBzOi8vbG9jYWxob3N0IiwibmFtZSI6InF1b2Nsb25nZG5nQGdtYWlsLmNvbSIsInV1aWRfYWNjb3VudCI6ImJjN2JmZDI2LThmMTYtMTFmMC1hNzY5LWY3MjI4MWE1OTJjOCIsImF1dGhvcml0aWVzIjpbIlVTRVIiXSwianRpIjoiYWY4YmJhMmEtN2MyMC00YmMxLTlkODYtYjQyMWNhYmI4ODIyIiwiY2xpZW50X2lkIjoiYWRtaW5hcHAifQ.Ef0ngesK8dKyTP6x_FBZ5u1KocEsfESMXmJItVC2isEX6zW0-BLbRIxRFGpEBcFTdUrDisE165o2MD9-VS810rF1UEYmsWbpTegCda4YjmiRgN02m2G4PFJTYV6L2Yc3qP-PpdqPYz6Lcnd8P4kXo4ulD8Kv5Rqb-38lCIpWbbrHar72cCyFzrB9KSb3h0KuB1bUf__nwK7BYx2MzezwcwMyYjnNKANHn3TTX_tMmbSL8-gWnl7pkmcbA5eRz-WffJstGatQ_7cgzD5dUBE1DAwreU8lk1xtG1yV3OUQqU6090HzRRZ1iGoNEq1P8ZUCRAuY_bscWwxO7a5OM7j8bg";
   NSMutableDictionary *headers = [NSMutableDictionary new];
   headers[@"Authorization"] = camera.accessToken;
   camera.headersRequest = headers;
