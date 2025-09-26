@@ -138,6 +138,12 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
 
   const signOut = async () => {
     try {
+      // Reset Crisp session so the next user does not inherit history
+      try {
+        const { resetSession } = require('react-native-crisp-chat-sdk');
+        resetSession();
+      } catch (_) {}
+
       await removeToken();
       await removeUser();
       (navigation as any).replace('Login');
