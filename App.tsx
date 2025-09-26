@@ -13,6 +13,9 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import MainNavigator from './src/navigation/MainTabNavigator';
 import { theme } from './src/theme/colors';
 import { AuthProvider } from './src/contexts/AuthContext';
+import { ChatProvider } from './src/contexts/ChatContext';
+import { ChatVisibilityProvider } from './src/component/ChatVisibilityProvider';
+import ChatOverlay from './src/component/ChatOverlay';
 import './src/i18n'; // Initialize i18n
 import { navigationRef } from './src/navigation/NavigationService';
 
@@ -68,9 +71,14 @@ const App = () => {
             barStyle={isDarkMode ? 'light-content' : 'dark-content'}
             backgroundColor={theme.colors.background}
           />
-          <NavigationContainer theme={navigationTheme} ref={navigationRef}>
-            <MainNavigator />
-          </NavigationContainer>
+            <ChatProvider>
+              <ChatVisibilityProvider>
+                <NavigationContainer theme={navigationTheme} ref={navigationRef}>
+                  <MainNavigator />
+                </NavigationContainer>
+                <ChatOverlay />
+              </ChatVisibilityProvider>
+            </ChatProvider>
         </SafeAreaProvider>
     </GestureHandlerRootView>
   );

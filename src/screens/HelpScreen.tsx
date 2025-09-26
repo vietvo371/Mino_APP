@@ -146,7 +146,15 @@ const HelpScreen = () => {
           <Text style={styles.sectionTitle}>{t('help.contactSupport')}</Text>
           <View style={styles.contactList}>
             {getContactMethods(t).map(method => (
-              <TouchableOpacity key={method.id} style={styles.contactItem}>
+              <TouchableOpacity 
+                key={method.id} 
+                style={styles.contactItem}
+                onPress={() => {
+                  if (method.id === 'chat') {
+                    navigation.navigate('CrispChat' as never);
+                  }
+                }}
+              >
                 <View style={[styles.contactIcon, { backgroundColor: '#4A90E215' }]}>
                   <Icon name={method.icon} size={24} color="#4A90E2" />
                 </View>

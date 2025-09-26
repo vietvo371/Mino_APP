@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -27,6 +27,7 @@ import LanguageSelector from '../components/LanguageSelector';
 import CountryCodePicker from '../components/CountryCodePicker';
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 import { useTranslation } from '../hooks/useTranslation';
+import { useChatVisibility } from '../component/ChatVisibilityProvider';
 
 interface LoginScreenProps {
   navigation: any;
@@ -37,6 +38,7 @@ const { width, height } = Dimensions.get('window');
 const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const { signIn } = useAuth();
   const { t, getCurrentLanguage } = useTranslation();
+  const { setChatButtonVisible } = useChatVisibility();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -51,6 +53,15 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
     dialCode: '+84',
     flag: '🇻🇳',
   });
+
+  // Hide floating chat button on login screen
+  useEffect(() => {
+    setChatButtonVisible(false);
+    return () => {
+      setChatButtonVisible(true);
+    };
+  }, [setChatButtonVisible]);
+
   const validateForm = () => {
     const newErrors: { identifier?: string; password?: string } = {};
 
