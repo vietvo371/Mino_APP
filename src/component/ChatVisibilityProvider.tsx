@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, ReactNode } from 'react';
 interface ChatVisibilityContextType {
   isChatButtonVisible: boolean;
   setChatButtonVisible: (visible: boolean) => void;
+  resetChatButtonVisibility: () => void;
 }
 
 const ChatVisibilityContext = createContext<ChatVisibilityContextType | undefined>(undefined);
@@ -14,11 +15,17 @@ interface ChatVisibilityProviderProps {
 export const ChatVisibilityProvider: React.FC<ChatVisibilityProviderProps> = ({ children }) => {
   const [isChatButtonVisible, setChatButtonVisible] = useState(true);
 
+  const resetChatButtonVisibility = () => {
+    console.log('ChatVisibilityProvider: resetting chat button visibility to true');
+    setChatButtonVisible(true);
+  };
+
   return (
     <ChatVisibilityContext.Provider
       value={{
         isChatButtonVisible,
         setChatButtonVisible,
+        resetChatButtonVisibility,
       }}
     >
       {children}

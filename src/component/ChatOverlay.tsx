@@ -12,9 +12,14 @@ const ChatOverlay: React.FC = () => {
   // Sync user info from AuthContext to ChatContext
   useChatSync();
 
+  console.log('ChatOverlay: isChatButtonVisible:', isChatButtonVisible);
+
   if (!isChatButtonVisible) {
+    console.log('ChatOverlay: not rendering floating button');
     return null;
   }
+
+  console.log('ChatOverlay: rendering floating button');
 
   return (
     <View style={styles.container} pointerEvents="box-none">

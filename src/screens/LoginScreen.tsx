@@ -38,7 +38,7 @@ const { width, height } = Dimensions.get('window');
 const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
   const { signIn } = useAuth();
   const { t, getCurrentLanguage } = useTranslation();
-  const { setChatButtonVisible } = useChatVisibility();
+  const { setChatButtonVisible, resetChatButtonVisibility } = useChatVisibility();
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -121,6 +121,10 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       // Login successful - navigate to MainTabs
       await saveUser(response.data.data);
       await saveToken(response.data.token);
+      
+      // Reset floating chat button visibility
+      resetChatButtonVisibility();
+      
       navigation.navigate('MainTabs');
       
     } catch (error: any) {
