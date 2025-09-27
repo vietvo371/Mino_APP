@@ -15,7 +15,9 @@ import { theme } from './src/theme/colors';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { ChatProvider } from './src/contexts/ChatContext';
 import { ChatVisibilityProvider } from './src/component/ChatVisibilityProvider';
+import { SocketProvider } from './src/contexts/SocketContext';
 import ChatOverlay from './src/component/ChatOverlay';
+import { NotificationHub } from './src/socket/NotificationHub';
 import './src/i18n'; // Initialize i18n
 import { navigationRef } from './src/navigation/NavigationService';
 
@@ -71,14 +73,17 @@ const App = () => {
             barStyle={isDarkMode ? 'light-content' : 'dark-content'}
             backgroundColor={theme.colors.background}
           />
-            <ChatProvider>
-              <ChatVisibilityProvider>
-                <NavigationContainer theme={navigationTheme} ref={navigationRef}>
-                  <MainNavigator />
-                </NavigationContainer>
-                <ChatOverlay />
-              </ChatVisibilityProvider>
-            </ChatProvider>
+              <SocketProvider>
+                <ChatProvider>
+                  <ChatVisibilityProvider>
+                    <NavigationContainer theme={navigationTheme} ref={navigationRef}>
+                      <MainNavigator />
+                    </NavigationContainer>
+                    <ChatOverlay />
+                    <NotificationHub />
+                  </ChatVisibilityProvider>
+                </ChatProvider>
+              </SocketProvider>
         </SafeAreaProvider>
     </GestureHandlerRootView>
   );

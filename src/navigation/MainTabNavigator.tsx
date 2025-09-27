@@ -44,6 +44,7 @@ import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 import SuccessTransactionDetailScreen from '../screens/SuccessTransactionDetailScreen';
 import FailedTransactionDetailScreen from '../screens/FailedTransactionDetailScreen';
 import CrispChatScreen from '../screens/CrispChatScreen';
+import TestSocketScreen from '../screens/TestSocketScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 const Tab = createBottomTabNavigator<RootStackParamList>();
@@ -114,7 +115,7 @@ const MainTabs = () => {
 const MainNavigator = () => {
   return (
     <Stack.Navigator
-      initialRouteName="Loading" 
+      initialRouteName="TestSocket" 
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',
@@ -167,6 +168,9 @@ const MainNavigator = () => {
         <Stack.Screen name="Payment" component={PaymentScreen} />
         <Stack.Screen name="DetailHistory" component={DetailHistoryScreen} />
         <Stack.Screen name="CrispChat" component={CrispChatScreen} />
+
+        {/* Test */}
+        <Stack.Screen name="TestSocket" component={TestSocketScreen} />
       </Stack.Group>
 
     </Stack.Navigator>
