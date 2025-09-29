@@ -713,5 +713,29 @@
     "failedToSendOtp": "Failed to send OTP",
     "otpResent": "Verification code has been resent",
     "ok": "OK"
+  },
+  "toast": {
+    "transactionSuccess": "Transaction Successful",
+    "transactionFailed": "Transaction Failed",
+    "socketError": "Connection Error",
+    "socketConnected": "Connected",
+    "socketDisconnected": "Disconnected",
+    "amount": "Amount",
+    "exchangeRate": "Exchange Rate",
+    "fee": "Fee",
+    "feePercent": "Fee",
+    "receiverAccount": "Receiver Account",
+    "network": "Network",
+    "note": "Note",
+    "transactionHash": "Tx",
+    "wallet": "Wallet",
+    "time": "Time",
+    "transaction": "Transaction",
+    "success": "Success",
+    "error": "Error",
+    "info": "Info",
+    "warning": "Warning",
+    "bankName": "Bank Name",
+    "accountNumber": "Account Number"
   }
 }

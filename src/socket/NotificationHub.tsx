@@ -1,27 +1,43 @@
-import React, { useEffect } from 'react';
-import Toast from 'react-native-toast-message';
+import React, { useEffect, useState } from 'react';
 import { useNotificationStore } from './notificationStore';
+import ToastCustom, { ToastData } from '../component/ToastCustom';
 
 export const NotificationHub = () => {
     const list = useNotificationStore((s) => s.list);
     const remove = useNotificationStore((s) => s.remove);
+    const [currentToast, setCurrentToast] = useState<ToastData | null>(null);
 
     useEffect(() => {
-        if (list.length === 0) return;
+        if (list.length === 0) {
+            setCurrentToast(null);
+            return;
+        }
+        
         const last = list[list.length - 1];
         
-        Toast.show({
-            type:
-                last.type === 'success' ? 'success' :
-                last.type === 'warning' ? 'info' :
-                last.type === 'error' ? 'error' : 'info',
-            text1: last.title ?? 'Notification',
-            text2: last.message,
-            position: 'top',
-            visibilityTime: 3500,
-            onHide: () => remove(last.id), // Tự động xóa sau khi hiển thị
-        });
-    }, [list, remove]);
+        // Only show if it's a new notification (not already showing)
+        if (!currentToast || currentToast.id !== last.id) {
+            setCurrentToast({
+                id: last.id,
+                title: last.title,
+                message: last.message,
+                type: last.type,
+                duration: 5000, 
+            });
+        }
+    }, [list, currentToast]);
 
-    return <Toast />;
+    const handleHideToast = () => {
+        if (currentToast) {
+            remove(currentToast.id);
+        }
+        setCurrentToast(null);
+    };
+
+    return (
+        <ToastCustom 
+            toast={currentToast} 
+            onHide={handleHideToast}
+        />
+    );
 };

@@ -3,6 +3,7 @@ import { Alert, Platform } from 'react-native';
 import { deriveDashboardStats, deriveRecentBatches, mockUsers } from './mockData';
 import { getToken, removeToken, saveToken } from "./TokenManager";
 import { navigate, resetTo } from "../navigation/NavigationService";
+import Geolocation from 'react-native-geolocation-service';
 
 // Types
 export interface DashboardStats {
@@ -38,6 +39,44 @@ export interface UserProfile {
   profile_image: string;
 }
 
+// Location interface
+interface LocationData {
+  lat: number;
+  long: number;
+}
+
+// Function to get current location
+const getCurrentLocation = (): Promise<LocationData | null> => {
+  return new Promise((resolve) => {
+    Geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        console.log('Location obtained:', { lat: latitude, long: longitude });
+        resolve({
+          lat: latitude,
+          long: longitude,
+        });
+      },
+      (error) => {
+        console.log('Location error:', error.message);
+        // Always return default location (Da Nang, Vietnam) if location access fails
+        console.log('Using default location due to error');
+        resolve({
+          lat: 16.068882379104995,
+          long: 108.24535024604958,
+        });
+      },
+      {
+        enableHighAccuracy: false, // Use less accurate but faster location
+        timeout: 3000, // Very short timeout to avoid blocking
+        maximumAge: 300000, // 5 minutes cache
+        showLocationDialog: false, // Don't show system dialog
+        forceRequestLocation: false, // Use cached location if available
+      }
+    );
+  });
+};
+
 
 const baseUrl = Platform.select({
   ios: 'https://mimo.dragonlab.vn/api',
@@ -60,11 +99,18 @@ const api = axios.create({
 });
 
 api.interceptors.request.use(async (config) => {
+  // Add Authorization header
   const token = await getToken();
   if (token) {
     console.log('token', token);
     config.headers.Authorization = `Bearer ${token}`;
   }
+  const location = await getCurrentLocation();
+    if (location) {
+      config.headers['x-location'] = JSON.stringify(location);
+      console.log('Location header added:', location);
+    } 
+
   return config;
 });
 
@@ -75,7 +121,17 @@ api.interceptors.response.use(
   (error: any) => {
     // Timeout handling
     if (error.code === 'ECONNABORTED' || /timeout/i.test(error.message)) {
-      Alert.alert('Timeout', 'Kết nối quá thời gian. Vui lòng thử lại.');
+      console.log('Timeout', error);
+      removeToken(); 
+      Alert.alert('Timeout', 'Kết nối quá thời gian. Vui lòng thử lại.',
+        [ {
+          text: 'OK',
+          onPress: () => {
+            resetTo('Login');
+          },
+        },
+      ]
+      );
       return Promise.reject(error);
     }
 

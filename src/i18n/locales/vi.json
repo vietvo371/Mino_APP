@@ -713,5 +713,29 @@
     "failedToSendOtp": "Không thể gửi OTP",
     "otpResent": "Mã xác thực đã được gửi lại",
     "ok": "OK"
+  },
+  "toast": {
+    "transactionSuccess": "Giao dịch thành công",
+    "transactionFailed": "Giao dịch thất bại",
+    "socketError": "Lỗi kết nối",
+    "socketConnected": "Đã kết nối",
+    "socketDisconnected": "Mất kết nối",
+    "amount": "Số tiền",
+    "exchangeRate": "Tỷ giá",
+    "fee": "Phí",
+    "feePercent": "Phí",
+    "receiverAccount": "TK nhận",
+    "network": "Mạng",
+    "note": "Ghi chú",
+    "transactionHash": "Tx",
+    "wallet": "Ví",
+    "time": "Thời gian",
+    "transaction": "Giao dịch",
+    "success": "Thành công",
+    "error": "Lỗi",
+    "info": "Thông báo",
+    "warning": "Cảnh báo",
+    "bankName": "Ngân hàng",
+    "accountNumber": "Số tài khoản"
   }
 }

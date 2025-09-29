@@ -46,6 +46,23 @@ export const initEcho = (token: string) => {
     return echoInstance;
 };
 
+// Lấy tên kênh riêng theo token (server trả về ví dụ: "notifications.token.<id>")
+export const fetchTokenChannel = async (bearerToken: string): Promise<string> => {
+    const res = await fetch(`${API_BASE}/api/me/broadcast-channel`, {
+        headers: {
+            Authorization: `Bearer ${bearerToken}`,
+            Accept: 'application/json',
+        },
+    });
+    if (!res.ok) {
+        throw new Error(`fetchTokenChannel failed: ${res.status}`);
+    }
+    const json = await res.json();
+    const channel = String(json?.channel ?? '');
+    // Echo sẽ tự thêm tiền tố "private-" khi subscribe
+    return channel.replace(/^private-/, '');
+};
+
 export const getEcho = () => echoInstance;
 
 export const disconnectEcho = () => { 
