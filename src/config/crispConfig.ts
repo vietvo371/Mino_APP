@@ -2,7 +2,7 @@
 export const CRISP_CONFIG = {
   // Replace with your actual Crisp Website ID
   // You can find this in your Crisp Dashboard
-  WEBSITE_ID: '4415b3b8-c504-4c41-820e-6cc2021d8e6b',
+  WEBSITE_ID: '86adb5ef-5e42-4b5d-8d58-78ec327b0181',
   
   // Optional: Default user settings
   DEFAULT_USER: {

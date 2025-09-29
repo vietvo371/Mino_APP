@@ -39,7 +39,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         pusher.connection.bind('connected', () => {
           console.log('[WS] Connected');
           setIsConnected(true);
-          push({ title: 'WS', message: 'Connected to server', type: 'success' });
+          // push({ title: 'WS', message: 'Connected to server', type: 'success' });
         });
         
         pusher.connection.bind('disconnected', () => {
@@ -53,7 +53,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         
         pusher.connection.bind('error', (error: any) => {
           console.log('[WS] Error:', error);
-          push({ title: 'WS Error', message: String(error?.error ?? error), type: 'error' });
+          // push({ title: 'WS Error', message: String(error?.error ?? error), type: 'error' });
         });
         
         // Join private channel
@@ -63,12 +63,12 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           // Subscription events
           channel.subscription.bind('pusher:subscription_succeeded', () => {
             console.log('[WS] Subscribed to private-notifications');
-            push({ title: 'WS', message: 'Subscribed to notifications', type: 'success' });
+            // push({ title: 'WS', message: 'Subscribed to notifications', type: 'success' });
           });
           
           channel.subscription.bind('pusher:subscription_error', (err: any) => {
             console.log('[WS] Subscription error:', err);
-            push({ title: 'WS Subscribe Error', message: JSON.stringify(err), type: 'error' });
+            // push({ title: 'WS Subscribe Error', message: JSON.stringify(err), type: 'error' });
           });
           
           // Listen to specific events
@@ -112,7 +112,6 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
               `Tx: ${short(transaction_hash)}\n` +
               `Ví: ${short(address)}\n` +
               `Thời gian: ${time}`;
-
             push({
               title,
               message,
