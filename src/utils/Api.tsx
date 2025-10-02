@@ -45,30 +45,52 @@ interface LocationData {
   long: number;
 }
 
-// Function to get current location
+// Cache location to avoid repeated calls
+let cachedLocation: LocationData | null = null;
+let locationCacheTime = 0;
+const LOCATION_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Function to get current location with caching
 const getCurrentLocation = (): Promise<LocationData | null> => {
   return new Promise((resolve) => {
+    // Return cached location if still valid
+    const now = Date.now();
+    if (cachedLocation && (now - locationCacheTime) < LOCATION_CACHE_DURATION) {
+      console.log('Using cached location:', cachedLocation);
+      resolve(cachedLocation);
+      return;
+    }
+
     Geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        console.log('Location obtained:', { lat: latitude, long: longitude });
-        resolve({
+        const location = {
           lat: latitude,
           long: longitude,
-        });
+        };
+        console.log('Location obtained:', location);
+        // Cache the location
+        cachedLocation = location;
+        locationCacheTime = now;
+        
+        resolve(location);
       },
       (error) => {
         console.log('Location error:', error.message);
-        // Always return default location (Da Nang, Vietnam) if location access fails
-        console.log('Using default location due to error');
-        resolve({
+        const defaultLocation = {
           lat: 16.068882379104995,
           long: 108.24535024604958,
-        });
+        };
+        
+        // Cache default location too
+        cachedLocation = defaultLocation;
+        locationCacheTime = now;
+        
+        resolve(defaultLocation);
       },
       {
         enableHighAccuracy: false, // Use less accurate but faster location
-        timeout: 3000, // Very short timeout to avoid blocking
+        timeout: 1000, // Reduced timeout to 1 second
         maximumAge: 300000, // 5 minutes cache
         showLocationDialog: false, // Don't show system dialog
         forceRequestLocation: false, // Use cached location if available
@@ -105,11 +127,16 @@ api.interceptors.request.use(async (config) => {
     console.log('token', token);
     config.headers.Authorization = `Bearer ${token}`;
   }
-  const location = await getCurrentLocation();
+  
+  // Get location asynchronously without blocking the request
+  getCurrentLocation().then((location) => {
     if (location) {
       config.headers['x-location'] = JSON.stringify(location);
       console.log('Location header added:', location);
-    } 
+    }
+  }).catch((error) => {
+    console.log('Location error in interceptor:', error);
+  });
 
   return config;
 });
@@ -135,12 +162,10 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Validation error, bubble up to caller for field-level handling
     if (error.response?.status === 422) {
       return Promise.reject(error);
     }
 
-    // Unauthorized or token issues -> navigate to Login
     if (error.response?.status === 401 || error.response?.status === 403) {
       removeToken(); // enable if you want to clear token
       Alert.alert('Phiên đăng nhập', 'Phiên đã hết hạn, vui lòng đăng nhập lại.', [
@@ -154,14 +179,12 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // Generic server/network error
     console.log('API error:', {
       url: error.config?.url,
       method: error.config?.method,
       status: error.response?.status,
       message: error.message,
     });
-    // Alert.alert('Error', error.response?.data?.message || 'Lỗi Server');
     return Promise.reject(error);
   }
 );
