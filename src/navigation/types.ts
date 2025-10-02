@@ -110,7 +110,6 @@ export type RootStackParamList = {
   Security: undefined;
   Notifications: undefined;
   Help: undefined;
-  CrispChat: undefined;
 };
 
 export type StackScreen<T extends keyof RootStackParamList> = React.FC<NativeStackScreenProps<RootStackParamList, T>>;

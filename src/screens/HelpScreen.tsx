@@ -150,9 +150,7 @@ const HelpScreen = () => {
                 key={method.id} 
                 style={styles.contactItem}
                 onPress={() => {
-                  if (method.id === 'chat') {
-                    navigation.navigate('CrispChat' as never);
-                  }
+                  // Chat functionality removed
                 }}
               >
                 <View style={[styles.contactIcon, { backgroundColor: '#4A90E215' }]}>

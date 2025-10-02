@@ -43,7 +43,6 @@ import EditProfileScreen from '../screens/EditProfileScreen';
 import ChangePasswordScreen from '../screens/ChangePasswordScreen';
 import SuccessTransactionDetailScreen from '../screens/SuccessTransactionDetailScreen';
 import FailedTransactionDetailScreen from '../screens/FailedTransactionDetailScreen';
-import CrispChatScreen from '../screens/CrispChatScreen';
 import TestSocketScreen from '../screens/TestSocketScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -167,7 +166,6 @@ const MainNavigator = () => {
         <Stack.Screen name="EditTRC20Address" component={EditTRC20AddressScreen} />
         <Stack.Screen name="Payment" component={PaymentScreen} />
         <Stack.Screen name="DetailHistory" component={DetailHistoryScreen} />
-        <Stack.Screen name="CrispChat" component={CrispChatScreen} />
 
         {/* Test */}
         <Stack.Screen name="TestSocket" component={TestSocketScreen} />

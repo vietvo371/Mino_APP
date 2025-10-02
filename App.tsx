@@ -13,10 +13,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import MainNavigator from './src/navigation/MainTabNavigator';
 import { theme } from './src/theme/colors';
 import { AuthProvider } from './src/contexts/AuthContext';
-import { ChatProvider } from './src/contexts/ChatContext';
-import { ChatVisibilityProvider } from './src/component/ChatVisibilityProvider';
 import { SocketProvider } from './src/contexts/SocketContext';
-import ChatOverlay from './src/component/ChatOverlay';
 import { NotificationHub } from './src/socket/NotificationHub';
 import './src/i18n'; // Initialize i18n
 import { navigationRef } from './src/navigation/NavigationService';
@@ -74,15 +71,10 @@ const App = () => {
             backgroundColor={theme.colors.background}
           />
               <SocketProvider>
-                <ChatProvider>
-                  <ChatVisibilityProvider>
-                    <NavigationContainer theme={navigationTheme} ref={navigationRef}>
-                      <MainNavigator />
-                    </NavigationContainer>
-                    <ChatOverlay />
-                    <NotificationHub />
-                  </ChatVisibilityProvider>
-                </ChatProvider>
+                <NavigationContainer theme={navigationTheme} ref={navigationRef}>
+                  <MainNavigator />
+                </NavigationContainer>
+                <NotificationHub />
               </SocketProvider>
         </SafeAreaProvider>
     </GestureHandlerRootView>
