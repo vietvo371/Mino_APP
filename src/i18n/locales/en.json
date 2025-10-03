@@ -674,7 +674,12 @@
     "serverError": "Server error",
     "unknownError": "Unknown error",
     "validationError": "Data validation error",
-    "timeoutError": "Request timeout"
+    "timeoutError": "Request timeout",
+    "sessionExpired": "Login Session",
+    "sessionExpiredMessage": "Session has expired, please login again.",
+    "sessionExpiredSandbox": "You are leaving the test sandbox environment",
+    "accessDenied": "You do not have access permission.",
+    "timeoutMessage": "Connection timeout. Please try again."
   },
   "editTrc20Address": {
     "title": "Edit Address",

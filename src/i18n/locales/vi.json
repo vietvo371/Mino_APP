@@ -674,7 +674,12 @@
     "serverError": "Lỗi máy chủ",
     "unknownError": "Lỗi không xác định",
     "validationError": "Lỗi xác thực dữ liệu",
-    "timeoutError": "Hết thời gian chờ"
+    "timeoutError": "Hết thời gian chờ",
+    "sessionExpired": "Phiên đăng nhập",
+    "sessionExpiredMessage": "Phiên đã hết hạn, vui lòng đăng nhập lại.",
+    "sessionExpiredSandbox": "Bạn đang ra khỏi vực sandbox thử nghiệm",
+    "accessDenied": "Bạn không có quyền truy cập.",
+    "timeoutMessage": "Kết nối quá thời gian. Vui lòng thử lại."
   },
   "editTrc20Address": {
     "title": "Chỉnh sửa địa chỉ",

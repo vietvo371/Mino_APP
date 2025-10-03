@@ -4,6 +4,7 @@ import { deriveDashboardStats, deriveRecentBatches, mockUsers } from './mockData
 import { getToken, removeToken, saveToken } from "./TokenManager";
 import { navigate, resetTo } from "../navigation/NavigationService";
 import Geolocation from 'react-native-geolocation-service';
+import i18n from '../i18n';
 
 // Types
 export interface DashboardStats {
@@ -49,6 +50,9 @@ interface LocationData {
 let cachedLocation: LocationData | null = null;
 let locationCacheTime = 0;
 const LOCATION_CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// Guard to prevent multiple simultaneous alerts
+let isShowingAuthAlert = false;
 
 // Function to get current location with caching
 const getCurrentLocation = (): Promise<LocationData | null> => {
@@ -150,13 +154,13 @@ api.interceptors.response.use(
     if (error.code === 'ECONNABORTED' || /timeout/i.test(error.message)) {
       console.log('Timeout', error);
       removeToken(); 
-      Alert.alert('Timeout', 'Kết nối quá thời gian. Vui lòng thử lại.',
-        [ {
-          text: 'OK',
-          onPress: () => {
-            resetTo('Login');
+      Alert.alert(i18n.t('errors.timeoutError'), i18n.t('errors.timeoutMessage'),
+        [           {
+            text: i18n.t('common.confirm'),
+            onPress: () => {
+              resetTo('Login');
+            },
           },
-        },
       ]
       );
       return Promise.reject(error);
@@ -168,14 +172,25 @@ api.interceptors.response.use(
 
     if (error.response?.status === 401 || error.response?.status === 403) {
       removeToken(); // enable if you want to clear token
-      Alert.alert('Phiên đăng nhập', 'Phiên đã hết hạn, vui lòng đăng nhập lại.', [
-        {
-          text: 'OK',
-          onPress: () => {
-            resetTo('Login');
+      // Prevent multiple simultaneous alerts
+      if (!isShowingAuthAlert) {
+        isShowingAuthAlert = true;
+        const title = i18n.t('errors.sessionExpired');
+        const message = error.response?.status === 401 
+          ? i18n.t('errors.sessionExpiredSandbox') 
+          : i18n.t('errors.accessDenied');
+        
+        Alert.alert(title, message, [
+          {
+            text: i18n.t('common.confirm'),
+            onPress: () => {
+              isShowingAuthAlert = false; // Reset the guard
+              resetTo('Login');
+            },
           },
-        },
-      ]);
+        ]);
+      }
+      
       return Promise.reject(error);
     }
 
