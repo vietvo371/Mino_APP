@@ -167,7 +167,7 @@ const HistoryScreen = () => {
   const categorizeTransactions = () => {
     const pending = transactions.filter(t => t.status === 0); // pending
     const success = transactions.filter(t => t.status === 1); // success
-    const fail = transactions.filter(t => t.status === 2); // failed
+    const fail = transactions.filter(t => t.status === 2 || t.status === 3 || t.status === 4); // failed, waiting buy confirm, waiting sell confirm
     
     return { pending, success, fail };
   };
@@ -280,29 +280,40 @@ const HistoryScreen = () => {
     return (
       <TouchableOpacity
         key={`${transaction.note}-${transaction.id}-${index}`}
-        style={[styles.transactionItem, styles.failedTransactionItem]}
+        style={[
+          styles.transactionItem, 
+          transaction.status === 2 ? styles.failedTransactionItem : styles.waitingConfirmTransactionItem
+        ]}
         // onPress={() => {
         //   const transactionType = transaction.type === 1 ? 'buy' : 'sell';
-        //   (navigation as any).navigate('FailedTransactionDetail', { 
-        //     transaction: transaction,
-        //     idTransaction: transaction.id, 
-        //     type: transactionType 
-        //   });
+        //     // For failed transactions
+        //     (navigation as any).navigate('FailedTransactionDetail', { 
+        //       transaction: transaction,
+        //       idTransaction: transaction.id, 
+        //       type: transactionType 
+        //     });
         // }}
       >
         <View style={styles.transactionContent}>
           <View style={styles.transactionHeader}>
             <View style={styles.transactionTitleContainer}>
-              <View style={[styles.iconContainer, { backgroundColor: '#FFEBEE' }]}>
+              <View style={[styles.iconContainer, { 
+                backgroundColor: transaction.status === 2 ? '#FFEBEE' : '#FFF4E6'
+              }]}>
                 <Icon
-                  name="close-circle"
+                  name={transaction.status === 2 ? "close-circle" : "clock-outline"}
                   size={20}
-                  color="#FF3B30"
+                  color={transaction.status === 2 ? "#FF3B30" : "#FF9500"}
                 />
               </View>
-              <View>
+              <View style={styles.transactionInfo}>
                 <Text style={styles.transactionType}>
-                  {isBuy ? t('history.buyUsdt') : t('history.sellUsdt')} - {t('history.failed')}
+                  {isBuy ? t('history.buyUsdt') : t('history.sellUsdt')} - {
+                    transaction.status === 2 ? t('history.failed') :
+                    transaction.status === 3 ? t('history.waitingBuyConfirm') :
+                    transaction.status === 4 ? t('history.waitingSellConfirm') :
+                    t('history.failed')
+                  }
                 </Text>
                 <Text style={styles.transactionDate}>
                   {date} • {time}
@@ -310,23 +321,37 @@ const HistoryScreen = () => {
               </View>
             </View>
             <View style={styles.statusContainer}>
-              <View style={[styles.statusDot, { backgroundColor: '#FF3B30' }]} />
-              <Text style={[styles.transactionStatus, { color: '#FF3B30' }]}>
-                {t('history.failed')}
+              <View style={[styles.statusDot, { 
+                backgroundColor: transaction.status === 2 ? '#FF3B30' : '#FF9500'
+              }]} />
+              <Text style={[styles.transactionStatus, { 
+                color: transaction.status === 2 ? '#FF3B30' : '#FF9500'
+              }]}>
+                {transaction.status === 2 ? t('history.failed') :
+                 transaction.status === 3 ? "" :
+                 transaction.status === 4 ? "" :
+                 t('history.failed')}
               </Text>
             </View>
           </View>
 
-          <View style={[styles.amountContainer, styles.failedAmountContainer]}>
+          <View style={[
+            styles.amountContainer, 
+            transaction.status === 2 ? styles.failedAmountContainer : styles.waitingConfirmAmountContainer
+          ]}>
             <View style={styles.amountRow}>
               <Text style={styles.amountLabel}>{isBuy ? t('history.amountToPay') : t('history.amountToReceive')}</Text>
-              <Text style={[styles.amountValue, { color: '#FF3B30' }]}>
+              <Text style={[styles.amountValue, { 
+                color: transaction.status === 2 ? '#FF3B30' : '#FF9500'
+              }]}>
                 {amount}
               </Text>
             </View>
             <View style={styles.amountRow}>
               <Text style={styles.amountLabel}>{isBuy ? t('history.usdtToReceive') : t('history.usdtToSell')}</Text>
-              <Text style={[styles.exchangeValue, { color: '#FF3B30' }]}>{exchangeAmount}</Text>
+              <Text style={[styles.exchangeValue, { 
+                color: transaction.status === 2 ? '#FF3B30' : '#FF9500'
+              }]}>{exchangeAmount}</Text>
             </View>
             <View style={styles.amountRow}>
               <Text style={styles.amountLabel}>{t('history.exchangeRate')}</Text>
@@ -438,7 +463,7 @@ const HistoryScreen = () => {
       return renderPendingTransaction(transaction, index);
     } else if (transaction.status === 1) {
       return renderSuccessTransaction(transaction, index);
-    } else if (transaction.status === 2) {
+    } else if (transaction.status === 2 || transaction.status === 3 || transaction.status === 4) {
       return renderFailedTransaction(transaction, index);
     } else {
       // Fallback to pending for unknown status
@@ -942,8 +967,15 @@ const styles = StyleSheet.create({
     borderColor: '#FF3B30',
     backgroundColor: '#FFF8F8',
   },
+  waitingConfirmTransactionItem: {
+    borderColor: '#FF9500',
+    backgroundColor: '#FFFBF5',
+  },
   failedAmountContainer: {
     backgroundColor: '#FFEBEE',
+  },
+  waitingConfirmAmountContainer: {
+    backgroundColor: '#FFF4E6',
   },
   // Pending transaction styles
   pendingTransactionItem: {
@@ -961,10 +993,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: 16,
+    flexWrap: 'nowrap', // Ngăn các phần tử xuống dòng
+  },
+  transactionInfo: {
+    flex: 1,
+    marginRight: 8,
   },
   transactionTitleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1, // Cho phép container mở rộng
+    marginRight: 8, // Thêm khoảng cách với status
   },
   iconContainer: {
     width: 36,
@@ -975,10 +1014,13 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   transactionType: {
-    fontSize: wp('4%'),
+    fontSize: wp('3.8%'),
     fontWeight: '600',
     color: '#000',
     marginBottom: 4,
+    flexShrink: 1, // Cho phép text co lại
+    flexWrap: 'wrap', // Cho phép xuống dòng
+    maxWidth: '85%', // Giới hạn chiều rộng tối đa
   },
   transactionDate: {
     fontSize: wp('3.5%'),
@@ -987,16 +1029,21 @@ const styles = StyleSheet.create({
   statusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    minWidth: wp('22%'), // Đảm bảo chiều rộng tối thiểu
+    maxWidth: wp('25%'), // Giới hạn chiều rộng tối đa
+    justifyContent: 'flex-end', // Căn phải
   },
   statusDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    marginRight: 6,
+    marginRight: 4, // Giảm margin
   },
   transactionStatus: {
-    fontSize: wp('3.5%'),
+    fontSize: wp('3.2%'), // Giảm font size
     fontWeight: '500',
+    flexShrink: 1, // Cho phép text co lại
+    textAlign: 'right', // Căn phải
   },
   amountContainer: {
     backgroundColor: '#F8F8F8',

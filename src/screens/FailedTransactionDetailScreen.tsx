@@ -27,7 +27,7 @@ type FailedTransactionDetail = {
   amount: string;
   usdt: string;
   exchangeRate: string;
-  status: 2; // Failed only
+  status: 2 | 3 | 4; // 2: Failed, 3: Waiting Buy Confirm, 4: Waiting Sell Confirm
   date: string;
   time: string;
   transactionId: string;
@@ -88,7 +88,7 @@ const FailedTransactionDetailScreen = () => {
         amount: parseFloat(String(d.amount_vnd_real ?? '')).toLocaleString('vi-VN'), // VND amount that would have been received
         usdt: String(d.amount_usdt ?? ''), // USDT amount that would have been sold
         exchangeRate: parseFloat(String(d.rate ?? '')).toLocaleString('vi-VN'),
-        status: 2, // Failed
+        status: d.status || 2, // Use actual status or default to Failed
         date: d.created_at ? new Date(d.created_at).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN'),
         time: d.created_at ? new Date(d.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
         transactionId: d.transaction_hash || '',
@@ -113,7 +113,7 @@ const FailedTransactionDetailScreen = () => {
         amount: parseFloat(String(d.amount_vnd ?? '')).toLocaleString('vi-VN'),
         usdt: String(d.amount_usdt ?? ''),
         exchangeRate: parseFloat(String(d.rate ?? '')).toLocaleString('vi-VN'),
-        status: 2, // Failed
+        status: d.status || 2, // Use actual status or default to Failed
         date: d.created_at ? new Date(d.created_at).toLocaleDateString('vi-VN') : new Date().toLocaleDateString('vi-VN'),
         time: d.created_at ? new Date(d.created_at).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
         transactionId: d.transaction_hash || '',
@@ -227,21 +227,47 @@ const FailedTransactionDetailScreen = () => {
           <Icon name="arrow-left" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>
-          {isBuy ? t('failedTransaction.buyUsdtFailed') : t('failedTransaction.sellUsdtFailed')}
+          {isBuy 
+            ? (transaction.status === 2 
+                ? t('failedTransaction.buyUsdtFailed')
+                : t('history.waitingBuyConfirm'))
+            : (transaction.status === 2 
+                ? t('failedTransaction.sellUsdtFailed')
+                : t('history.waitingSellConfirm'))
+          }
         </Text>
         <View style={styles.headerRight} />
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Failed Status Card */}
-        <View style={styles.failedStatusCard}>
+        <View style={[
+          styles.failedStatusCard,
+          {
+            backgroundColor: transaction.status === 2 ? '#FFF8F8' : '#FFFBF5',
+            borderColor: transaction.status === 2 ? '#FF3B30' : '#FF9500',
+          }
+        ]}>
           <View style={styles.statusHeader}>
-            <View style={[styles.statusIcon, { backgroundColor: '#FFEBEE' }]}>
-              <Icon name="close-circle" size={24} color="#FF3B30" />
+            <View style={[styles.statusIcon, { 
+              backgroundColor: transaction.status === 2 ? '#FFEBEE' : '#FFF4E6'
+            }]}>
+              <Icon 
+                name={transaction.status === 2 ? "close-circle" : "clock-outline"}
+                size={24} 
+                color={transaction.status === 2 ? "#FF3B30" : "#FF9500"}
+              />
             </View>
             <View style={styles.statusInfo}>
               <Text style={styles.transactionType}>
-                {isBuy ? t('failedTransaction.buyUsdtFailed') : t('failedTransaction.sellUsdtFailed')}
+                {isBuy 
+                  ? (transaction.status === 2 
+                      ? t('failedTransaction.buyUsdtFailed')
+                      : t('history.waitingBuyConfirm'))
+                  : (transaction.status === 2 
+                      ? t('failedTransaction.sellUsdtFailed')
+                      : t('history.waitingSellConfirm'))
+                }
               </Text>
               <Text style={styles.transactionDate}>
                 {transaction.createdAt ? formatCreatedAt(transaction.createdAt) : `${transaction.date} • ${transaction.time}`}
@@ -249,15 +275,30 @@ const FailedTransactionDetailScreen = () => {
             </View>
           </View>
           <View style={styles.statusContainer}>
-            <View style={[styles.statusDot, { backgroundColor: '#FF3B30' }]} />
-            <Text style={[styles.statusText, { color: '#FF3B30' }]}>
-              {t('history.failed')}
+            <View style={[styles.statusDot, { 
+              backgroundColor: transaction.status === 2 ? '#FF3B30' : '#FF9500'
+            }]} />
+            <Text style={[styles.statusText, { 
+              color: transaction.status === 2 ? '#FF3B30' : '#FF9500'
+            }]}>
+              {transaction.status === 2 
+                ? t('history.failed')
+                : (transaction.status === 3 
+                    ? t('history.waitingBuyConfirm')
+                    : t('history.waitingSellConfirm'))
+              }
             </Text>
           </View>
         </View>
 
         {/* Transaction Info */}
-        <View style={styles.failedInfoCard}>
+        <View style={[
+          styles.failedInfoCard,
+          {
+            backgroundColor: transaction.status === 2 ? '#FFF8F8' : '#FFFBF5',
+            borderColor: transaction.status === 2 ? '#FF3B30' : '#FF9500',
+          }
+        ]}>
           <Text style={styles.cardTitle}>{t('failedTransaction.transactionInformation')}</Text>
           
           <View style={styles.infoRow}>
@@ -418,33 +459,43 @@ const FailedTransactionDetailScreen = () => {
           )}
         </View>
 
-        {/* Failure Reason */}
-        <View style={styles.failedInfoCard}>
-          <Text style={styles.cardTitle}>{t('failedTransaction.failureReason')}</Text>
-          <View style={styles.failureReasonContainer}>
-            <Icon name="alert-circle" size={20} color="#FF3B30" />
-            <Text style={styles.failureReasonText}>
-              {t('failedTransaction.transactionNotCompleted')}
-            </Text>
+        {/* Failure Reason - Only show for failed transactions */}
+        {transaction.status === 2 && (
+          <View style={[
+            styles.failedInfoCard,
+            {
+              backgroundColor: transaction.status === 2 ? '#FFF8F8' : '#FFFBF5',
+              borderColor: transaction.status === 2 ? '#FF3B30' : '#FF9500',
+            }
+          ]}>
+            <Text style={styles.cardTitle}>{t('failedTransaction.failureReason')}</Text>
+            <View style={styles.failureReasonContainer}>
+              <Icon name="alert-circle" size={20} color="#FF3B30" />
+              <Text style={styles.failureReasonText}>
+                {t('failedTransaction.transactionNotCompleted')}
+              </Text>
+            </View>
+            <View style={styles.failureReasonsList}>
+              <Text style={styles.failureReasonItem}>{t('failedTransaction.paymentNotReceived')}</Text>
+              <Text style={styles.failureReasonItem}>{t('failedTransaction.incorrectAmount')}</Text>
+              <Text style={styles.failureReasonItem}>{t('failedTransaction.networkIssues')}</Text>
+              <Text style={styles.failureReasonItem}>{t('failedTransaction.invalidDetails')}</Text>
+            </View>
           </View>
-          <View style={styles.failureReasonsList}>
-            <Text style={styles.failureReasonItem}>{t('failedTransaction.paymentNotReceived')}</Text>
-            <Text style={styles.failureReasonItem}>{t('failedTransaction.incorrectAmount')}</Text>
-            <Text style={styles.failureReasonItem}>{t('failedTransaction.networkIssues')}</Text>
-            <Text style={styles.failureReasonItem}>{t('failedTransaction.invalidDetails')}</Text>
-          </View>
-        </View>
+        )}
 
         {/* Failed Note */}
-        <View style={styles.failedNoteContainer}>
-          <Icon name="close-circle" size={20} color="#FF3B30" />
-          <Text style={[styles.noteText, { color: '#FF3B30' }]}>
-            {isBuy 
-              ? `${t('failedTransaction.transactionFailed')} ${transaction.usdt} USDT ${t('failedTransaction.toWallet')}`
-              : `${t('failedTransaction.transactionFailed')} ${transaction.amount} VND ${t('failedTransaction.toBankAccount')}`
-            }
-          </Text>
-        </View>
+        {transaction.status === 2 && (
+          <View style={styles.failedNoteContainer}>
+            <Icon name="close-circle" size={20} color="#FF3B30" />
+            <Text style={[styles.noteText, { color: '#FF3B30' }]}>
+              {isBuy 
+                ? `${t('failedTransaction.transactionFailed')} ${transaction.usdt} USDT ${t('failedTransaction.toWallet')}`
+                : `${t('failedTransaction.transactionFailed')} ${transaction.amount} VND ${t('failedTransaction.toBankAccount')}`
+              }
+            </Text>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -503,11 +554,9 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   failedStatusCard: {
-    backgroundColor: '#FFF8F8',
     borderRadius: 16,
     padding: 20,
     marginBottom: 20,
-    borderColor: '#FF3B30',
     borderWidth: 1,
   },
   statusHeader: {
@@ -551,11 +600,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   failedInfoCard: {
-    backgroundColor: '#FFF8F8',
     borderRadius: 16,
     padding: 20,
     marginBottom: 20,
-    borderColor: '#FF3B30',
     borderWidth: 1,
   },
   cardTitle: {

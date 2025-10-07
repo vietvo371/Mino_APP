@@ -59,13 +59,32 @@ const DetailHistoryScreen = () => {
   const [transaction, setTransaction] = React.useState<TransactionDetail | undefined>(transactionParam);
   const [loading, setLoading] = useState<boolean>(!!idTransaction && !transactionParam);
   const [user, setUser] = useState<any>(null);
+  const [bankAccounts, setBankAccounts] = useState<{bank_name: string; bank_number: string}[]>([]);
+
   const fetchUser = async () => {
     const user = await getUser();
     setUser(user);
   };
 
+  const fetchBankAccounts = async () => {
+    try {
+      const response = await api.get('/client/bank/data');
+      if (response.data.status) {
+        const accounts = response.data.data.map((acc: any) => ({
+          bank_name: acc.bank_code,
+          bank_number: acc.bank_number
+        }));
+        console.log('accounts', response.data.data);
+        setBankAccounts(accounts);
+      }
+    } catch (error) {
+      console.log('Error fetching bank accounts:', error);
+    }
+  };
+
   useEffect(() => {
     fetchUser();
+    fetchBankAccounts();
     if (!idTransaction) {
       setLoading(false);
     }
@@ -352,6 +371,28 @@ const DetailHistoryScreen = () => {
             </Text>
           </View>
         </View>
+         {/* Note */}
+         <View style={styles.noteContainer}>
+          <Icon name="information" size={20} color="#E65100" />
+          <View style={{flex: 1}}>
+            <Text style={styles.noteText}>
+              {t('detailHistory.verifiedBankAccountsOnly')}
+            </Text>
+            {bankAccounts.length > 0 ? (
+              <View style={{marginTop: 8}}>
+                {bankAccounts.map((account, index) => (
+                  <Text key={index} style={[styles.noteText, {marginLeft: 8, marginTop: 4}]}>
+                    • {account.bank_name}: {account.bank_number}
+                  </Text>
+                ))}
+              </View>
+            ) : (
+              <Text style={[styles.noteText, {marginTop: 4}]}>
+                {t('detailHistory.noVerifiedBankAccounts')}
+              </Text>
+            )}
+          </View>
+        </View>
 
         {/* QR Code Section */}
         <View style={[styles.qrCard, isExpired && { opacity: 0.5 }]}>
@@ -473,16 +514,7 @@ const DetailHistoryScreen = () => {
           )}
         </View>
 
-        {/* Note */}
-        <View style={styles.noteContainer}>
-          <Icon name="information" size={20} color="#666" />
-          <Text style={styles.noteText}>
-            {isPending 
-              ? t('detailHistory.pendingNote')
-              : t('detailHistory.completedNote')
-            }
-          </Text>
-        </View>
+       
       </ScrollView>
     </SafeAreaView>
   );
@@ -903,7 +935,7 @@ const styles = StyleSheet.create({
   },
   noteContainer: {
     flexDirection: 'row',
-    backgroundColor: '#F2F2F7',
+    backgroundColor: '#FFF4E6',
     padding: 16,
     borderRadius: 12,
     marginBottom: 20,
@@ -925,7 +957,7 @@ const styles = StyleSheet.create({
   noteText: {
     flex: 1,
     fontSize: wp('3.5%'),
-    color: '#666',
+    color: '#E65100',
     marginLeft: 12,
     lineHeight: wp('4.5%'),
   },

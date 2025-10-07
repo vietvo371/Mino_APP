@@ -145,14 +145,59 @@ api.interceptors.request.use(async (config) => {
   return config;
 });
 
+// Maximum number of retry attempts
+const MAX_RETRY_ATTEMPTS = 2;
+
+// Function to determine if we should retry the request
+const shouldRetry = (error: any, retryCount: number) => {
+  // Don't retry if we've exceeded max attempts
+  if (retryCount >= MAX_RETRY_ATTEMPTS) return false;
+
+  // Don't retry for specific error codes
+  if (error.response?.status === 422) return false; // Validation errors
+  if (error.response?.status === 403) return false; // Permission denied
+
+  // Retry on network errors, timeouts, and 401s
+  return (
+    !error.response || // Network error
+    error.code === 'ECONNABORTED' || // Timeout
+    /timeout/i.test(error.message) || // Timeout message
+    error.response.status === 401 || // Unauthorized
+    (error.response.status >= 500 && error.response.status <= 599) // Server errors
+  );
+};
+
 api.interceptors.response.use(
   (response) => {
     return response;
   },
-  (error: any) => {
+  async (error: any) => {
+    const config = error.config;
+    
+    // Initialize retry count if it doesn't exist
+    config.retryCount = config.retryCount || 0;
+    
+    // Check if we should retry the request
+    if (shouldRetry(error, config.retryCount)) {
+      config.retryCount += 1;
+      
+      // Exponential backoff delay
+      const delayMs = Math.min(1000 * (2 ** config.retryCount), 10000);
+      
+      console.log(`Retrying request (attempt ${config.retryCount}/${MAX_RETRY_ATTEMPTS}) after ${delayMs}ms`);
+      
+      // Wait for the delay
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+      
+      // Retry the request
+      return api(config);
+    }
+
+    // If we're here, we've either exceeded retry attempts or shouldn't retry
+    
     // Timeout handling
     if (error.code === 'ECONNABORTED' || /timeout/i.test(error.message)) {
-      console.log('Timeout', error);
+      console.log('Timeout after retries:', error);
       removeToken(); 
       Alert.alert(i18n.t('errors.timeoutError'), i18n.t('errors.timeoutMessage'),
         [           {
@@ -194,11 +239,12 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    console.log('API error:', {
+    console.log('API error after retries:', {
       url: error.config?.url,
       method: error.config?.method,
       status: error.response?.status,
       message: error.message,
+      retryCount: config.retryCount,
     });
     return Promise.reject(error);
   }
