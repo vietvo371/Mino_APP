@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -270,7 +271,7 @@ const DetailHistoryScreen = () => {
 
   const copyToClipboard = (text: string, message: string) => {
     Clipboard.setString(text);
-    Alert.alert(t('detailHistory.copied'), message);
+    showAlert(t('detailHistory.copied'), message);
   };
 
   // Render Buy USDT Transaction

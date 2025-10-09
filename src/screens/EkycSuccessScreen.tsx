@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React from 'react';
 import {
   View,
@@ -16,6 +17,7 @@ import { StackScreen } from '../navigation/types';
 const { width, height } = Dimensions.get('window');
 
 const EkycSuccessScreen: StackScreen<'EkycSuccess'> = ({ navigation }) => {
+  const { showAlert } = useAlert();
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.backgroundContainer}>

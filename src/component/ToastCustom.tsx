@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useEffect, useRef } from 'react';
 import {
   View,
@@ -28,6 +29,7 @@ interface ToastCustomProps {
 }
 
 const ToastCustom: React.FC<ToastCustomProps> = ({ toast, onHide }) => {
+  const { showAlert } = useAlert();
   const { t } = useTranslation();
   const slideAnim = useRef(new Animated.Value(-100)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;

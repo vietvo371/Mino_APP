@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -8,7 +9,6 @@ import {
   Alert,
   TextInput,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSocket } from '../contexts/SocketContext';
 import { useNotificationStore } from '../socket/notificationStore';
 import { useEchoChannel } from '../hooks/useEcho';
@@ -20,7 +20,7 @@ const TestSocketScreen: React.FC = () => {
   const { list, push, clear, remove } = useNotificationStore();
   const [customMessage, setCustomMessage] = useState('');
   const [token, setToken] = useState<string | null>(null);
-
+  const { showAlert } = useAlert();
   useEffect(() => {
     loadToken();
   }, []);
@@ -77,7 +77,7 @@ const TestSocketScreen: React.FC = () => {
   const handleManualConnect = async () => {
     try {
       if (!token) {
-        Alert.alert('Error', 'No token found. Please login first.');
+        showAlert('Error', 'No token found. Please login first.');
         return;
       }
 
@@ -122,7 +122,7 @@ const TestSocketScreen: React.FC = () => {
 
   const handleSendCustomMessage = () => {
     if (!customMessage.trim()) {
-      Alert.alert('Error', 'Please enter a message');
+      showAlert('Error', 'Please enter a message');
       return;
     }
 
@@ -147,7 +147,7 @@ const TestSocketScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.screenContainer}>
       <ScrollView style={styles.scrollView}>
         <Text style={styles.title}>Socket Test Screen</Text>
 
@@ -254,7 +254,7 @@ const TestSocketScreen: React.FC = () => {
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -268,9 +268,9 @@ const getTypeColor = (type?: string) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
+  screenContainer: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#fff',
   },
   scrollView: {
     flex: 1,

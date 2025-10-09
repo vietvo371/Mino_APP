@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -62,6 +63,7 @@ const SuccessTransactionDetailScreen = () => {
   const [user, setUser] = useState<any>(null);
   const [fadeAnim] = useState(new Animated.Value(0));
   const [scaleAnim] = useState(new Animated.Value(0.95));
+  const { showAlert } = useAlert();
 
   const fetchUser = async () => {
     const user = await getUser();
@@ -197,9 +199,9 @@ const SuccessTransactionDetailScreen = () => {
   const copyToClipboard = async (text: string, message: string) => {
     try {
       await Clipboard.setString(text);
-      Alert.alert(`✅ ${t('successTransaction.copied')}`, message, [{ text: t('common.confirm') }]);
+      showAlert(`✅ ${t('successTransaction.copied')}`, message, [{ text: t('common.confirm') }]);
     } catch (error) {
-      Alert.alert(`❌ ${t('common.error')}`, t('successTransaction.unableToCopy'));
+      showAlert(`❌ ${t('common.error')}`, t('successTransaction.unableToCopy'));
     }
   };
 

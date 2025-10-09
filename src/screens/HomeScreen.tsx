@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -12,7 +13,6 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import LoadingOverlay from '../component/LoadingOverlay';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { StackScreen } from '../navigation/types';
@@ -317,7 +317,7 @@ const HomeScreen: StackScreen<'Home'> = () => {
         // Check limit by transaction type
         const maxAmount = activeTab === 'buy' ? MAX_VND_AMOUNT : MAX_USDT_AMOUNT;
         if (numValue > maxAmount) {
-          Alert.alert(
+          showAlert(
             'Notification',
             activeTab === 'buy'
               ? 'Maximum VND amount is 999,999,999,999'
@@ -364,7 +364,7 @@ const HomeScreen: StackScreen<'Home'> = () => {
       // Check limit by transaction type
       const maxAmount = activeTab === 'buy' ? MAX_VND_AMOUNT : MAX_USDT_AMOUNT;
       if (numValue > maxAmount) {
-        Alert.alert(
+        showAlert(
           'Notification',
           activeTab === 'buy'
             ? 'Maximum VND amount is 999,999,999,999'
@@ -438,7 +438,7 @@ const HomeScreen: StackScreen<'Home'> = () => {
       if (userProfile?.is_active_mail !== 1) missingVerifications.push('Email Verification');
       if (userProfile?.is_active_phone !== 1) missingVerifications.push('Phone Verification');
       
-      Alert.alert(
+      showAlert(
         'Verification Required',
         `To buy/sell USDT, you need to complete the following verifications:\n\n• ${missingVerifications.join('\n• ')}\n\nPlease complete all verifications in the Security section.`,
         [
@@ -457,7 +457,7 @@ const HomeScreen: StackScreen<'Home'> = () => {
 
     // Check wallet/account requirements based on transaction type
     if (activeTab === 'buy' && !hasTRC20Wallet) {
-      Alert.alert(
+      showAlert(
         'TRC20 Wallet Required',
         'To buy USDT, you need to add a TRC20 wallet address first. Please add your wallet address in the TRC20 Addresses section.',
         [
@@ -475,7 +475,7 @@ const HomeScreen: StackScreen<'Home'> = () => {
     }
 
     if (activeTab === 'sell' && !hasBankAccount) {
-      Alert.alert(
+      showAlert(
         'Bank Account Required',
         'To sell USDT, you need to add a bank account first. Please add your bank account in the Bank Accounts section.',
         [
@@ -523,7 +523,7 @@ const HomeScreen: StackScreen<'Home'> = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       {/* Loading Overlay */}
       <LoadingOverlay 
         visible={isInitialLoading} 
@@ -698,7 +698,7 @@ const HomeScreen: StackScreen<'Home'> = () => {
           </TouchableOpacity>
         )}
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -706,6 +706,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+    paddingTop: Platform.OS === 'android' ? 20 : 0,
   },
   tabContainer: {
     flexDirection: 'row',

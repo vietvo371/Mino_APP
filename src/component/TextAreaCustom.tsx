@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
 
@@ -11,6 +12,7 @@ type TextAreaCustomProps = {
 }
 
 const TextAreaCustom = ({ title, placeholder, value, onChangeText, onBlur, type = 'default' }: TextAreaCustomProps) => {
+  const { showAlert } = useAlert();
     return (
         <View style={styles.formContainer}>
             {title && <Text style={styles.titleInput}>{title}</Text>}

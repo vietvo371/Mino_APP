@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
@@ -62,7 +63,7 @@ const PhoneVerificationScreen = () => {
         }
       } catch (e) {
         console.log('Error fetching profile:', e);
-        Alert.alert(t('common.error'), t('phoneVerification.getPhoneError'));
+        showAlert(t('common.error'), t('phoneVerification.getPhoneError'));
       } finally {
         setCheckingStatus(false);
       }
@@ -91,9 +92,9 @@ const PhoneVerificationScreen = () => {
         setCountdown(60); // 60 seconds countdown
         startCountdown();
         setHasVerified(false); // Reset verification state when new code is sent
-        Alert.alert('', response.data.message || t('phoneVerification.sendOtpSuccess'));
+        showAlert('', response.data.message || t('phoneVerification.sendOtpSuccess'));
       } else {
-        Alert.alert(t('common.error'), response.data.message || t('phoneVerification.sendOtpError'));
+        showAlert(t('common.error'), response.data.message || t('phoneVerification.sendOtpError'));
       }
     } catch (error: any) {
       console.log('Send OTP error:', error);
@@ -103,7 +104,7 @@ const PhoneVerificationScreen = () => {
       } else if (error.message) {
         errorMessage = error.message;
       }
-      Alert.alert(t('common.error'), errorMessage);
+      showAlert(t('common.error'), errorMessage);
     } finally {
       setLoading(false);
     }
@@ -209,7 +210,7 @@ const PhoneVerificationScreen = () => {
   const handleVerify = async () => {
     const otpString = otp.join('');
     if (!otpString || otpString.length < 6) {
-      Alert.alert(t('common.error'), t('phoneVerification.enterFullOtp'));
+      showAlert(t('common.error'), t('phoneVerification.enterFullOtp'));
       return;
     }
 
@@ -228,7 +229,7 @@ const PhoneVerificationScreen = () => {
       });
       
       if (response.data.status) {
-        Alert.alert(t('common.success'), t('phoneVerification.phoneVerifiedSuccess'), [
+        showAlert(t('common.success'), t('phoneVerification.phoneVerifiedSuccess'), [
           {
             text: 'OK',
             onPress: () => {
@@ -237,7 +238,7 @@ const PhoneVerificationScreen = () => {
           }
         ]);
       } else {
-        Alert.alert(t('common.error'), response.data.message || t('phoneVerification.otpIncorrect'));
+        showAlert(t('common.error'), response.data.message || t('phoneVerification.otpIncorrect'));
         // Reset OTP on error
         setOtp(['', '', '', '', '', '']);
         setCode('');
@@ -253,7 +254,7 @@ const PhoneVerificationScreen = () => {
       } else if (error.message) {
         errorMessage = error.message;
       }
-      // Alert.alert(t('common.error'), errorMessage);
+      // showAlert(t('common.error'), errorMessage);
       // Reset OTP on error
       setOtp(['', '', '', '', '', '']);
       setCode('');

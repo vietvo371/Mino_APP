@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useState } from 'react';
 import {
     View,
@@ -17,6 +18,7 @@ interface FileUploaderProps {
 }
 
 const FileUploader: React.FC<FileUploaderProps> = ({ onFileSelected, onError }) => {
+  const { showAlert } = useAlert();    
     const [selectedFile, setSelectedFile] = useState<DocumentPickerResponse | null>(null);
 
     const pickDocument = async () => {

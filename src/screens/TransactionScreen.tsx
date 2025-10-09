@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useState } from 'react';
 import {
   View,
@@ -9,13 +10,12 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { theme } from '../theme/colors';
-import { componentStyles } from '../theme/components';
-import { StackScreen } from '../navigation/types';
+import { commonStyles } from "../theme/components";import { componentStyles } from '../theme/components';
+import { commonStyles } from "../theme/components";import { StackScreen } from '../navigation/types';
 import InputCustom from '../component/InputCustom';
 import ButtonCustom from '../component/ButtonCustom';
 
@@ -27,7 +27,7 @@ const TransactionScreen: StackScreen<'Transaction'> = () => {
   const [selectedWallet, setSelectedWallet] = useState('USDT');
 
   const handleSend = () => {
-    Alert.alert(
+    showAlert(
       'Confirm Transaction',
       `Are you sure you want to send ${amount} ${selectedWallet} to ${address}?`,
       [
@@ -39,7 +39,7 @@ const TransactionScreen: StackScreen<'Transaction'> = () => {
           text: 'Confirm',
           onPress: () => {
             // Handle transaction
-            Alert.alert('Success', 'Transaction sent successfully');
+            showAlert('Success', 'Transaction sent successfully');
             navigation.goBack();
           },
         },
@@ -48,7 +48,7 @@ const TransactionScreen: StackScreen<'Transaction'> = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={commonStyles.screenContainer}>
       <View style={styles.backgroundContainer}>
         <LinearGradient
           colors={[theme.colors.backgroundDark, theme.colors.secondary]}
@@ -217,15 +217,11 @@ const TransactionScreen: StackScreen<'Transaction'> = () => {
           style={styles.sendButton}
         />
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.backgroundDark,
-  },
   backgroundContainer: {
     ...StyleSheet.absoluteFillObject,
   },

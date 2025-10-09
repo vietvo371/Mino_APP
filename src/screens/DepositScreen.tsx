@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useState } from 'react';
 import {
   View,
@@ -9,13 +10,12 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { theme } from '../theme/colors';
-import { componentStyles } from '../theme/components';
-import { StackScreen } from '../navigation/types';
+import { commonStyles } from "../theme/components";import { componentStyles } from '../theme/components';
+import { commonStyles } from "../theme/components";import { StackScreen } from '../navigation/types';
 import InputCustom from '../component/InputCustom';
 import ButtonCustom from '../component/ButtonCustom';
 import QRCode from '../component/QRCode';
@@ -29,15 +29,15 @@ const DepositScreen: StackScreen<'Deposit'> = () => {
   const [accountName, setAccountName] = useState('');
 
   const handleCopy = (text: string) => {
-    Alert.alert('Copied', `${text} has been copied to clipboard`);
+    showAlert('Copied', `${text} has been copied to clipboard`);
   };
 
   const handleShare = () => {
-    Alert.alert('Share', 'Share functionality will be implemented');
+    showAlert('Share', 'Share functionality will be implemented');
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={commonStyles.screenContainer}>
       <View style={styles.backgroundContainer}>
         <LinearGradient
           colors={[theme.colors.backgroundDark, theme.colors.secondary]}
@@ -263,15 +263,11 @@ const DepositScreen: StackScreen<'Deposit'> = () => {
           </>
         )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.backgroundDark,
-  },
   backgroundContainer: {
     ...StyleSheet.absoluteFillObject,
   },

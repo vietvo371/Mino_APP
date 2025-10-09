@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useEffect } from 'react';
 import {
   View,
@@ -8,7 +9,6 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../contexts/AuthContext';
 import { theme } from '../theme/colors';
-import { getToken } from '../utils/TokenManager';
 import api from '../utils/Api';
 
 interface LoadingScreenProps {
@@ -16,6 +16,7 @@ interface LoadingScreenProps {
 }
 
 const LoadingScreen: React.FC<LoadingScreenProps> = ({ navigation }) => {
+  const { showAlert } = useAlert();
   const { isAuthenticated, loading } = useAuth();
 
   const checkLogin = async () => {

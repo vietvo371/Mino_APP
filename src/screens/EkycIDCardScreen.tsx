@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useState } from 'react';
 import {
   View,
@@ -18,6 +19,7 @@ import LoadingOverlay from '../component/LoadingOverlay';
 import { StackScreen } from '../navigation/types';
 
 const EkycIDCardScreen: StackScreen<'EkycIDCard'> = ({ navigation }) => {
+  const { showAlert } = useAlert();
   const [frontImage, setFrontImage] = useState<string | null>(null);
   const [backImage, setBackImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

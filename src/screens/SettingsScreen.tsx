@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useState } from 'react';
 import {
   View,
@@ -9,13 +10,12 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { theme } from '../theme/colors';
-import { componentStyles } from '../theme/components';
-import { StackScreen } from '../navigation/types';
+import { commonStyles } from "../theme/components";import { componentStyles } from '../theme/components';
+import { commonStyles } from "../theme/components";import { StackScreen } from '../navigation/types';
 
 const SettingsScreen: StackScreen<'Settings'> = () => {
   const navigation = useNavigation();
@@ -26,7 +26,7 @@ const SettingsScreen: StackScreen<'Settings'> = () => {
   const [currency, setCurrency] = useState('USD');
 
   const handleLanguageChange = () => {
-    Alert.alert(
+    showAlert(
       'Select Language',
       'Choose your preferred language',
       [
@@ -38,7 +38,7 @@ const SettingsScreen: StackScreen<'Settings'> = () => {
   };
 
   const handleCurrencyChange = () => {
-    Alert.alert(
+    showAlert(
       'Select Currency',
       'Choose your preferred currency',
       [
@@ -50,7 +50,7 @@ const SettingsScreen: StackScreen<'Settings'> = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={commonStyles.screenContainer}>
       <View style={styles.backgroundContainer}>
         <LinearGradient
           colors={[theme.colors.backgroundDark, theme.colors.secondary]}
@@ -200,15 +200,11 @@ const SettingsScreen: StackScreen<'Settings'> = () => {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.backgroundDark,
-  },
   backgroundContainer: {
     ...StyleSheet.absoluteFillObject,
   },

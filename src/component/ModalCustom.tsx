@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import { Modal, StyleSheet, TouchableOpacity, View, Text } from "react-native";
 import { theme } from "../theme/colors";
 
@@ -13,6 +14,7 @@ interface ModalCustomProps {
 
 
 const ModalCustom = ({ isModalVisible, setIsModalVisible, title, children, isAction = true, isClose = true , onPressAction }: ModalCustomProps) => {
+  const { showAlert } = useAlert();
     return (
         <Modal
             animationType="fade"

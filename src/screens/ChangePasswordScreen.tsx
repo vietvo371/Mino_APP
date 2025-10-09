@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useState } from 'react';
 import {
   View,
@@ -39,6 +40,7 @@ interface ChangePasswordScreenProps {
 }
 
 const ChangePasswordScreen: React.FC<ChangePasswordScreenProps> = ({ navigation, route }) => {
+  const { showAlert } = useAlert();
   const { t } = useTranslation();
   const { identifier, type, token } = route.params;
   const [newPassword, setNewPassword] = useState('');
@@ -88,7 +90,7 @@ const ChangePasswordScreen: React.FC<ChangePasswordScreenProps> = ({ navigation,
       console.log('Change password response:', response.data);
       
       if (response.data.status) {
-        Alert.alert(
+        showAlert(
           t('common.success'),
           t('changePassword.passwordChanged'),
           [
@@ -99,7 +101,7 @@ const ChangePasswordScreen: React.FC<ChangePasswordScreenProps> = ({ navigation,
           ]
         );
       } else {
-        Alert.alert(t('common.error'), response.data.message || t('changePassword.passwordChangeFailed'));
+        showAlert(t('common.error'), response.data.message || t('changePassword.passwordChangeFailed'));
       }
     } catch (error: any) {
       console.log('Change password error:', error);
@@ -109,7 +111,7 @@ const ChangePasswordScreen: React.FC<ChangePasswordScreenProps> = ({ navigation,
       } else if (error.message) {
         errorMessage = error.message;
       }
-      Alert.alert(t('common.error'), errorMessage);
+      showAlert(t('common.error'), errorMessage);
     } finally {
       setLoading(false);
     }

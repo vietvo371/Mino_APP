@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -211,9 +212,9 @@ const FailedTransactionDetailScreen = () => {
   const copyToClipboard = async (text: string, message: string) => {
     try {
       await Clipboard.setString(text);
-      Alert.alert('✅ Copied', message, [{ text: 'OK' }]);
+      showAlert('✅ Copied', message, [{ text: 'OK' }]);
     } catch (error) {
-      Alert.alert('❌ Error', 'Unable to copy. Please try again.');
+      showAlert('❌ Error', 'Unable to copy. Please try again.');
     }
   };
 

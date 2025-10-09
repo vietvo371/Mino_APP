@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -34,6 +35,7 @@ interface ForgotPasswordScreenProps {
 const { width, height } = Dimensions.get('window');
 
 const ForgotPasswordScreen: React.FC<ForgotPasswordScreenProps> = ({ navigation }) => {
+  const { showAlert } = useAlert();
   const { t, getCurrentLanguage } = useTranslation();
   const [identifier, setIdentifier] = useState('');
   const [loading, setLoading] = useState(false);

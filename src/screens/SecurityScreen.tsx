@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -11,11 +12,10 @@ import {
   Alert,
   RefreshControl,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { theme } from '../theme/colors';
-import api from '../utils/Api';
+import { commonStyles } from "../theme/components";import api from '../utils/Api';
 import { getUser } from '../utils/TokenManager';
 import { useTranslation } from '../hooks/useTranslation';
 import { EkycService } from '../services/EkycService';
@@ -61,7 +61,7 @@ const SecurityScreen = () => {
       }
     } catch (error: any) {
       console.log('Profile fetch error:', error);
-      Alert.alert(t('security.error'), t('security.failedToLoadProfile'));
+      showAlert(t('security.error'), t('security.failedToLoadProfile'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -114,34 +114,34 @@ const SecurityScreen = () => {
       // Validate step by step with Alerts
       if (!lcf || lcf?.object?.liveness !== 'success') {
         setIsEkycLoading(false);
-        Alert.alert(t('security.cardFrontInvalid'), t('security.cardFrontInvalidMessage'));
+        showAlert(t('security.cardFrontInvalid'), t('security.cardFrontInvalidMessage'));
         return;
       }
       if (!lcr || lcr?.object?.liveness !== 'success') {
         setIsEkycLoading(false);
-        Alert.alert(t('security.cardRearInvalid'), t('security.cardRearInvalidMessage'));
+        showAlert(t('security.cardRearInvalid'), t('security.cardRearInvalidMessage'));
         return;
       }
       if (!lf || lf?.object?.liveness !== 'success') {
         setIsEkycLoading(false);
-        Alert.alert(t('security.faceInvalid'), t('security.faceInvalidMessage'));
+        showAlert(t('security.faceInvalid'), t('security.faceInvalidMessage'));
         return;
       }
       if (!mask || mask?.object?.masked !== 'no') {
         setIsEkycLoading(false);
-        Alert.alert(t('security.maskDetected'), t('security.maskDetectedMessage'));
+        showAlert(t('security.maskDetected'), t('security.maskDetectedMessage'));
         return;
       }
       if (!ocr || ocr?.statusCode !== 200) {
         setIsEkycLoading(false);
-        Alert.alert(t('security.ocrFailed'), t('security.ocrFailedMessage'));
+        showAlert(t('security.ocrFailed'), t('security.ocrFailedMessage'));
         return;
       }
       if (cmp) {
         const prob = Number(cmp?.object?.prob || 0);
         if (!(cmp?.object?.msg === 'MATCH' && prob >= 95)) {
           setIsEkycLoading(false);
-          Alert.alert(t('security.faceMatchFailed'), t('security.faceMatchFailedMessage'));
+          showAlert(t('security.faceMatchFailed'), t('security.faceMatchFailedMessage'));
           return;
         }
       }
@@ -176,16 +176,16 @@ const SecurityScreen = () => {
         });
         if (response.data.status) {
           setIsEkycLoading(false);
-          Alert.alert('eKYC', t('security.ekycSuccess'));
+          showAlert('eKYC', t('security.ekycSuccess'));
           fetchUserProfile();
         } else {
-          Alert.alert('eKYC', response.data.message || t('security.ekycFailed'));
+          showAlert('eKYC', response.data.message || t('security.ekycFailed'));
           setIsEkycLoading(false);
         }
       } catch (error: any) {
         if (error.response?.data?.errors) {
           Object.keys(error.response.data.errors).forEach(field => {
-            Alert.alert('eKYC', error.response.data.errors[field][0] || t('security.ekycFailed'));
+            showAlert('eKYC', error.response.data.errors[field][0] || t('security.ekycFailed'));
           });
         }
       } finally {
@@ -257,7 +257,7 @@ const SecurityScreen = () => {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={commonStyles.screenContainer}>
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
@@ -272,12 +272,12 @@ const SecurityScreen = () => {
           <ActivityIndicator size="large" color="#4A90E2" />
           <Text style={styles.loadingText}>{t('security.loadingSettings')}</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={commonStyles.screenContainer}>
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -435,15 +435,11 @@ const SecurityScreen = () => {
         visible={isEkycLoading} 
         message={ekycLoadingMessage} 
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

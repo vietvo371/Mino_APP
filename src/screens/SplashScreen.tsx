@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useEffect } from 'react';
 import { View, StyleSheet, Animated, Easing } from 'react-native';
 import { useNavigation } from '@react-navigation/native';

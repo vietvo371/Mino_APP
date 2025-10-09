@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import { BlurView } from '@react-native-community/blur';
 import LinearGradient from 'react-native-linear-gradient';
 import { Image, StyleSheet, View } from 'react-native';

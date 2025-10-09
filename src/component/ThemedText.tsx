@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React from 'react';
 import { Text, TextProps, TextStyle } from 'react-native';
 import { textStyles } from '../theme/typography';

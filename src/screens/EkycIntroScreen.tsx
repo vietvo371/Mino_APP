@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React from 'react';
 import {
   View,
@@ -18,6 +19,7 @@ import { StackScreen } from '../navigation/types';
 const { width, height } = Dimensions.get('window');
 
 const EkycIntroScreen: StackScreen<'EkycIntro'> = ({ navigation }) => {
+  const { showAlert } = useAlert();
   const steps = [
     {
       icon: 'card-account-details-outline',

@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React from 'react';
 import { View, Text, Button, StyleSheet, ScrollView } from 'react-native';
 import { useSocket } from '../contexts/SocketContext';

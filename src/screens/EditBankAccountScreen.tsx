@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -47,6 +48,7 @@ interface BankAccountData {
 
 const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
   const navigation = useNavigation();
+  const { showAlert } = useAlert();
   const route = useRoute();
   const { account } = route.params as { account: BankAccountData };
   const { t } = useTranslation();
@@ -73,11 +75,11 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
       if (response.data.status) {
         setBanks(response.data.data);
       } else {
-        Alert.alert(t('common.error'), t('editBankAccount.alerts.loadBanksError'));
+        showAlert(t('common.error'), t('editBankAccount.alerts.loadBanksError'));
       }
     } catch (error: any) {
       console.log('Fetch banks error:', error);
-      Alert.alert(t('common.error'), t('editBankAccount.alerts.loadBanksFailed'));
+      showAlert(t('common.error'), t('editBankAccount.alerts.loadBanksFailed'));
     } finally {
       setLoadingBanks(false);
     }
@@ -126,7 +128,7 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
     try {
       const user = await getUser();
       if (!user?.email) {
-        Alert.alert(t('common.error'), t('editBankAccount.alerts.userNotAuthenticated'));
+        showAlert(t('common.error'), t('editBankAccount.alerts.userNotAuthenticated'));
         return;
       }
       const response = await api.post('/client/bank/update', {
@@ -139,7 +141,7 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
       });
 
       if (response.data.status) {
-        Alert.alert(
+        showAlert(
           t('common.success'), 
           response.data.message || t('editBankAccount.alerts.updateSuccess'),
           [
@@ -150,7 +152,7 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
           ]
         );
       } else {
-        Alert.alert(t('common.error'), response.data.message || t('editBankAccount.alerts.updateFailed'));
+        showAlert(t('common.error'), response.data.message || t('editBankAccount.alerts.updateFailed'));
       }
       
     } catch (error: any) {
@@ -174,7 +176,7 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
         
         // Show first error in alert
         const firstError = Object.values(formattedErrors)[0];
-        Alert.alert(t('editBankAccount.alerts.validationError'), firstError);
+        showAlert(t('editBankAccount.alerts.validationError'), firstError);
       } else {
         // Handle other errors
         let errorMessage = t('editBankAccount.alerts.updateFailed');
@@ -183,7 +185,7 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
         } else if (error.message) {
           errorMessage = error.message;
         }
-        Alert.alert(t('common.error'), errorMessage);
+        showAlert(t('common.error'), errorMessage);
       }
     } finally {
       setLoading(false);
@@ -199,7 +201,7 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
   };
 
   const handleDelete = () => {
-    Alert.alert(
+    showAlert(
       t('editBankAccount.alerts.deleteConfirm'),
       t('editBankAccount.alerts.deleteMessage'),
       [
@@ -218,7 +220,7 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
 
   const deleteBankAccount = async () => {
     if (!account?.id) {
-      Alert.alert(t('common.error'), t('editBankAccount.alerts.invalidAccountData'));
+      showAlert(t('common.error'), t('editBankAccount.alerts.invalidAccountData'));
       return;
     }
 
@@ -226,7 +228,7 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
     try {
       const user = await getUser();
       if (!user?.email) {
-        Alert.alert(t('common.error'), t('editBankAccount.alerts.userNotAuthenticated'));
+        showAlert(t('common.error'), t('editBankAccount.alerts.userNotAuthenticated'));
         return;
       }
       const response = await api.post('/client/bank/delete', {
@@ -235,7 +237,7 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
       });
 
       if (response?.data?.status) {
-        Alert.alert(t('common.success'), t('editBankAccount.alerts.deleteSuccess'), [
+        showAlert(t('common.success'), t('editBankAccount.alerts.deleteSuccess'), [
           {
             text: 'OK',
             onPress: () => {
@@ -244,11 +246,11 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
           },
         ]);
       } else {
-        Alert.alert(t('common.error'), response?.data?.message || t('editBankAccount.alerts.deleteFailed'));
+        showAlert(t('common.error'), response?.data?.message || t('editBankAccount.alerts.deleteFailed'));
       }
     } catch (error: any) {
       console.log('Delete bank account error:', error.response);
-      Alert.alert(
+      showAlert(
         t('common.error'),
         error?.response?.data?.message || t('editBankAccount.alerts.deleteFailed')
       );

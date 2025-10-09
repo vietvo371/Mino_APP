@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -32,7 +33,7 @@ const AddTRC20AddressScreen = () => {
   const [showOtp, setShowOtp] = useState(false);
   const [identifier, setIdentifier] = useState<string>('');
   const [identifierType, setIdentifierType] = useState<'email' | 'phone'>('email');
-
+  const { showAlert } = useAlert();
   // Prefill identifier from profile
   useEffect(() => {
     const fetchProfile = async () => {
@@ -81,7 +82,7 @@ const AddTRC20AddressScreen = () => {
       console.log('Create wallet response:', response.data);
 
       if (response.data.status) {
-        Alert.alert(
+        showAlert(
           t('common.success'),
           response.data.message || t('trc20Addresses.createSuccess'),
           [
@@ -92,7 +93,7 @@ const AddTRC20AddressScreen = () => {
           ]
         );
       } else {
-        Alert.alert(t('common.error'), response.data.message || t('trc20Addresses.createFailed'));
+        showAlert(t('common.error'), response.data.message || t('trc20Addresses.createFailed'));
       }
     } catch (error: any) {
       console.log('Create wallet error:', error);
@@ -108,7 +109,7 @@ const AddTRC20AddressScreen = () => {
         });
         setErrors(formattedErrors);
         const firstError = Object.values(formattedErrors)[0];
-        Alert.alert(t('trc20Addresses.validation.validationError'), String(firstError));
+        showAlert(t('trc20Addresses.validation.validationError'), String(firstError));
       } else {
         let errorMessage = t('trc20Addresses.createFailed');
         if (error.response?.data?.message) {
@@ -116,7 +117,7 @@ const AddTRC20AddressScreen = () => {
         } else if (error.message) {
           errorMessage = error.message;
         }
-        Alert.alert(t('common.error'), errorMessage);
+        showAlert(t('common.error'), errorMessage);
       }
     } finally {
       setLoading(false);

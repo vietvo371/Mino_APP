@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import { PropsWithChildren, useEffect, useState } from 'react';
 import { View, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';

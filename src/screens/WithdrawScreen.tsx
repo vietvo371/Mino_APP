@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useState } from 'react';
 import {
   View,
@@ -9,13 +10,12 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { theme } from '../theme/colors';
-import { componentStyles } from '../theme/components';
-import { StackScreen } from '../navigation/types';
+import { commonStyles } from "../theme/components";import { componentStyles } from '../theme/components';
+import { commonStyles } from "../theme/components";import { StackScreen } from '../navigation/types';
 import InputCustom from '../component/InputCustom';
 import ButtonCustom from '../component/ButtonCustom';
 
@@ -30,7 +30,7 @@ const WithdrawScreen: StackScreen<'Withdraw'> = () => {
   const [note, setNote] = useState('');
 
   const handleWithdraw = () => {
-    Alert.alert(
+    showAlert(
       'Confirm Withdrawal',
       `Are you sure you want to withdraw ${amount} ${selectedWallet}?`,
       [
@@ -42,7 +42,7 @@ const WithdrawScreen: StackScreen<'Withdraw'> = () => {
           text: 'Confirm',
           onPress: () => {
             // Handle withdrawal
-            Alert.alert('Success', 'Withdrawal request sent successfully');
+            showAlert('Success', 'Withdrawal request sent successfully');
             navigation.goBack();
           },
         },
@@ -51,7 +51,7 @@ const WithdrawScreen: StackScreen<'Withdraw'> = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={commonStyles.screenContainer}>
       <View style={styles.backgroundContainer}>
         <LinearGradient
           colors={[theme.colors.backgroundDark, theme.colors.secondary]}
@@ -336,15 +336,11 @@ const WithdrawScreen: StackScreen<'Withdraw'> = () => {
           style={styles.withdrawButton}
         />
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.backgroundDark,
-  },
   backgroundContainer: {
     ...StyleSheet.absoluteFillObject,
   },

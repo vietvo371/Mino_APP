@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React from 'react';
 import {
   View,
@@ -57,6 +58,7 @@ type Props = {
 };
 
 const CountryCodePicker = ({ visible, onClose, onSelect, selectedCountry }: Props) => {
+  const { showAlert } = useAlert();
   return (
     <Modal
       visible={visible}

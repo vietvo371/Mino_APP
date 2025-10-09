@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -8,14 +9,13 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { mockEkycService as ekycService } from '../services/MockEkycService';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingOverlay from '../component/LoadingOverlay';
 import { theme } from '../theme/colors';
-
+import { commonStyles } from "../theme/components";
 
 const EkycScreen = () => {
   const navigation = useNavigation();
@@ -47,7 +47,7 @@ const EkycScreen = () => {
   const initializeSDK = async () => {
     try {
     } catch (err) {
-      Alert.alert('Lỗi', 'Không thể khởi tạo SDK eKYC. Vui lòng thử lại sau.');
+      showAlert('Lỗi', 'Không thể khởi tạo SDK eKYC. Vui lòng thử lại sau.');
     }
   };
 
@@ -56,7 +56,7 @@ const EkycScreen = () => {
       const image = await captureIdCardFront();
       setFrontImage(image);
     } catch (err) {
-      Alert.alert('Lỗi', 'Không thể chụp mặt trước CCCD/CMND. Vui lòng thử lại.');
+      showAlert('Lỗi', 'Không thể chụp mặt trước CCCD/CMND. Vui lòng thử lại.');
     }
   };
 
@@ -65,7 +65,7 @@ const EkycScreen = () => {
       const image = await captureIdCardBack();
       setBackImage(image);
     } catch (err) {
-      Alert.alert('Lỗi', 'Không thể chụp mặt sau CCCD/CMND. Vui lòng thử lại.');
+      showAlert('Lỗi', 'Không thể chụp mặt sau CCCD/CMND. Vui lòng thử lại.');
     }
   };
 
@@ -74,7 +74,7 @@ const EkycScreen = () => {
       const image = await captureSelfie();
       setSelfieImage(image);
     } catch (err) {
-      Alert.alert('Lỗi', 'Không thể chụp ảnh chân dung. Vui lòng thử lại.');
+      showAlert('Lỗi', 'Không thể chụp ảnh chân dung. Vui lòng thử lại.');
     }
   };
 
@@ -83,14 +83,14 @@ const EkycScreen = () => {
       const result = await performLiveness();
       setLivenessData(result);
     } catch (err) {
-      Alert.alert('Lỗi', 'Không thể thực hiện kiểm tra chống giả mạo. Vui lòng thử lại.');
+      showAlert('Lỗi', 'Không thể thực hiện kiểm tra chống giả mạo. Vui lòng thử lại.');
     }
   };
 
   const handleVerify = async () => {
     try {
       if (!frontImage || !backImage || !selfieImage) {
-        Alert.alert('Lỗi', 'Vui lòng chụp đầy đủ ảnh CCCD/CMND và ảnh chân dung.');
+        showAlert('Lỗi', 'Vui lòng chụp đầy đủ ảnh CCCD/CMND và ảnh chân dung.');
         return;
       }
 
@@ -109,13 +109,13 @@ const EkycScreen = () => {
       const result = await verifyEkyc(verifyData);
 
       if (result.status === 'verified') {
-        Alert.alert('Thành công', 'Xác thực eKYC thành công!');
+        showAlert('Thành công', 'Xác thực eKYC thành công!');
         navigation.goBack();
       } else {
-        Alert.alert('Thất bại', 'Xác thực eKYC thất bại. Vui lòng thử lại.');
+        showAlert('Thất bại', 'Xác thực eKYC thất bại. Vui lòng thử lại.');
       }
     } catch (err) {
-      Alert.alert('Lỗi', 'Không thể xác thực eKYC. Vui lòng thử lại.');
+      showAlert('Lỗi', 'Không thể xác thực eKYC. Vui lòng thử lại.');
     }
   };
 
@@ -135,7 +135,7 @@ const EkycScreen = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={commonStyles.screenContainer}>
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -218,15 +218,11 @@ const EkycScreen = () => {
           <Text style={styles.verifyButtonText}>Xác thực</Text>
         </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

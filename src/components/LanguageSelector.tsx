@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React from 'react';
 import {
   View,
@@ -44,6 +45,7 @@ type Props = {
 };
 
 const LanguageSelector = ({ visible, onClose, onSelect, currentLanguage }: Props) => {
+  const { showAlert } = useAlert();
   const { t, changeLanguage } = useTranslation();
 
   const handleLanguageSelect = async (languageCode: string) => {

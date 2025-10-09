@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -85,7 +86,7 @@ const EditProfileScreen = () => {
       }
     } catch (error) {
       console.log('Error fetching profile:', error);
-      Alert.alert('Error', 'Cannot load profile information');
+      showAlert('Error', 'Cannot load profile information');
     } finally {
       setLoading(false);
     }
@@ -155,14 +156,14 @@ const EditProfileScreen = () => {
       const response = await api.post('/client/update-profile', updateData);
       
       if (response.data.status) {
-        Alert.alert(t('common.success'), t('editProfile.updateSuccess'), [
+        showAlert(t('common.success'), t('editProfile.updateSuccess'), [
           {
             text: t('common.confirm'),
             onPress: () => navigation.goBack()
           }
         ]);
       } else {
-        Alert.alert(t('common.error'), response.data.message || t('editProfile.updateFailed'));
+        showAlert(t('common.error'), response.data.message || t('editProfile.updateFailed'));
       }
     } catch (error: any) {
       console.log('Update profile error:', error);
@@ -177,7 +178,7 @@ const EditProfileScreen = () => {
         if (error.response?.data?.message) {
           errorMessage = error.response.data.message;
         }
-        Alert.alert(t('common.error'), errorMessage);
+        showAlert(t('common.error'), errorMessage);
       }
     } finally {
       setSaving(false);

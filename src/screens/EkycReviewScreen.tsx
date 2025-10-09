@@ -1,6 +1,6 @@
-// components/EkycComponent.tsx
+import { useAlert } from "../component/AlertCustom";
+import { View, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import React, { useState } from 'react';
-import { View, TouchableOpacity, Text, StyleSheet, TextInput, Alert } from 'react-native';
 import { EkycService } from '../services/EkycService';
 import { useTranslation } from '../hooks/useTranslation';
 import api from '../utils/Api';
@@ -26,29 +26,29 @@ export const EkycReviewScreen: React.FC = () => {
 
       // Validate step by step with Alerts
       if (!lcf || lcf?.object?.liveness !== 'success') {
-        Alert.alert('Giấy tờ mặt trước', 'Giấy tờ không hợp lệ, vui lòng chụp lại.');
+        showAlert('Giấy tờ mặt trước', 'Giấy tờ không hợp lệ, vui lòng chụp lại.');
         return;
       }
       if (!lcr || lcr?.object?.liveness !== 'success') {
-        Alert.alert('Giấy tờ mặt sau', 'Giấy tờ không hợp lệ, vui lòng chụp lại.');
+        showAlert('Giấy tờ mặt sau', 'Giấy tờ không hợp lệ, vui lòng chụp lại.');
         return;
       }
       if (!lf || lf?.object?.liveness !== 'success') {
-        Alert.alert('Chân dung', 'Không nhận diện được người thật, vui lòng chụp lại.');
+        showAlert('Chân dung', 'Không nhận diện được người thật, vui lòng chụp lại.');
         return;
       }
       if (!mask || mask?.object?.masked !== 'no') {
-        Alert.alert('Che mặt', 'Vui lòng không che mặt khi chụp.');
+        showAlert('Che mặt', 'Vui lòng không che mặt khi chụp.');
         return;
       }
       if (!ocr || ocr?.statusCode !== 200) {
-        Alert.alert('OCR', 'Bóc tách thông tin thất bại, vui lòng chụp lại.');
+        showAlert('OCR', 'Bóc tách thông tin thất bại, vui lòng chụp lại.');
         return;
       }
       if (cmp) {
         const prob = Number(cmp?.object?.prob || 0);
         if (!(cmp?.object?.msg === 'MATCH' && prob >= 95)) {
-          Alert.alert('So khớp khuôn mặt', 'Khuôn mặt chưa khớp thông tin eKYC.');
+          showAlert('So khớp khuôn mặt', 'Khuôn mặt chưa khớp thông tin eKYC.');
           return;
         }
       }
@@ -80,9 +80,9 @@ export const EkycReviewScreen: React.FC = () => {
         //   hash_face_far,
         //   email,
         // });
-        // Alert.alert('eKYC', 'Đã xác thực danh tính.');
+        // showAlert('eKYC', 'Đã xác thực danh tính.');
       } catch (e) {
-        Alert.alert('eKYC', 'Gửi kết quả lên máy chủ thất bại.');
+        showAlert('eKYC', 'Gửi kết quả lên máy chủ thất bại.');
       }
     } catch (error) {
       console.error('eKYC Full Error:', error);
@@ -114,7 +114,7 @@ export const EkycReviewScreen: React.FC = () => {
   const handleVerifyFaceById = async () => {
     try {
       if (!verifyId) {
-        Alert.alert('Verify Face', 'Nhập Verify ID trước khi chạy');
+        showAlert('Verify Face', 'Nhập Verify ID trước khi chạy');
         return;
       }
       const result = await EkycService.verifyFaceById(verifyId);

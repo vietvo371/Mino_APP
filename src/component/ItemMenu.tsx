@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import { DrawerItem } from "@react-navigation/drawer"
 import Icon from 'react-native-vector-icons/Entypo';
 import SCREEN_NAME from "../share"
@@ -15,6 +16,7 @@ type ItemMenuProps = {
 }
 
 const ItemMenu = ({navigation, label, name_icon, screen_name, focused, onPress}: ItemMenuProps) => {
+  const { showAlert } = useAlert();
     return (
         <DrawerItem
             label={label}

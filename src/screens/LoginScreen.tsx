@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -35,6 +36,7 @@ interface LoginScreenProps {
 const { width, height } = Dimensions.get('window');
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
+  const { showAlert } = useAlert();
   const { signIn } = useAuth();
   const { t, getCurrentLanguage } = useTranslation();
   const [identifier, setIdentifier] = useState('');
@@ -132,14 +134,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         errorMessage = error.message;
       }
       
-      Alert.alert(t('auth.loginFailed'), errorMessage);
+      showAlert(t('auth.loginFailed'), errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   const handleSocialLogin = (provider: string) => {
-    Alert.alert('Coming Soon', `${provider} login will be available soon`);
+    showAlert('Coming Soon', `${provider} login will be available soon`);
   };
 
   return (

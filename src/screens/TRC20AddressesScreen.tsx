@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -44,7 +45,7 @@ const TRC20AddressesScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [needsVerification, setNeedsVerification] = useState(false);
-
+  const { showAlert } = useAlert();
   // Fetch wallet data from API
   const fetchWalletData = async (isRefresh = false) => {
     try {
@@ -79,7 +80,7 @@ const TRC20AddressesScreen = () => {
       } else if (error.message) {
         errorMessage = error.message;
       }
-      Alert.alert(t('common.error'), errorMessage);
+      showAlert(t('common.error'), errorMessage);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -112,7 +113,7 @@ const TRC20AddressesScreen = () => {
   const handleCopyAddress = (address: string) => {
     // Copy address to clipboard
     // You can implement clipboard functionality here
-    Alert.alert(t('trc20Addresses.copied'), t('trc20Addresses.addressCopied'));
+    showAlert(t('trc20Addresses.copied'), t('trc20Addresses.addressCopied'));
   };
 
   const renderVerificationRequired = () => (

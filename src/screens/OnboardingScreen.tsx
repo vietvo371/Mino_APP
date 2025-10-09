@@ -1,10 +1,8 @@
+import { useAlert } from "../component/AlertCustom";
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BlurView } from '@react-native-community/blur';
-
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View, Platform } from 'react-native';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import EventCard from '../component/EventCard';
 import Marquee from '../component/Marquee';
 import { theme } from '../theme/colors';
@@ -44,6 +42,7 @@ interface OnboardingScreenProps {
 }
 
 const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
+  const { showAlert } = useAlert();
   const { t } = useTranslation();
   const [activeIndex, setActiveIndex] = useState(0);
   const onboardingData = getOnboardingData(t);
@@ -79,8 +78,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
 
       <View style={styles.overlay} />
 
-      <BlurView blurType="dark" blurAmount={70} style={styles.blurContainer}>
-        <SafeAreaView style={styles.safeArea}>
+      <View style={styles.contentContainer}>
           {/* Top part - Marquee cards */}
           <Animated.View
             style={styles.marqueeContainer}
@@ -134,8 +132,7 @@ const OnboardingScreen: React.FC<OnboardingScreenProps> = ({ navigation }) => {
               </Animated.Text>
             </AnimatedPressable>
           </View>
-        </SafeAreaView>
-      </BlurView>
+      </View>
     </View>
   );
 }
@@ -147,35 +144,34 @@ const styles = StyleSheet.create({
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(246, 241, 146, 0.5)',
+    backgroundColor: Platform.select({
+      ios: 'rgba(246, 241, 146, 0.5)',
+      android: 'rgba(246, 241, 146, 0.7)',
+    }),
   },
-  blurContainer: {
+  contentContainer: {
     flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    marginTop: 40,
-  },
-  logo: {
-    width: 120,
-    height: 120,
+    backgroundColor: Platform.select({
+      ios: 'transparent',
+      android: 'rgba(0, 0, 0, 0.5)',
+    }),
   },
   marqueeContainer: {
     height: '50%',
-    marginTop: 80,
+    marginTop: Platform.select({
+      ios: 80,
+      android: 40,
+    }),
   },
   bottomContainer: {
     flex: 1,
     justifyContent: 'flex-end',
-    gap: 16,
-    padding: 24,
-    paddingBottom: 40,
-    fontSize: 24,
-    fontWeight: 'bold',
-
+    paddingHorizontal: 24,
+    paddingBottom: Platform.select({
+      ios: 40,
+      android: 24,
+    }),
+    rowGap: 16,
   },
   title: {
     fontSize: 32,
@@ -209,12 +205,22 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: "#FFFF66",
-    paddingVertical: 16,
+    paddingVertical: Platform.select({
+      ios: 16,
+      android: 12,
+    }),
     paddingHorizontal: 40,
     borderRadius: theme.borderRadius.lg,
     alignItems: 'center',
     alignSelf: 'stretch',
-    ...theme.shadows.yellow,
+    elevation: Platform.select({
+      ios: 0,
+      android: 4,
+    }),
+    ...Platform.select({
+      ios: theme.shadows.yellow,
+      android: {},
+    }),
   },
   buttonText: {
     fontSize: 18,

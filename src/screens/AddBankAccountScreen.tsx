@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -47,7 +48,7 @@ const AddBankAccountScreen = () => {
   const [showOtp, setShowOtp] = useState(false);
   const [identifier, setIdentifier] = useState<string>('');
   const [identifierType, setIdentifierType] = useState<'email' | 'phone'>('email');
-
+  const { showAlert } = useAlert();
   // Convert to uppercase without diacritics
   const toUpperNoDiacritics = (value: string) => {
     if (!value) return '';
@@ -69,11 +70,11 @@ const AddBankAccountScreen = () => {
       if (response.data.status) {
         setBanks(response.data.data);
       } else {
-        Alert.alert('', t('editBankAccount.alerts.loadBanksFailed'));
+        showAlert('', t('editBankAccount.alerts.loadBanksFailed'));
       }
     } catch (error: any) {
       console.log('Fetch banks error:', error);
-      Alert.alert(t('common.error'), t('editBankAccount.alerts.loadBanksFailed'));
+      showAlert(t('common.error'), t('editBankAccount.alerts.loadBanksFailed'));
     } finally {
       setLoadingBanks(false);
     }
@@ -140,7 +141,7 @@ const AddBankAccountScreen = () => {
       console.log('Create bank account response:', response.data);
       
       if (response.data.status) {
-        Alert.alert(
+        showAlert(
           t('common.success'), 
           response.data.message || t('bankAccounts.createSuccess'),
           [
@@ -151,7 +152,7 @@ const AddBankAccountScreen = () => {
           ]
         );
       } else {
-        Alert.alert('', response.data.message || t('bankAccounts.createFailed'));
+        showAlert('', response.data.message || t('bankAccounts.createFailed'));
       }
       
     } catch (error: any) {
@@ -169,7 +170,7 @@ const AddBankAccountScreen = () => {
         });
         setErrors(formattedErrors);
         const firstError = Object.values(formattedErrors)[0];
-        Alert.alert(t('editBankAccount.alerts.validationError'), String(firstError));
+        showAlert(t('editBankAccount.alerts.validationError'), String(firstError));
       } else {
         let errorMessage = t('bankAccounts.createFailed');
         if (error.response?.data?.message) {
@@ -177,7 +178,7 @@ const AddBankAccountScreen = () => {
         } else if (error.message) {
           errorMessage = error.message;
         }
-        Alert.alert(t('common.error'), errorMessage);
+        showAlert(t('common.error'), errorMessage);
       }
     } finally {
       setLoading(false);

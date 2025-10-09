@@ -1,5 +1,5 @@
+import { useAlert } from "../component/AlertCustom";
 import axios from "axios";
-import { Alert, Platform } from 'react-native';
 import { deriveDashboardStats, deriveRecentBatches, mockUsers } from './mockData';
 import { getToken, removeToken, saveToken } from "./TokenManager";
 import { navigate, resetTo } from "../navigation/NavigationService";
@@ -199,7 +199,7 @@ api.interceptors.response.use(
     if (error.code === 'ECONNABORTED' || /timeout/i.test(error.message)) {
       console.log('Timeout after retries:', error);
       removeToken(); 
-      Alert.alert(i18n.t('errors.timeoutError'), i18n.t('errors.timeoutMessage'),
+      showAlert(i18n.t('errors.timeoutError'), i18n.t('errors.timeoutMessage'),
         [           {
             text: i18n.t('common.confirm'),
             onPress: () => {
@@ -225,7 +225,7 @@ api.interceptors.response.use(
           ? i18n.t('errors.sessionExpiredSandbox') 
           : i18n.t('errors.accessDenied');
         
-        Alert.alert(title, message, [
+        showAlert(title, message, [
           {
             text: i18n.t('common.confirm'),
             onPress: () => {

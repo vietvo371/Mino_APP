@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useState } from 'react';
 import {
   View,
@@ -31,6 +32,7 @@ interface AuditLog {
 }
 
 const AdminAuditScreen: React.FC<AdminAuditScreenProps> = ({ navigation }) => {
+  const { showAlert } = useAlert();
   const [selectedType, setSelectedType] = useState<string>('');
   const [startDate, setStartDate] = useState<Date>(
     new Date(new Date().setDate(new Date().getDate() - 7))

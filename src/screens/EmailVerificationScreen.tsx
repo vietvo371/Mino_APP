@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -55,7 +56,7 @@ const EmailVerificationScreen = () => {
         }
       } catch (e) {
         console.log('Error fetching profile:', e);
-        Alert.alert(t('common.error'), t('emailVerification.getEmailError'));
+        showAlert(t('common.error'), t('emailVerification.getEmailError'));
       } finally {
         setCheckingStatus(false);
       }
@@ -82,9 +83,9 @@ const EmailVerificationScreen = () => {
         setIsCodeSent(true);
         setCountdown(60); // 60 seconds countdown
         startCountdown();
-        Alert.alert('', response.data.message || t('emailVerification.sendOtpSuccess'));
+        showAlert('', response.data.message || t('emailVerification.sendOtpSuccess'));
       } else {
-        Alert.alert(t('common.error'), response.data.message || t('emailVerification.sendOtpError'));
+        showAlert(t('common.error'), response.data.message || t('emailVerification.sendOtpError'));
       }
     } catch (error: any) {
       console.log('Send OTP error:', error);
@@ -94,7 +95,7 @@ const EmailVerificationScreen = () => {
       } else if (error.message) {
         errorMessage = error.message;
       }
-      Alert.alert(t('common.error'), errorMessage);
+      showAlert(t('common.error'), errorMessage);
     } finally {
       setLoading(false);
     }
@@ -157,7 +158,7 @@ const EmailVerificationScreen = () => {
   const handleVerify = async () => {
     const otpString = otp.join('');
     if (!otpString || otpString.length < 6) {
-      Alert.alert(t('common.error'), t('emailVerification.enterFullOtp'));
+      showAlert(t('common.error'), t('emailVerification.enterFullOtp'));
       return;
     }
 
@@ -171,7 +172,7 @@ const EmailVerificationScreen = () => {
       console.log('Verify OTP response:', response.data);
       
       if (response.data.status) {
-        Alert.alert(t('common.success'), t('emailVerification.emailVerifiedSuccess'), [
+        showAlert(t('common.success'), t('emailVerification.emailVerifiedSuccess'), [
           {
             text: 'OK',
             onPress: () => {
@@ -180,7 +181,7 @@ const EmailVerificationScreen = () => {
           }
         ]);
       } else {
-        Alert.alert(t('common.error'), response.data.message || t('emailVerification.otpIncorrect'));
+        showAlert(t('common.error'), response.data.message || t('emailVerification.otpIncorrect'));
         // Reset OTP on error
         setOtp(['', '', '', '', '', '']);
         setCode('');
@@ -195,7 +196,7 @@ const EmailVerificationScreen = () => {
       } else if (error.message) {
         errorMessage = error.message;
       }
-      Alert.alert(t('common.error'), errorMessage);
+      showAlert(t('common.error'), errorMessage);
       // Reset OTP on error
       setOtp(['', '', '', '', '', '']);
       setCode('');

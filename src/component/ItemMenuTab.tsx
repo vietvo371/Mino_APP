@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { heightPercentageToDP as hp, widthPercentageToDP as wp } from 'react-native-responsive-screen';
 
@@ -8,7 +9,8 @@ type ItemMenuTabProps = {
 }
 
 const ItemMenuTab = ({ image, text, onPress }: ItemMenuTabProps) => {
-    return (
+  const { showAlert } = useAlert();
+    return (    
         <TouchableOpacity style={styles.item} onPress={onPress}>
             <Image source={image} style={styles.icon} />
                 <Text 

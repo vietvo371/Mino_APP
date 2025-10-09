@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -31,6 +32,7 @@ const { width, height } = Dimensions.get('window');
 
 
 const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
+  const { showAlert } = useAlert();
   const { t } = useTranslation();
 
   const [formData, setFormData] = useState({
@@ -108,10 +110,10 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
         re_password: formData.re_password,
       });
       if (response.data.status === false) {
-        Alert.alert(t('auth.registrationFailed'), response.data.message);
+        showAlert(t('auth.registrationFailed'), response.data.message);
         return;
       }
-      Alert.alert(t('auth.registrationSuccessful'), response.data.message,
+      showAlert(t('auth.registrationSuccessful'), response.data.message,
         [
           {
             text: t('common.confirm'),

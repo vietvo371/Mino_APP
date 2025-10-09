@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -10,7 +11,6 @@ import {
   Alert,
   RefreshControl,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { theme } from '../theme/colors';
@@ -92,6 +92,7 @@ interface UserProfile {
 
 const ProfileScreen: StackScreen<'Profile'> = () => {
   const { t } = useTranslation();
+  const { showAlert } = useAlert();
   const navigation = useNavigation();
   const menuItems = getMenuItems(t);
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -113,7 +114,7 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
       if (response.data.status) {
         setUser(response.data.data);
       } else {
-        Alert.alert(t('common.error'), t('profile.failedToLoadProfile'));
+        showAlert(t('common.error'), t('profile.failedToLoadProfile'));
       }
     } catch (error: any) {
       console.log('Profile fetch error:', error);
@@ -125,7 +126,7 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
         errorMessage = error.message;
       }
       
-      Alert.alert(t('common.error'), errorMessage);
+      showAlert(t('common.error'), errorMessage);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -168,7 +169,7 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
   const isPhoneVerified = user?.is_active_phone === 1;
 
   const handleSignOut = () => {
-    Alert.alert(
+    showAlert(
       t('profile.signOut'),
       t('profile.signOutConfirm'),
       [
@@ -256,17 +257,17 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
         <View style={styles.loadingContainer}>
           <Icon name="loading" size={40} color={theme.colors.primary} />
           <Text style={styles.loadingText}>{t('profile.loadingProfile')}</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.backgroundContainer}>
       </View>
 
@@ -336,7 +337,7 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
           <Text style={styles.signOutText}>{t('profile.signOut')}</Text>
         </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -397,6 +398,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+    paddingTop: Platform.OS === 'android' ? 20 : 0,
   },
   backgroundContainer: {
     ...StyleSheet.absoluteFillObject,

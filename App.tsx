@@ -15,6 +15,7 @@ import { theme } from './src/theme/colors';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { SocketProvider } from './src/contexts/SocketContext';
 import { NotificationHub } from './src/socket/NotificationHub';
+import { AlertProvider } from './src/component/AlertCustom';
 import './src/i18n'; // Initialize i18n
 import { navigationRef } from './src/navigation/NavigationService';
 
@@ -66,16 +67,18 @@ const App = () => {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaProvider>
-          <StatusBar
-            barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-            backgroundColor={theme.colors.background}
-          />
-              <SocketProvider>
-                <NavigationContainer theme={navigationTheme} ref={navigationRef}>
-                  <MainNavigator />
-                </NavigationContainer>
-                <NotificationHub />
-              </SocketProvider>
+          <AlertProvider>
+            <StatusBar
+              barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+              backgroundColor={theme.colors.background}
+            />
+                {/* <SocketProvider> */}
+                  <NavigationContainer theme={navigationTheme} ref={navigationRef}>
+                    <MainNavigator />
+                  </NavigationContainer>
+                  <NotificationHub />
+                {/* </SocketProvider> */}
+          </AlertProvider>
         </SafeAreaProvider>
     </GestureHandlerRootView>
   );

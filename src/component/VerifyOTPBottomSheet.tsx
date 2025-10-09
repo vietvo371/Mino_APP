@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
@@ -70,6 +71,7 @@ const VerifyOTPBottomSheet: React.FC<VerifyOTPBottomSheetProps> = ({
   const [hasVerified, setHasVerified] = useState<boolean>(false);
   const hiddenInputRef = useRef<TextInput>(null);
   const [openId, setOpenId] = useState<number>(0);
+  const { showAlert } = useAlert();
 
   // Compute default endpoints if not provided
   const verifyEndpoint: EndpointBuilder = useMemo(() => {
@@ -270,7 +272,7 @@ const VerifyOTPBottomSheet: React.FC<VerifyOTPBottomSheetProps> = ({
       
       if (response?.data?.status === false) {
         const errorMessage = response?.data?.message || t('verifyOtpBottomSheet.verificationFailed');
-        Alert.alert('OTP', errorMessage, [
+        showAlert('OTP', errorMessage, [
           {
             text: t('verifyOtpBottomSheet.ok'),
             onPress: () => {
@@ -286,7 +288,7 @@ const VerifyOTPBottomSheet: React.FC<VerifyOTPBottomSheetProps> = ({
       handleClose();
     } catch (error: any) {
       const errorMessage = error?.response?.data?.message || error?.message || t('verifyOtpBottomSheet.verificationError');
-      Alert.alert('OTP', errorMessage, [
+      showAlert('OTP', errorMessage, [
         {
           text: t('verifyOtpBottomSheet.ok'),
           onPress: () => {
@@ -317,10 +319,10 @@ const VerifyOTPBottomSheet: React.FC<VerifyOTPBottomSheetProps> = ({
       
       if (response?.data?.status === false) {
         const errorMessage = response?.data?.message || t('verifyOtpBottomSheet.failedToSendOtp');
-        Alert.alert('OTP', errorMessage);
+        showAlert('OTP', errorMessage);
       } else {
         if (!isInitial) {
-          Alert.alert('OTP', t('verifyOtpBottomSheet.otpResent'));
+          showAlert('OTP', t('verifyOtpBottomSheet.otpResent'));
         }
         setTimer(resendDisabledSeconds);
         setCanResend(false);
@@ -328,7 +330,7 @@ const VerifyOTPBottomSheet: React.FC<VerifyOTPBottomSheetProps> = ({
       }
     } catch (error: any) {
       const errorMessage = error?.response?.data?.message || error?.message || t('verifyOtpBottomSheet.failedToSendOtp');
-      Alert.alert('OTP', errorMessage);
+      showAlert('OTP', errorMessage);
     } finally {
       setLoading(false);
     }

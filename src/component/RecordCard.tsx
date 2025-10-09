@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React from 'react';
 import {
   View,
@@ -31,6 +32,7 @@ interface RecordCardProps {
 }
 
 const RecordCard: React.FC<RecordCardProps> = ({ record, onPress, style }) => {
+  const { showAlert } = useAlert();
   const convertDate = (date?: string) => {
     if (!date) return '-';
     return new Date(date).toLocaleDateString('en-US', {
@@ -114,8 +116,8 @@ const RecordCard: React.FC<RecordCardProps> = ({ record, onPress, style }) => {
       </View>
     </TouchableOpacity>
   );
+  
 };
-
 const styles = StyleSheet.create({
   container: {
     backgroundColor: theme.colors.background,
@@ -182,6 +184,8 @@ const styles = StyleSheet.create({
   },
   actionContainer: { justifyContent: 'center', marginLeft: theme.spacing.sm },
 });
+
+
 
 export default RecordCard;
 

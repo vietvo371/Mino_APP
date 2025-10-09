@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
@@ -289,7 +290,7 @@ const PaymentScreen = () => {
         ? parseInt(selectedWalletId, 10)
         : (wallets.find(w => w.isDefault)?.id || undefined);
       if (!walletId) {
-        Alert.alert(t('payment.notification'), t('payment.selectWalletRequired'));
+        showAlert(t('payment.notification'), t('payment.selectWalletRequired'));
         return;
       }
 
@@ -308,15 +309,15 @@ const PaymentScreen = () => {
             if (idTx) {
               (navigation as any).navigate('DetailHistory', { idTransaction: idTx, type: 'buy' });
             } else {
-              Alert.alert(t('payment.success'), res.data.message || t('payment.createBuyTransactionSuccess'));
+              showAlert(t('payment.success'), res.data.message || t('payment.createBuyTransactionSuccess'));
             }
           } else {
-            Alert.alert(t('payment.error'), res?.data?.message || t('payment.createTransactionFailed'));
+            showAlert(t('payment.error'), res?.data?.message || t('payment.createTransactionFailed'));
           }
         })
         .catch((err) => {
           console.log('Create buy tx error:', err);
-          Alert.alert(t('payment.error'), err?.response?.data?.message || t('payment.createTransactionFailed'));
+          showAlert(t('payment.error'), err?.response?.data?.message || t('payment.createTransactionFailed'));
         });
     } else {
       // Determine bank account ID: selected one or default
@@ -324,7 +325,7 @@ const PaymentScreen = () => {
         ? parseInt(selectedBankId, 10)
         : (bankAccounts.find(b => b.isDefault)?.id || undefined);
       if (!bankAccountId) {
-        Alert.alert(t('payment.notification'), t('payment.selectBankRequired'));
+        showAlert(t('payment.notification'), t('payment.selectBankRequired'));
         return;
       }
 
@@ -342,22 +343,22 @@ const PaymentScreen = () => {
             if (idTx) {
               (navigation as any).navigate('DetailHistory', { idTransaction: idTx, type: 'sell' });
             } else {
-              Alert.alert(t('payment.success'), res.data.message || t('payment.createSellTransactionSuccess'));
+              showAlert(t('payment.success'), res.data.message || t('payment.createSellTransactionSuccess'));
             }
           } else {
-            Alert.alert(t('payment.error'), res?.data?.message || t('payment.createTransactionFailed'));
+            showAlert(t('payment.error'), res?.data?.message || t('payment.createTransactionFailed'));
           }
         })
         .catch((err) => {
           console.log('Create sell tx error:', err);
-          Alert.alert(t('payment.error'), err?.response?.data?.message || t('payment.createTransactionFailed'));
+          showAlert(t('payment.error'), err?.response?.data?.message || t('payment.createTransactionFailed'));
         });
     }
   };
 
   const copyToClipboard = (text: string, message: string) => {
     Clipboard.setString(text);
-    Alert.alert(t('payment.copied'), message);
+    showAlert(t('payment.copied'), message);
   };
 
   const getTransactionInfo = () => {

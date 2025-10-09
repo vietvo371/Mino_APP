@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useEffect, useState } from 'react';
 import {
   View,
@@ -67,12 +68,12 @@ const EditTRC20AddressScreen = () => {
 
   const performUpdate = async () => {
     if (!name.trim()) {
-      Alert.alert(t('common.error'), t('editTrc20Address.alerts.enterWalletName'));
+      showAlert(t('common.error'), t('editTrc20Address.alerts.enterWalletName'));
       return;
     }
 
     if (!addressData?.id) {
-      Alert.alert(t('common.error'), t('editTrc20Address.alerts.invalidWalletData'));
+      showAlert(t('common.error'), t('editTrc20Address.alerts.invalidWalletData'));
       return;
     }
 
@@ -87,7 +88,7 @@ const EditTRC20AddressScreen = () => {
       });
 
       if (response?.data?.status) {
-        Alert.alert(t('common.success'), t('editTrc20Address.alerts.updateSuccess'), [
+        showAlert(t('common.success'), t('editTrc20Address.alerts.updateSuccess'), [
           {
             text: 'OK',
             onPress: () => {
@@ -97,11 +98,11 @@ const EditTRC20AddressScreen = () => {
           },
         ]);
       } else {
-        Alert.alert(t('common.error'), response?.data?.message || t('editTrc20Address.alerts.updateFailed'));
+        showAlert(t('common.error'), response?.data?.message || t('editTrc20Address.alerts.updateFailed'));
       }
     } catch (error: any) {
       console.log('Update wallet error:', error.response);
-      Alert.alert(
+      showAlert(
         t('common.error'),
         error?.response?.data?.message || t('editTrc20Address.alerts.updateFailed')
       );
@@ -112,11 +113,11 @@ const EditTRC20AddressScreen = () => {
 
   const handleSave = () => {
     if (!name.trim()) {
-      Alert.alert(t('common.error'), t('editTrc20Address.alerts.enterWalletName'));
+      showAlert(t('common.error'), t('editTrc20Address.alerts.enterWalletName'));
       return;
     }
     if (!addressData?.id) {
-      Alert.alert(t('common.error'), t('editTrc20Address.alerts.invalidWalletData'));
+      showAlert(t('common.error'), t('editTrc20Address.alerts.invalidWalletData'));
       return;
     }
     setPendingAction('update');
@@ -124,7 +125,7 @@ const EditTRC20AddressScreen = () => {
   };
 
   const handleDelete = () => {
-    Alert.alert(
+    showAlert(
       t('editTrc20Address.alerts.deleteConfirmTitle'),
       t('editTrc20Address.alerts.deleteConfirmMessage'),
       [
@@ -143,7 +144,7 @@ const EditTRC20AddressScreen = () => {
 
   const deleteWallet = async () => {
     if (!addressData?.id) {
-      Alert.alert(t('common.error'), t('editTrc20Address.alerts.invalidWalletData'));
+      showAlert(t('common.error'), t('editTrc20Address.alerts.invalidWalletData'));
       return;
     }
 
@@ -155,7 +156,7 @@ const EditTRC20AddressScreen = () => {
       });
 
       if (response?.data?.status) {
-        Alert.alert(t('common.success'), t('editTrc20Address.alerts.deleteSuccess'), [
+        showAlert(t('common.success'), t('editTrc20Address.alerts.deleteSuccess'), [
           {
             text: 'OK',
             onPress: () => {
@@ -164,11 +165,11 @@ const EditTRC20AddressScreen = () => {
           },
         ]);
       } else {
-        Alert.alert(t('common.error'), response?.data?.message || t('editTrc20Address.alerts.deleteFailed'));
+        showAlert(t('common.error'), response?.data?.message || t('editTrc20Address.alerts.deleteFailed'));
       }
     } catch (error: any) {
       console.log('Delete wallet error:', error.response);
-      Alert.alert(
+      showAlert(
         t('common.error'),
         error?.response?.data?.message || t('editTrc20Address.alerts.deleteFailed')
       );
@@ -190,7 +191,7 @@ const EditTRC20AddressScreen = () => {
   const handleCopy = () => {
     if (addressData?.address) {
       Clipboard.setString(addressData.address);
-      Alert.alert(t('editTrc20Address.alerts.copiedTitle'), t('editTrc20Address.alerts.copiedAddress'));
+      showAlert(t('editTrc20Address.alerts.copiedTitle'), t('editTrc20Address.alerts.copiedAddress'));
     }
   };
 

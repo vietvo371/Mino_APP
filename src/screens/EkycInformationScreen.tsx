@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useState } from 'react';
 import {
   View,
@@ -18,6 +19,7 @@ import LoadingOverlay from '../component/LoadingOverlay';
 import { StackScreen } from '../navigation/types';
 
 const EkycInformationScreen: StackScreen<'EkycInformation'> = ({ navigation }) => {
+  const { showAlert } = useAlert();
   const [formData, setFormData] = useState({
     fullName: '',
     idNumber: '',

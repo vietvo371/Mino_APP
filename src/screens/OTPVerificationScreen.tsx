@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import { useState, useEffect, useRef } from 'react';
 import {
   View,
@@ -28,6 +29,7 @@ const { width, height } = Dimensions.get('window');
 const OTP_LENGTH = 6;
 
 const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, route }) => {
+  const { showAlert } = useAlert();
   const { t } = useTranslation();
   const { identifier, type, flow = 'forgot' } = route.params;
 
@@ -148,7 +150,7 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
   const handleVerifyOTP = async () => {
     const otpString = otp.join('');
     if (otpString.length !== OTP_LENGTH) {
-      Alert.alert(t('common.error'), t('otp.invalidOtp'));
+      showAlert(t('common.error'), t('otp.invalidOtp'));
       return;
     }
 
@@ -184,7 +186,7 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
       console.log('OTP verification response:', response.data);
       
       if (response.data.status === false) {
-        Alert.alert(
+        showAlert(
           t('otp.verificationFailed'), 
           response.data.message,
           [
@@ -203,7 +205,7 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
       } else {
         if (flow === 'forgot') {
           // Navigate to ChangePassword screen for forgot password flow
-          Alert.alert(t('otp.verificationSuccessful'), response.data.message,
+          showAlert(t('otp.verificationSuccessful'), response.data.message,
             [
               {
                 text: t('common.confirm'),
@@ -217,7 +219,7 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
           );
         } else {
           // Navigate to Login for register flow
-          Alert.alert(t('otp.verificationSuccessful'), response.data.message,
+          showAlert(t('otp.verificationSuccessful'), response.data.message,
             [
               {
                 text: t('common.confirm'),
@@ -240,7 +242,7 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
         errorMessage = error.message;
       }
       
-      Alert.alert(t('otp.verificationFailed'), errorMessage, [
+      showAlert(t('otp.verificationFailed'), errorMessage, [
         {
           text: t('common.confirm'),
           onPress: () => {
@@ -288,7 +290,7 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
       setCurrentInputIndex(0);
       setOtpString('');
       setHasVerified(false);
-      Alert.alert(t('common.success'), t('otp.otpResent'));
+      showAlert(t('common.success'), t('otp.otpResent'));
     } catch (error: any) {
       console.log('Resend OTP error:', error);
       
@@ -301,7 +303,7 @@ const OTPVerificationScreen: StackScreen<'OTPVerification'> = ({ navigation, rou
         errorMessage = error.message;
       }
       
-      Alert.alert(t('common.error'), errorMessage);
+      showAlert(t('common.error'), errorMessage);
     } finally {
       setLoading(false);
     }

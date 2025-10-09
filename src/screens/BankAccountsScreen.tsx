@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -106,7 +107,7 @@ const BankAccountsScreen = () => {
       } else if (error.message) {
         errorMessage = error.message;
       }
-      Alert.alert(t('common.error'), errorMessage);
+      showAlert(t('common.error'), errorMessage);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -160,7 +161,7 @@ const BankAccountsScreen = () => {
 
   const handleCopyAccount = (accountNumber: string) => {
     // Copy account number to clipboard
-    Alert.alert(t('bankAccounts.copied'), t('bankAccounts.accountNumberCopied'));
+    showAlert(t('bankAccounts.copied'), t('bankAccounts.accountNumberCopied'));
   };
 
   const renderVerificationRequired = () => (

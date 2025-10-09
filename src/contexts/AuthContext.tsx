@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authApi, User, SignUpData } from '../utils/authApi';
 import { EkycVerifyRequest, EkycVerifyResponse } from '../types/ekyc';

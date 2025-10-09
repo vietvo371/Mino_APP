@@ -1,3 +1,4 @@
+import { useAlert } from "../component/AlertCustom";
 import React, { useState } from 'react';
 import {
   View,
@@ -17,6 +18,7 @@ import LoadingOverlay from '../component/LoadingOverlay';
 import { StackScreen } from '../navigation/types';
 
 const EkycSelfieScreen: StackScreen<'EkycSelfie'> = ({ navigation }) => {
+  const { showAlert } = useAlert();
   const [selfieImage, setSelfieImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
