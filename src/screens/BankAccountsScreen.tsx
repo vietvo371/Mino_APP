@@ -10,6 +10,8 @@ import {
   ActivityIndicator,
   Alert,
   RefreshControl,
+  StatusBar,
+  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -45,6 +47,7 @@ type BankAccount = {
 const BankAccountsScreen = () => {
   const navigation = useNavigation();
   const { t } = useTranslation();
+  const { showAlert } = useAlert();
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
   const [banks, setBanks] = useState<{[key: number]: { name: string; code: string; }}>({});
   const [loading, setLoading] = useState(true);
@@ -183,113 +186,129 @@ const BankAccountsScreen = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Icon name="arrow-left" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('bankAccounts.title')}</Text>
-        
-         <TouchableOpacity 
-          style={styles.addButton}
-          disabled={needsVerification}
-          onPress={handleAddAccount}
-        >
-          <Icon name="plus" size={24} color="#4A90E2" />
-        </TouchableOpacity>
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="#FFFFFF"
+      />
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Icon name="arrow-left" size={24} color="#000" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('bankAccounts.title')}</Text>
+          <TouchableOpacity 
+            style={styles.addButton}
+            disabled={needsVerification}
+            onPress={handleAddAccount}
+          >
+            <Icon name="plus" size={24} color="#4A90E2" />
+          </TouchableOpacity>
+        </View>
 
-      {needsVerification ? (
-        renderVerificationRequired()
-      ) : (
-      <ScrollView 
-        style={styles.content}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        <Text style={styles.sectionTitle}>{t('bankAccounts.accountList')}</Text>
-        
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#4A90E2" />
-            <Text style={styles.loadingText}>{t('bankAccounts.loadingAccounts')}</Text>
-          </View>
-        ) : accounts.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Icon name="bank-outline" size={64} color="#CCCCCC" />
-            <Text style={styles.emptyTitle}>{t('bankAccounts.noBankAccounts')}</Text>
-            <Text style={styles.emptyDescription}>
-              {t('bankAccounts.noAccountsDescription')}
-            </Text>
-            <TouchableOpacity 
-              style={styles.addFirstButton}
-              onPress={handleAddAccount}
-            >
-              <Icon name="plus" size={20} color="#FFFFFF" />
-              <Text style={styles.addFirstText}>{t('bankAccounts.addAccount')}</Text>
-            </TouchableOpacity>
-          </View>
+        {needsVerification ? (
+          renderVerificationRequired()
         ) : (
-          accounts.map((account) => (
-            <View key={account.id} style={styles.accountCard}>
-              <View style={styles.accountHeader}>
-                <Text style={styles.bankName} 
-                numberOfLines={1}
-                ellipsizeMode="tail">{account.bank}</Text>
-                {account.isDefault && (
-                  <View style={styles.defaultBadge}>
-                    <Text style={styles.defaultText}>{t('bankAccounts.default')}</Text>
-                  </View>
-                )}
+          <ScrollView 
+            style={styles.content}
+            contentContainerStyle={styles.scrollContent}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <Text style={styles.sectionTitle}>{t('bankAccounts.accountList')}</Text>
+            
+            {loading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#4A90E2" />
+                <Text style={styles.loadingText}>{t('bankAccounts.loadingAccounts')}</Text>
               </View>
-
-              <View style={styles.accountInfo}>
-                <View>
-                  <Text style={styles.accountLabel}>{t('bankAccounts.accountNumber')}</Text>
-                  <Text style={styles.accountNumber}>{account.accountNumber}</Text>
-                </View>
-                <TouchableOpacity 
-                  style={styles.copyButton}
-                  onPress={() => handleCopyAccount(account.accountNumber)}
-                >
-                  <Icon name="content-copy" size={20} color="#4A90E2" />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.accountNameContainer}>
-                <Text style={styles.accountLabel}>{t('bankAccounts.accountHolder')}</Text>
-                <Text style={styles.accountName}>{account.accountName}</Text>
-              </View>
-
-              <View style={styles.accountFooter}>
-                <Text style={styles.createdDate}>
-                  {t('bankAccounts.created')} {new Date(account.createdAt).toLocaleDateString()}
+            ) : accounts.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Icon name="bank-outline" size={64} color="#CCCCCC" />
+                <Text style={styles.emptyTitle}>{t('bankAccounts.noBankAccounts')}</Text>
+                <Text style={styles.emptyDescription}>
+                  {t('bankAccounts.noAccountsDescription')}
                 </Text>
                 <TouchableOpacity 
-                  style={styles.editButton}
-                  onPress={() => handleEditAccount(account)}
+                  style={styles.addFirstButton}
+                  onPress={handleAddAccount}
                 >
-                  <Icon name="pencil" size={16} color="#666" />
-                  <Text style={styles.editText}>{t('bankAccounts.edit')}</Text>
+                  <Icon name="plus" size={20} color="#FFFFFF" />
+                  <Text style={styles.addFirstText}>{t('bankAccounts.addAccount')}</Text>
                 </TouchableOpacity>
               </View>
-            </View>
-          ))
+            ) : (
+              accounts.map((account) => (
+                <View key={account.id} style={styles.accountCard}>
+                  <View style={styles.accountHeader}>
+                    <Text style={styles.bankName} 
+                    numberOfLines={1}
+                    ellipsizeMode="tail">{account.bank}</Text>
+                    {account.isDefault && (
+                      <View style={styles.defaultBadge}>
+                        <Text style={styles.defaultText}>{t('bankAccounts.default')}</Text>
+                      </View>
+                    )}
+                  </View>
+
+                  <View style={styles.accountInfo}>
+                    <View>
+                      <Text style={styles.accountLabel}>{t('bankAccounts.accountNumber')}</Text>
+                      <Text style={styles.accountNumber}>{account.accountNumber}</Text>
+                    </View>
+                    <TouchableOpacity 
+                      style={styles.copyButton}
+                      onPress={() => handleCopyAccount(account.accountNumber)}
+                    >
+                      <Icon name="content-copy" size={20} color="#4A90E2" />
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.accountNameContainer}>
+                    <Text style={styles.accountLabel}>{t('bankAccounts.accountHolder')}</Text>
+                    <Text style={styles.accountName}>{account.accountName}</Text>
+                  </View>
+
+                  <View style={styles.accountFooter}>
+                    <Text style={styles.createdDate}>
+                      {t('bankAccounts.created')} {new Date(account.createdAt).toLocaleDateString()}
+                    </Text>
+                    <TouchableOpacity 
+                      style={styles.editButton}
+                      onPress={() => handleEditAccount(account)}
+                    >
+                      <Icon name="pencil" size={16} color="#666" />
+                      <Text style={styles.editText}>{t('bankAccounts.edit')}</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))
+            )}
+          </ScrollView>
         )}
-      </ScrollView>
-      )}
+      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0,
+  },
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  scrollContent: {
+    paddingBottom: Platform.OS === 'android' ? hp('6%') : hp('4%'),
   },
   // Verification styles
   verificationContainer: {

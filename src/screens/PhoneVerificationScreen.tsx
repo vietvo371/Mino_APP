@@ -11,6 +11,7 @@ import {
   Platform,
   ActivityIndicator,
   Dimensions,
+  StatusBar,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
@@ -40,6 +41,7 @@ const PhoneVerificationScreen = () => {
   const [checkingStatus, setCheckingStatus] = useState(true);
   const [otpString, setOtpString] = useState('');
   const [hasVerified, setHasVerified] = useState(false);
+  const { showAlert } = useAlert();
 
   // Ref for hidden TextInput to support copy-paste
   const hiddenTextInputRef = useRef<TextInput>(null);
@@ -310,13 +312,18 @@ const PhoneVerificationScreen = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.backgroundContainer}>
-        <View style={styles.decorativeCircle1} />
-        <View style={styles.decorativeCircle2} />
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={theme.colors.white}
+      />
+      <View style={styles.container}>
+        <View style={styles.backgroundContainer}>
+          <View style={styles.decorativeCircle1} />
+          <View style={styles.decorativeCircle2} />
+        </View>
 
-      <View style={styles.mainContent}>
+        <View style={styles.mainContent}>
         {/* Header */}
         <Animated.View
           style={styles.header}
@@ -526,11 +533,17 @@ const PhoneVerificationScreen = () => {
           </Animated.View>
         )}
       </View>
+    </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: theme.colors.white,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0,
+  },
   container: {
     flex: 1,
     backgroundColor: theme.colors.white,
@@ -559,6 +572,7 @@ const styles = StyleSheet.create({
   mainContent: {
     flex: 1,
     paddingHorizontal: wp('4%'),
+    paddingBottom: Platform.OS === 'android' ? hp('4%') : hp('2%'),
   },
 
   // Header Styles
@@ -977,6 +991,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.white,
     paddingVertical: hp('2%'),
     paddingHorizontal: wp('4%'),
+    paddingBottom: Platform.OS === 'android' ? hp('4%') : hp('2%'),
     ...Platform.select({
       ios: {
         shadowColor: theme.colors.primary,
@@ -1036,5 +1051,4 @@ const styles = StyleSheet.create({
 });
 
 export default PhoneVerificationScreen;
-
 

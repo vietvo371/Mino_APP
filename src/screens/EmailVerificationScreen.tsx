@@ -11,6 +11,7 @@ import {
   Platform,
   ActivityIndicator,
   Dimensions,
+  StatusBar,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
@@ -38,7 +39,7 @@ const EmailVerificationScreen = () => {
   const [currentInputIndex, setCurrentInputIndex] = useState(0);
   const [isAlreadyVerified, setIsAlreadyVerified] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
-
+  const { showAlert } = useAlert();
   // Fetch email and verification status from profile when component mounts
   useEffect(() => {
     const fetchProfileAndStatus = async () => {
@@ -251,13 +252,18 @@ const EmailVerificationScreen = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.backgroundContainer}>
-        <View style={styles.decorativeCircle1} />
-        <View style={styles.decorativeCircle2} />
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={theme.colors.white}
+      />
+      <View style={styles.container}>
+        <View style={styles.backgroundContainer}>
+          <View style={styles.decorativeCircle1} />
+          <View style={styles.decorativeCircle2} />
+        </View>
 
-      <View style={styles.mainContent}>
+        <View style={styles.mainContent}>
         {/* Header */}
         <Animated.View
           style={styles.header}
@@ -449,11 +455,17 @@ const EmailVerificationScreen = () => {
           </Animated.View>
         )}
       </View>
+    </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: theme.colors.white,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0,
+  },
   container: {
     flex: 1,
     backgroundColor: theme.colors.white,
@@ -482,6 +494,7 @@ const styles = StyleSheet.create({
   mainContent: {
     flex: 1,
     paddingHorizontal: wp('4%'),
+    paddingBottom: Platform.OS === 'android' ? hp('4%') : hp('2%'),
   },
 
   // Header Styles
@@ -891,6 +904,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.white,
     paddingVertical: hp('2%'),
     paddingHorizontal: wp('4%'),
+    paddingBottom: Platform.OS === 'android' ? hp('4%') : hp('2%'),
     ...Platform.select({
       ios: {
         shadowColor: theme.colors.primary,
@@ -950,5 +964,4 @@ const styles = StyleSheet.create({
 });
 
 export default EmailVerificationScreen;
-
 

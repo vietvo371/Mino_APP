@@ -10,6 +10,8 @@ import {
   Platform,
   Alert,
   RefreshControl,
+  SafeAreaView,
+  StatusBar,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
@@ -257,91 +259,109 @@ const ProfileScreen: StackScreen<'Profile'> = () => {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <Icon name="loading" size={40} color={theme.colors.primary} />
-          <Text style={styles.loadingText}>{t('profile.loadingProfile')}</Text>
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="#FFFFFF"
+        />
+        <View style={styles.container}>
+          <View style={styles.loadingContainer}>
+            <Icon name="loading" size={40} color={theme.colors.primary} />
+            <Text style={styles.loadingText}>{t('profile.loadingProfile')}</Text>
+          </View>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.backgroundContainer}>
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="#FFFFFF"
+      />
+      <View style={styles.container}>
+        <View style={styles.backgroundContainer} />
 
-      <ScrollView
-        style={styles.content}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[theme.colors.primary]}
-            tintColor={theme.colors.primary}
-          />
-        }
-      >
-        {/* Profile Header */}
-        <View style={styles.header}>
-          <View style={styles.avatarContainer}>
-            <Image
-              source={require('../assets/images/avatar.jpeg')}
-              style={styles.avatar}
+        <ScrollView
+          style={styles.content}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[theme.colors.primary]}
+              tintColor={theme.colors.primary}
             />
-            <TouchableOpacity 
-              style={styles.editButton}
-              activeOpacity={0.7}
-              onPress={() => (navigation as any).navigate('EditProfile')}
-            >
-              <Icon name="pencil" size={16} color="#FFFFFF" />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.userInfo}>
-            <Text style={styles.name}>{user?.full_name || 'Loading...'}</Text>
-            <Text style={styles.email}>{user?.email || 'Loading...'}</Text>
-            <TouchableOpacity style={styles.badgesContainer} activeOpacity={0.7} onPress={() => (navigation as any).navigate('Security')}>
-              <View style={[styles.badge, { backgroundColor: isEkycVerified ? '#34C75915' : '#E5E5EA' }]}>
-                <Icon name="shield-check" size={14} color={isEkycVerified ? '#34C759' : '#8E8E93'} />
-                <Text style={[styles.badgeText, { color: isEkycVerified ? '#34C759' : '#8E8E93' }]}>{t('profile.ekyc')}</Text>
-              </View>
-              <View style={[styles.badge, { backgroundColor: isEmailVerified ? '#34C75915' : '#E5E5EA' }]}>
-                <Icon name="email-check" size={14} color={isEmailVerified ? '#34C759' : '#8E8E93'} />
-                <Text style={[styles.badgeText, { color: isEmailVerified ? '#34C759' : '#8E8E93' }]}>{t('profile.email')}</Text>
-              </View>
-              <View style={[styles.badge, { backgroundColor: isPhoneVerified ? '#34C75915' : '#E5E5EA' }]}>
-                <Icon name="phone-check" size={14} color={isPhoneVerified ? '#34C759' : '#8E8E93'} />
-                <Text style={[styles.badgeText, { color: isPhoneVerified ? '#34C759' : '#8E8E93' }]}>{t('profile.phone')}</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-     
-
-        {/* Menu Items */}
-        <View style={styles.menuContainer}>
-          {menuItems.map(renderMenuItem)}
-        </View>
-
-        {/* Sign Out Button */}
-        <TouchableOpacity
-          style={styles.signOutButton}
-          onPress={handleSignOut}
-          activeOpacity={0.7}
+          }
         >
-          <Icon name="logout" size={20} color="#FF3B30" />
-          <Text style={styles.signOutText}>{t('profile.signOut')}</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </View>
+          {/* Profile Header */}
+          <View style={styles.header}>
+            <View style={styles.avatarContainer}>
+              <Image
+                source={require('../assets/images/avatar.jpeg')}
+                style={styles.avatar}
+              />
+              <TouchableOpacity 
+                style={styles.editButton}
+                activeOpacity={0.7}
+                onPress={() => (navigation as any).navigate('EditProfile')}
+              >
+                <Icon name="pencil" size={16} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.userInfo}>
+              <Text style={styles.name}>{user?.full_name || 'Loading...'}</Text>
+              <Text style={styles.email}>{user?.email || 'Loading...'}</Text>
+              <TouchableOpacity
+                style={styles.badgesContainer}
+                activeOpacity={0.7}
+                onPress={() => (navigation as any).navigate('Security')}
+              >
+                <View style={[styles.badge, { backgroundColor: isEkycVerified ? '#34C75915' : '#E5E5EA' }]}>
+                  <Icon name="shield-check" size={14} color={isEkycVerified ? '#34C759' : '#8E8E93'} />
+                  <Text style={[styles.badgeText, { color: isEkycVerified ? '#34C759' : '#8E8E93' }]}>{t('profile.ekyc')}</Text>
+                </View>
+                <View style={[styles.badge, { backgroundColor: isEmailVerified ? '#34C75915' : '#E5E5EA' }]}>
+                  <Icon name="email-check" size={14} color={isEmailVerified ? '#34C759' : '#8E8E93'} />
+                  <Text style={[styles.badgeText, { color: isEmailVerified ? '#34C759' : '#8E8E93' }]}>{t('profile.email')}</Text>
+                </View>
+                <View style={[styles.badge, { backgroundColor: isPhoneVerified ? '#34C75915' : '#E5E5EA' }]}>
+                  <Icon name="phone-check" size={14} color={isPhoneVerified ? '#34C759' : '#8E8E93'} />
+                  <Text style={[styles.badgeText, { color: isPhoneVerified ? '#34C759' : '#8E8E93' }]}>{t('profile.phone')}</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Menu Items */}
+          <View style={styles.menuContainer}>
+            {menuItems.map(renderMenuItem)}
+          </View>
+
+          {/* Sign Out Button */}
+          <TouchableOpacity
+            style={styles.signOutButton}
+            onPress={handleSignOut}
+            activeOpacity={0.7}
+          >
+            <Icon name="logout" size={20} color="#FF3B30" />
+            <Text style={styles.signOutText}>{t('profile.signOut')}</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0,
+  },
   subItemsContainer: {
     backgroundColor: '#F8F8F8',
     marginHorizontal: 16,
@@ -398,7 +418,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    paddingTop: Platform.OS === 'android' ? 20 : 0,
   },
   backgroundContainer: {
     ...StyleSheet.absoluteFillObject,
@@ -408,6 +427,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
+    paddingBottom: Platform.OS === 'android' ? 40 : 24,
   },
   header: {
     alignItems: 'center',

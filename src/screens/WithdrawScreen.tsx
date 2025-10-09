@@ -14,8 +14,8 @@ import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { theme } from '../theme/colors';
-import { commonStyles } from "../theme/components";import { componentStyles } from '../theme/components';
-import { commonStyles } from "../theme/components";import { StackScreen } from '../navigation/types';
+import { commonStyles } from "../theme/components";
+import { StackScreen } from '../navigation/types';
 import InputCustom from '../component/InputCustom';
 import ButtonCustom from '../component/ButtonCustom';
 
@@ -28,7 +28,7 @@ const WithdrawScreen: StackScreen<'Withdraw'> = () => {
   const [accountNumber, setAccountNumber] = useState('');
   const [accountName, setAccountName] = useState('');
   const [note, setNote] = useState('');
-
+  const { showAlert } = useAlert();
   const handleWithdraw = () => {
     showAlert(
       'Confirm Withdrawal',

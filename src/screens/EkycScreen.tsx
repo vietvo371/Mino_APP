@@ -11,11 +11,11 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
-import { mockEkycService as ekycService } from '../services/MockEkycService';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingOverlay from '../component/LoadingOverlay';
 import { theme } from '../theme/colors';
 import { commonStyles } from "../theme/components";
+import { useEkyc } from "../hooks/useEkyc";
 
 const EkycScreen = () => {
   const navigation = useNavigation();
@@ -31,6 +31,7 @@ const EkycScreen = () => {
     performLiveness,
     verifyEkyc,
   } = useEkyc();
+  const { showAlert } = useAlert();
 
   const [frontImage, setFrontImage] = useState<string>('');
   const [backImage, setBackImage] = useState<string>('');

@@ -11,6 +11,7 @@ import {
   Modal,
   Dimensions,
   Alert,
+  StatusBar,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../theme/colors';
@@ -560,258 +561,269 @@ const HistoryScreen = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>{t('history.title')}</Text>
-        <View style={styles.headerButtons}>
-          <TouchableOpacity 
-            style={styles.refreshButton}
-            onPress={fetchTransactionHistory}
-            disabled={loading}
-          >
-            <Icon name="refresh" size={24} color="#000" />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.filterButton}
-            onPress={() => setShowFilterModal(true)}
-          >
-            <Icon name="filter-variant" size={24} color="#000" />
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Show verification required view if needed */}
-      {needsVerification ? (
-        renderVerificationRequired()
-      ) : (
-        <>
-          {/* Tab Navigation */}
-          <View style={styles.tabContainer}>
-            <TouchableOpacity
-              style={[
-                styles.tabButton, 
-                activeTab === 'pending' && [styles.tabButtonActive, styles.tabButtonPending]
-              ]}
-              onPress={() => setActiveTab('pending')}
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="#FFFFFF"
+      />
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>{t('history.title')}</Text>
+          <View style={styles.headerButtons}>
+            <TouchableOpacity 
+              style={styles.refreshButton}
+              onPress={fetchTransactionHistory}
+              disabled={loading}
             >
-              <Text style={[
-                styles.tabText, 
-                activeTab === 'pending' && [styles.tabTextActive, styles.tabTextPending]
-              ]}>
-                {t('history.pending')}
-              </Text>
-              <View style={[
-                styles.tabBadge, 
-                activeTab === 'pending' && [styles.tabBadgeActive, styles.tabBadgePending]
-              ]}>
-                <Text style={[
-                  styles.tabBadgeText, 
-                  activeTab === 'pending' && [styles.tabBadgeTextActive, styles.tabBadgeTextPending]
-                ]}>
-                  {categorizeTransactions().pending.length}
-                </Text>
-              </View>
+              <Icon name="refresh" size={24} color="#000" />
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.tabButton, 
-                activeTab === 'success' && [styles.tabButtonActive, styles.tabButtonSuccess]
-              ]}
-              onPress={() => setActiveTab('success')}
+            <TouchableOpacity 
+              style={styles.filterButton}
+              onPress={() => setShowFilterModal(true)}
             >
-              <Text style={[
-                styles.tabText, 
-                activeTab === 'success' && [styles.tabTextActive, styles.tabTextSuccess]
-              ]}>
-                {t('history.success')}
-              </Text>
-              <View style={[
-                styles.tabBadge, 
-                activeTab === 'success' && [styles.tabBadgeActive, styles.tabBadgeSuccess]
-              ]}>
-                <Text style={[
-                  styles.tabBadgeText, 
-                  activeTab === 'success' && [styles.tabBadgeTextActive, styles.tabBadgeTextSuccess]
-                ]}>
-                  {categorizeTransactions().success.length}
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.tabButton, 
-                activeTab === 'fail' && [styles.tabButtonActive, styles.tabButtonFail]
-              ]}
-              onPress={() => setActiveTab('fail')}
-            >
-              <Text style={[
-                styles.tabText, 
-                activeTab === 'fail' && [styles.tabTextActive, styles.tabTextFail]
-              ]}>
-                {t('history.failed')}
-              </Text>
-              <View style={[
-                styles.tabBadge, 
-                activeTab === 'fail' && [styles.tabBadgeActive, styles.tabBadgeFail]
-              ]}>
-                <Text style={[
-                  styles.tabBadgeText, 
-                  activeTab === 'fail' && [styles.tabBadgeTextActive, styles.tabBadgeTextFail]
-                ]}>
-                  {categorizeTransactions().fail.length}
-                </Text>
-              </View>
+              <Icon name="filter-variant" size={24} color="#000" />
             </TouchableOpacity>
           </View>
+        </View>
 
-          <ScrollView
-            style={styles.content}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}
-          >
-            {getCurrentTransactions().length === 0 ? (
-              renderEmptyState()
-            ) : (
-              <View style={styles.transactionList}>
-                {getCurrentTransactions().map((transaction, index) => renderTransaction(transaction, index))}
-              </View>
-            )}
-          </ScrollView>
-        </>
-      )}
-
-      {/* Filter Modal */}
-      <Modal
-        visible={showFilterModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowFilterModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>{t('history.filter')}</Text>
-              <TouchableOpacity 
-                style={styles.closeButton}
-                onPress={() => setShowFilterModal(false)}
+        {/* Show verification required view if needed */}
+        {needsVerification ? (
+          renderVerificationRequired()
+        ) : (
+          <>
+            {/* Tab Navigation */}
+            <View style={styles.tabContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.tabButton, 
+                  activeTab === 'pending' && [styles.tabButtonActive, styles.tabButtonPending]
+                ]}
+                onPress={() => setActiveTab('pending')}
               >
-                <Icon name="close" size={24} color="#666" />
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.filterLabel}>{t('history.time')}</Text>
-            <View style={styles.timeFilterContainer}>
-              {TIME_FILTERS.map((filter) => (
-                <TouchableOpacity
-                  key={filter.id}
-                  style={[
-                    styles.timeFilterButton,
-                    selectedTimeFilter === filter.id && styles.timeFilterButtonActive
-                  ]}
-                  onPress={() => handleTimeFilterPress(filter.id)}
-                >
+                <Text style={[
+                  styles.tabText, 
+                  activeTab === 'pending' && [styles.tabTextActive, styles.tabTextPending]
+                ]}>
+                  {t('history.pending')}
+                </Text>
+                <View style={[
+                  styles.tabBadge, 
+                  activeTab === 'pending' && [styles.tabBadgeActive, styles.tabBadgePending]
+                ]}>
                   <Text style={[
-                    styles.timeFilterText,
-                    selectedTimeFilter === filter.id && styles.timeFilterTextActive
+                    styles.tabBadgeText, 
+                    activeTab === 'pending' && [styles.tabBadgeTextActive, styles.tabBadgeTextPending]
                   ]}>
-                    {filter.label}
+                    {categorizeTransactions().pending.length}
                   </Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.tabButton, 
+                  activeTab === 'success' && [styles.tabButtonActive, styles.tabButtonSuccess]
+                ]}
+                onPress={() => setActiveTab('success')}
+              >
+                <Text style={[
+                  styles.tabText, 
+                  activeTab === 'success' && [styles.tabTextActive, styles.tabTextSuccess]
+                ]}>
+                  {t('history.success')}
+                </Text>
+                <View style={[
+                  styles.tabBadge, 
+                  activeTab === 'success' && [styles.tabBadgeActive, styles.tabBadgeSuccess]
+                ]}>
+                  <Text style={[
+                    styles.tabBadgeText, 
+                    activeTab === 'success' && [styles.tabBadgeTextActive, styles.tabBadgeTextSuccess]
+                  ]}>
+                    {categorizeTransactions().success.length}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.tabButton, 
+                  activeTab === 'fail' && [styles.tabButtonActive, styles.tabButtonFail]
+                ]}
+                onPress={() => setActiveTab('fail')}
+              >
+                <Text style={[
+                  styles.tabText, 
+                  activeTab === 'fail' && [styles.tabTextActive, styles.tabTextFail]
+                ]}>
+                  {t('history.failed')}
+                </Text>
+                <View style={[
+                  styles.tabBadge, 
+                  activeTab === 'fail' && [styles.tabBadgeActive, styles.tabBadgeFail]
+                ]}>
+                  <Text style={[
+                    styles.tabBadgeText, 
+                    activeTab === 'fail' && [styles.tabBadgeTextActive, styles.tabBadgeTextFail]
+                  ]}>
+                    {categorizeTransactions().fail.length}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              style={styles.content}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.scrollContent}
+            >
+              {getCurrentTransactions().length === 0 ? (
+                renderEmptyState()
+              ) : (
+                <View style={styles.transactionList}>
+                  {getCurrentTransactions().map((transaction, index) => renderTransaction(transaction, index))}
+                </View>
+              )}
+            </ScrollView>
+          </>
+        )}
+
+        {/* Filter Modal */}
+        <Modal
+          visible={showFilterModal}
+          transparent
+          animationType="slide"
+          onRequestClose={() => setShowFilterModal(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>{t('history.filter')}</Text>
+                <TouchableOpacity 
+                  style={styles.closeButton}
+                  onPress={() => setShowFilterModal(false)}
+                >
+                  <Icon name="close" size={24} color="#666" />
                 </TouchableOpacity>
-              ))}
-            </View>
+              </View>
 
-            <View style={styles.dateRangeContainer}>
-              <TouchableOpacity style={styles.dateInput}>
-                <Text style={styles.dateInputText}>{selectedStartDate}</Text>
-              </TouchableOpacity>
-              <Text style={styles.dateRangeSeparator}>to</Text>
-              <TouchableOpacity style={styles.dateInput}>
-                <Text style={styles.dateInputText}>{selectedEndDate}</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.monthYearContainer}>
-              <ScrollView 
-                horizontal 
-                showsHorizontalScrollIndicator={false}
-                style={styles.monthList}
-              >
-                {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+              <Text style={styles.filterLabel}>{t('history.time')}</Text>
+              <View style={styles.timeFilterContainer}>
+                {TIME_FILTERS.map((filter) => (
                   <TouchableOpacity
-                    key={month}
+                    key={filter.id}
                     style={[
-                      styles.monthButton,
-                      selectedMonth === month && styles.monthButtonActive
+                      styles.timeFilterButton,
+                      selectedTimeFilter === filter.id && styles.timeFilterButtonActive
                     ]}
-                    onPress={() => setSelectedMonth(month)}
+                    onPress={() => handleTimeFilterPress(filter.id)}
                   >
                     <Text style={[
-                      styles.monthButtonText,
-                      selectedMonth === month && styles.monthButtonTextActive
+                      styles.timeFilterText,
+                      selectedTimeFilter === filter.id && styles.timeFilterTextActive
                     ]}>
-                      Month {month}
+                      {filter.label}
                     </Text>
                   </TouchableOpacity>
                 ))}
-              </ScrollView>
+              </View>
 
-              <ScrollView 
-                horizontal 
-                showsHorizontalScrollIndicator={false}
-                style={styles.yearList}
-              >
-                {[2022, 2023, 2024, 2025, 2026, 2027].map((year) => (
-                  <TouchableOpacity
-                    key={year}
-                    style={[
-                      styles.yearButton,
-                      selectedYear === year && styles.yearButtonActive
-                    ]}
-                    onPress={() => setSelectedYear(year)}
-                  >
-                    <Text style={[
-                      styles.yearButtonText,
-                      selectedYear === year && styles.yearButtonTextActive
-                    ]}>
-                      {year}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </ScrollView>
-            </View>
+              <View style={styles.dateRangeContainer}>
+                <TouchableOpacity style={styles.dateInput}>
+                  <Text style={styles.dateInputText}>{selectedStartDate}</Text>
+                </TouchableOpacity>
+                <Text style={styles.dateRangeSeparator}>to</Text>
+                <TouchableOpacity style={styles.dateInput}>
+                  <Text style={styles.dateInputText}>{selectedEndDate}</Text>
+                </TouchableOpacity>
+              </View>
 
-            <View style={styles.modalFooter}>
-              <TouchableOpacity 
-                style={styles.resetButton}
-                onPress={() => {
-                  setSelectedTimeFilter('1w');
-                  setSelectedStartDate('2025-09-06');
-                  setSelectedEndDate('2025-09-13');
-                  setSelectedMonth(9);
-                  setSelectedYear(2025);
-                }}
-              >
-                <Text style={styles.resetButtonText}>{t('history.reset')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.confirmButton}
-                onPress={handleFilterConfirm}
-              >
-                <Text style={styles.confirmButtonText}>{t('history.confirm')}</Text>
-              </TouchableOpacity>
+              <View style={styles.monthYearContainer}>
+                <ScrollView 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.monthList}
+                >
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                    <TouchableOpacity
+                      key={month}
+                      style={[
+                        styles.monthButton,
+                        selectedMonth === month && styles.monthButtonActive
+                      ]}
+                      onPress={() => setSelectedMonth(month)}
+                    >
+                      <Text style={[
+                        styles.monthButtonText,
+                        selectedMonth === month && styles.monthButtonTextActive
+                      ]}>
+                        Month {month}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+
+                <ScrollView 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.yearList}
+                >
+                  {[2022, 2023, 2024, 2025, 2026, 2027].map((year) => (
+                    <TouchableOpacity
+                      key={year}
+                      style={[
+                        styles.yearButton,
+                        selectedYear === year && styles.yearButtonActive
+                      ]}
+                      onPress={() => setSelectedYear(year)}
+                    >
+                      <Text style={[
+                        styles.yearButtonText,
+                        selectedYear === year && styles.yearButtonTextActive
+                      ]}>
+                        {year}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+
+              <View style={styles.modalFooter}>
+                <TouchableOpacity 
+                  style={styles.resetButton}
+                  onPress={() => {
+                    setSelectedTimeFilter('1w');
+                    setSelectedStartDate('2025-09-06');
+                    setSelectedEndDate('2025-09-13');
+                    setSelectedMonth(9);
+                    setSelectedYear(2025);
+                  }}
+                >
+                  <Text style={styles.resetButtonText}>{t('history.reset')}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={styles.confirmButton}
+                  onPress={handleFilterConfirm}
+                >
+                  <Text style={styles.confirmButtonText}>{t('history.confirm')}</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
 
-      <LoadingOverlay visible={loading} message={t('history.loadingHistory')} />
+        <LoadingOverlay visible={loading} message={t('history.loadingHistory')} />
+      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0,
+  },
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -942,7 +954,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: Platform.OS === 'android' ? hp('6%') : hp('4%'),
   },
   transactionList: {
     gap: 12,

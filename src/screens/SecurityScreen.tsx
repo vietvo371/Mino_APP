@@ -44,6 +44,7 @@ const SecurityScreen = () => {
   const [isEkycLoading, setIsEkycLoading] = useState(false);
   const [ekycLoadingMessage, setEkycLoadingMessage] = useState('');
   const { t  , currentLanguage} = useTranslation();
+  const { showAlert } = useAlert();
 
 
   // Fetch user profile

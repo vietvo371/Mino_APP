@@ -11,6 +11,8 @@ import {
   Dimensions,
   Image,
   ActivityIndicator,
+  SafeAreaView,
+  StatusBar,
 } from 'react-native';
 import LoadingOverlay from '../component/LoadingOverlay';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -106,6 +108,7 @@ const HomeScreen: StackScreen<'Home'> = () => {
   const [isLoadingBanks, setIsLoadingBanks] = useState(true);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { showAlert } = useAlert();
 
   // Function to fetch user profile
   const fetchUserProfile = async () => {
@@ -523,7 +526,12 @@ const HomeScreen: StackScreen<'Home'> = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="#FFFFFF"
+      />
+      <View style={styles.container}>
       {/* Loading Overlay */}
       <LoadingOverlay 
         visible={isInitialLoading} 
@@ -564,8 +572,10 @@ const HomeScreen: StackScreen<'Home'> = () => {
 
         <ScrollView 
           style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
           bounces={false}
+          keyboardShouldPersistTaps="handled"
         >
           {/* Amount Display */}
           <View style={styles.topSection}>
@@ -698,15 +708,20 @@ const HomeScreen: StackScreen<'Home'> = () => {
           </TouchableOpacity>
         )}
       </View>
-    </View>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0,
+  },
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-    paddingTop: Platform.OS === 'android' ? 20 : 0,
   },
   tabContainer: {
     flexDirection: 'row',
@@ -743,6 +758,9 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: Platform.OS === 'android' ? hp("6%") : hp("4%"),
   },
   topSection: {
     minHeight: hp("30%"),
@@ -856,13 +874,16 @@ const styles = StyleSheet.create({
   },
   confirmButton: {
     backgroundColor: '#000000',
-    paddingVertical: 10,
+    paddingVertical: Platform.select({
+      ios: 10,
+      android: 12
+    }),
     borderRadius: 12,
     marginHorizontal: 20,
-    position: 'absolute',
-    bottom: -15,
-    left: 0,
-    right: 0,
+    marginBottom: Platform.select({
+      ios: -15,
+      android: 10
+    }),
   },
   confirmButtonDisabled: {
     backgroundColor: '#CCCCCC',
@@ -904,10 +925,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   statusBanner: {
-    position: 'absolute',
-    bottom: -15,
-    left: 0,
-    right: 0,
+    marginBottom: Platform.select({
+      ios: -15,
+      android: 10
+    }),
   },
   warningBanner: {
     flexDirection: 'row',

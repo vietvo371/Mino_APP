@@ -11,6 +11,8 @@ import {
   Switch,
   Alert,
   ActivityIndicator,
+  StatusBar,
+  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
@@ -139,102 +141,113 @@ const AddTRC20AddressScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Icon name="arrow-left" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('trc20Addresses.title')}</Text>
-        <TouchableOpacity 
-          style={[styles.saveButton, loading && styles.saveButtonDisabled]}
-          onPress={handleSave}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color="#4A90E2" />
-          ) : (
-            <Text style={styles.saveText}>Save</Text>
-          )}
-        </TouchableOpacity>
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="#FFFFFF"
+      />
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Icon name="arrow-left" size={24} color="#000" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('trc20Addresses.title')}</Text>
+          <TouchableOpacity 
+            style={[styles.saveButton, loading && styles.saveButtonDisabled]}
+            onPress={handleSave}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color="#4A90E2" />
+            ) : (
+              <Text style={styles.saveText}>Save</Text>
+            )}
+          </TouchableOpacity>
+        </View>
 
-      <ScrollView style={styles.content}>
-        {/* Wallet Name */}
-        <Text style={styles.label}>{t('trc20Addresses.walletName')}</Text>
-        <TextInput
-          style={[styles.input, errors.name && styles.inputError]}
-          value={name}
-          onChangeText={(text) => {
-            setName(text);
-            if (errors.name) {
-              setErrors(prev => ({ ...prev, name: '' }));
-            }
-          }}
-          placeholder={t('trc20Addresses.enterWalletName')}
-          placeholderTextColor="#999"
-        />
-        {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
-
-        {/* TRC20 Address */}
-        <Text style={styles.label}>{t('trc20Addresses.walletAddress')}</Text>
-        <View style={[styles.addressInputContainer, errors.address && styles.inputError]}>
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Wallet Name */}
+          <Text style={styles.label}>{t('trc20Addresses.walletName')}</Text>
           <TextInput
-            style={styles.addressInput}
-            value={address}
+            style={[styles.input, errors.name && styles.inputError]}
+            value={name}
             onChangeText={(text) => {
-              setAddress(text);
-              if (errors.address) {
-                setErrors(prev => ({ ...prev, address: '' }));
+              setName(text);
+              if (errors.name) {
+                setErrors(prev => ({ ...prev, name: '' }));
               }
             }}
-            placeholder={t('trc20Addresses.enterWalletAddress')}
+            placeholder={t('trc20Addresses.enterWalletName')}
             placeholderTextColor="#999"
-            autoCapitalize="none"
           />
-          <View style={styles.addressActions}>
-            <TouchableOpacity 
-              style={styles.actionButton}
-              onPress={handlePaste}
-            >
-              <Icon name="content-paste" size={20} color="#4A90E2" />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.actionButton}
-              onPress={handleScan}
-            >
-              <Icon name="qrcode-scan" size={20} color="#4A90E2" />
-            </TouchableOpacity>
-          </View>
-        </View>
-        {errors.address && <Text style={styles.errorText}>{errors.address}</Text>}
+          {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
 
-        {/* Default Address Toggle */}
-        <View style={styles.defaultContainer}>
-          <View>
-            <Text style={styles.defaultTitle}>{t('trc20Addresses.setAsDefaultAddress')}</Text>
-            <Text style={styles.defaultDescription}>
-              {t('trc20Addresses.defaultAddressDescription')}
+          {/* TRC20 Address */}
+          <Text style={styles.label}>{t('trc20Addresses.walletAddress')}</Text>
+          <View style={[styles.addressInputContainer, errors.address && styles.inputError]}>
+            <TextInput
+              style={styles.addressInput}
+              value={address}
+              onChangeText={(text) => {
+                setAddress(text);
+                if (errors.address) {
+                  setErrors(prev => ({ ...prev, address: '' }));
+                }
+              }}
+              placeholder={t('trc20Addresses.enterWalletAddress')}
+              placeholderTextColor="#999"
+              autoCapitalize="none"
+            />
+            <View style={styles.addressActions}>
+              <TouchableOpacity 
+                style={styles.actionButton}
+                onPress={handlePaste}
+              >
+                <Icon name="content-paste" size={20} color="#4A90E2" />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.actionButton}
+                onPress={handleScan}
+              >
+                <Icon name="qrcode-scan" size={20} color="#4A90E2" />
+              </TouchableOpacity>
+            </View>
+          </View>
+          {errors.address && <Text style={styles.errorText}>{errors.address}</Text>}
+
+          {/* Default Address Toggle */}
+          <View style={styles.defaultContainer}>
+            <View>
+              <Text style={styles.defaultTitle}>{t('trc20Addresses.setAsDefaultAddress')}</Text>
+              <Text style={styles.defaultDescription}>
+                {t('trc20Addresses.defaultAddressDescription')}
+              </Text>
+            </View>
+            <Switch
+              value={isDefault}
+              onValueChange={setIsDefault}
+              trackColor={{ false: '#E5E5EA', true: '#4A90E2' }}
+              thumbColor="#FFFFFF"
+            />
+          </View>
+
+          <View style={styles.infoBox}>
+            <Icon name="information" size={20} color="#666" />
+            <Text style={styles.infoText}>
+              {t('trc20Addresses.saveWarning')}
             </Text>
           </View>
-          <Switch
-            value={isDefault}
-            onValueChange={setIsDefault}
-            trackColor={{ false: '#E5E5EA', true: '#4A90E2' }}
-            thumbColor="#FFFFFF"
-          />
-        </View>
-
-        <View style={styles.infoBox}>
-          <Icon name="information" size={20} color="#666" />
-          <Text style={styles.infoText}>
-            {t('trc20Addresses.saveWarning')}
-          </Text>
-        </View>
-       
-      </ScrollView>
+         
+        </ScrollView>
+      </View>
       <VerifyOTPBottomSheet
         visible={showOtp}
         onClose={() => setShowOtp(false)}
@@ -252,6 +265,11 @@ const AddTRC20AddressScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0,
+  },
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -287,6 +305,9 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 16,
+  },
+  scrollContent: {
+    paddingBottom: Platform.OS === 'android' ? 40 : 24,
   },
   label: {
     fontSize: wp('3.5%'),

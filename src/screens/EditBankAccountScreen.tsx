@@ -11,6 +11,8 @@ import {
   Switch,
   ActivityIndicator,
   Alert,
+  StatusBar,
+  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -271,125 +273,136 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="#FFFFFF"
+      />
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Icon name="arrow-left" size={24} color="#000" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('editBankAccount.title')}</Text>
+          <TouchableOpacity 
+            style={[styles.saveButton, loading && styles.saveButtonDisabled]}
+            onPress={handleUpdate}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color="#4A90E2" />
+            ) : (
+              <Text style={styles.saveText}>{t('editBankAccount.update')}</Text>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          <Icon name="arrow-left" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('editBankAccount.title')}</Text>
-        <TouchableOpacity 
-          style={[styles.saveButton, loading && styles.saveButtonDisabled]}
-          onPress={handleUpdate}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color="#4A90E2" />
-          ) : (
-            <Text style={styles.saveText}>{t('editBankAccount.update')}</Text>
-          )}
-        </TouchableOpacity>
-      </View>
+          {/* Bank Selection */}
+          <SelectCustom
+            label={t('editBankAccount.bank')}
+            value={selectedBankId}
+            onChange={(value) => {
+              setSelectedBankId(value);
+              if (errors.bank) {
+                setErrors(prev => ({ ...prev, bank: '' }));
+              }
+            }}
+            options={banks.map(bank => ({
+              label: bank.name,
+              value: bank.id.toString(),
+              subtitle: `${bank.code}`,
+              iconUrl: bank.logo,
+              searchText: `${bank.name} ${bank.code} ${bank.bin}`,
+            }))}
+            placeholder={t('editBankAccount.selectBank')}
+            error={errors.bank}
+            required
+            searchable={true}
+            searchPlaceholder={t('editBankAccount.searchBank')}
+            containerStyle={styles.selectContainer}
+          />
 
-      <ScrollView style={styles.content}>
-        {/* Bank Selection */}
-        <SelectCustom
-          label={t('editBankAccount.bank')}
-          value={selectedBankId}
-          onChange={(value) => {
-            setSelectedBankId(value);
-            if (errors.bank) {
-              setErrors(prev => ({ ...prev, bank: '' }));
-            }
-          }}
-          options={banks.map(bank => ({
-            label: bank.name,
-            value: bank.id.toString(),
-            subtitle: `${bank.code}`,
-            iconUrl: bank.logo,
-            searchText: `${bank.name} ${bank.code} ${bank.bin}`,
-          }))}
-          placeholder={t('editBankAccount.selectBank')}
-          error={errors.bank}
-          required
-          searchable={true}
-          searchPlaceholder={t('editBankAccount.searchBank')}
-          containerStyle={styles.selectContainer}
-        />
+          {/* Account Number */}
+          <Text style={styles.label}>{t('editBankAccount.accountNumber')}</Text>
+          <TextInput
+            style={[styles.input, errors.accountNumber && styles.inputError]}
+            value={accountNumber}
+            onChangeText={(text) => {
+              setAccountNumber(text);
+              if (errors.accountNumber) {
+                setErrors(prev => ({ ...prev, accountNumber: '' }));
+              }
+            }}
+            placeholder={t('editBankAccount.enterAccountNumber')}
+            keyboardType="numeric"
+            placeholderTextColor="#999"
+          />
+          {errors.accountNumber && <Text style={styles.errorText}>{errors.accountNumber}</Text>}
 
-        {/* Account Number */}
-        <Text style={styles.label}>{t('editBankAccount.accountNumber')}</Text>
-        <TextInput
-          style={[styles.input, errors.accountNumber && styles.inputError]}
-          value={accountNumber}
-          onChangeText={(text) => {
-            setAccountNumber(text);
-            if (errors.accountNumber) {
-              setErrors(prev => ({ ...prev, accountNumber: '' }));
-            }
-          }}
-          placeholder={t('editBankAccount.enterAccountNumber')}
-          keyboardType="numeric"
-          placeholderTextColor="#999"
-        />
-        {errors.accountNumber && <Text style={styles.errorText}>{errors.accountNumber}</Text>}
+          {/* Account Name */}
+          <Text style={styles.label}>{t('editBankAccount.accountHolderName')}</Text>
+          <TextInput
+            style={[styles.input, errors.accountName && styles.inputError]}
+            value={accountName}
+            onChangeText={(text) => {
+              setAccountName(text);
+              if (errors.accountName) {
+                setErrors(prev => ({ ...prev, accountName: '' }));
+              }
+            }}
+            placeholder={t('editBankAccount.enterAccountHolderName')}
+            autoCapitalize="characters"
+            placeholderTextColor="#999"
+          />
+          {errors.accountName && <Text style={styles.errorText}>{errors.accountName}</Text>}
 
-        {/* Account Name */}
-        <Text style={styles.label}>{t('editBankAccount.accountHolderName')}</Text>
-        <TextInput
-          style={[styles.input, errors.accountName && styles.inputError]}
-          value={accountName}
-          onChangeText={(text) => {
-            setAccountName(text);
-            if (errors.accountName) {
-              setErrors(prev => ({ ...prev, accountName: '' }));
-            }
-          }}
-          placeholder={t('editBankAccount.enterAccountHolderName')}
-          autoCapitalize="characters"
-          placeholderTextColor="#999"
-        />
-        {errors.accountName && <Text style={styles.errorText}>{errors.accountName}</Text>}
+          {/* Default Account Toggle */}
+          <View style={styles.defaultContainer}>
+            <View>
+              <Text style={styles.defaultTitle}>{t('editBankAccount.setAsDefault')}</Text>
+              <Text style={styles.defaultDescription}>
+                {t('editBankAccount.defaultDescription')}
+              </Text>
+            </View>
+            <Switch
+              value={isDefault}
+              onValueChange={setIsDefault}
+              trackColor={{ false: '#E5E5EA', true: '#4A90E2' }}
+              thumbColor="#FFFFFF"
+            />
+          </View>
 
-        {/* Default Account Toggle */}
-        <View style={styles.defaultContainer}>
-          <View>
-            <Text style={styles.defaultTitle}>{t('editBankAccount.setAsDefault')}</Text>
-            <Text style={styles.defaultDescription}>
-              {t('editBankAccount.defaultDescription')}
+          {/* Delete Button */}
+          <TouchableOpacity
+            style={[styles.deleteButton, loading && styles.deleteButtonDisabled]}
+            onPress={handleDelete}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color="#FF3B30" />
+            ) : (
+              <Icon name="trash-can-outline" size={20} color="#FF3B30" />
+            )}
+            <Text style={styles.deleteText}>{t('editBankAccount.deleteAccount')}</Text>
+          </TouchableOpacity>
+
+          <View style={styles.infoBox}>
+            <Icon name="information" size={20} color="#666" />
+            <Text style={styles.infoText}>
+              {t('editBankAccount.infoText')}
             </Text>
           </View>
-          <Switch
-            value={isDefault}
-            onValueChange={setIsDefault}
-            trackColor={{ false: '#E5E5EA', true: '#4A90E2' }}
-            thumbColor="#FFFFFF"
-          />
-        </View>
-
-        {/* Delete Button */}
-        <TouchableOpacity
-          style={[styles.deleteButton, loading && styles.deleteButtonDisabled]}
-          onPress={handleDelete}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color="#FF3B30" />
-          ) : (
-            <Icon name="trash-can-outline" size={20} color="#FF3B30" />
-          )}
-          <Text style={styles.deleteText}>{t('editBankAccount.deleteAccount')}</Text>
-        </TouchableOpacity>
-
-        <View style={styles.infoBox}>
-          <Icon name="information" size={20} color="#666" />
-          <Text style={styles.infoText}>
-            {t('editBankAccount.infoText')}
-          </Text>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </View>
 
       <VerifyOTPBottomSheet
         visible={showOtp}
@@ -405,6 +418,11 @@ const EditBankAccountScreen: StackScreen<'EditBankAccount'> = () => {
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0,
+  },
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -440,6 +458,9 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 16,
+  },
+  scrollContent: {
+    paddingBottom: Platform.OS === 'android' ? 40 : 24,
   },
   selectContainer: {
     marginBottom: 0,

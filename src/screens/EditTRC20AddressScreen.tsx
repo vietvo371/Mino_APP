@@ -11,6 +11,8 @@ import {
   Switch,
   Alert,
   Clipboard,
+  StatusBar,
+  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -32,6 +34,7 @@ type TRC20Address = {
 
 const EditTRC20AddressScreen = () => {
   const navigation = useNavigation();
+  const { showAlert } = useAlert();
   const route = useRoute();
   const addressData = (route.params as any)?.address as TRC20Address;
   const { t } = useTranslation();
@@ -196,86 +199,97 @@ const EditTRC20AddressScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Icon name="arrow-left" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('editTrc20Address.title')}</Text>
-        <TouchableOpacity 
-          style={[styles.saveButton, isLoading && styles.saveButtonDisabled]}
-          onPress={handleSave}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <Icon name="loading" size={16} color="#4A90E2" />
-          ) : (
-            <Text style={styles.saveText}>{t('common.save')}</Text>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView style={styles.content}>
-        {/* Wallet Name */}
-        <Text style={styles.label}>{t('editTrc20Address.walletNameLabel')}</Text>
-        <TextInput
-          style={styles.input}
-          value={name}
-          onChangeText={setName}
-          placeholder={t('editTrc20Address.walletNamePlaceholder')}
-          placeholderTextColor="#999"
-        />
-
-        {/* TRC20 Address (Non-editable) */}
-        <Text style={styles.label}>{t('editTrc20Address.polygonAddressLabel')}</Text>
-        <View style={styles.addressContainer}>
-          <Text style={styles.addressText}>{addressData?.address}</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="#FFFFFF"
+      />
+      <View style={styles.container}>
+        <View style={styles.header}>
           <TouchableOpacity 
-            style={styles.copyButton}
-            onPress={handleCopy}
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
           >
-            <Icon name="content-copy" size={20} color="#4A90E2" />
+            <Icon name="arrow-left" size={24} color="#000" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('editTrc20Address.title')}</Text>
+          <TouchableOpacity 
+            style={[styles.saveButton, isLoading && styles.saveButtonDisabled]}
+            onPress={handleSave}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Icon name="loading" size={16} color="#4A90E2" />
+            ) : (
+              <Text style={styles.saveText}>{t('common.save')}</Text>
+            )}
           </TouchableOpacity>
         </View>
 
-        {/* Default Address Toggle */}
-        <View style={styles.defaultContainer}>
-          <View>
-            <Text style={styles.defaultTitle}>{t('editTrc20Address.setDefaultTitle')}</Text>
-            <Text style={styles.defaultDescription}>
-              {t('editTrc20Address.setDefaultDescription')}
-            </Text>
-          </View>
-          <Switch
-            value={isDefault}
-            onValueChange={setIsDefault}
-            trackColor={{ false: '#E5E5EA', true: '#4A90E2' }}
-            thumbColor="#FFFFFF"
-          />
-        </View>
-
-        {/* Delete Button */}
-        <TouchableOpacity
-          style={[styles.deleteButton, isLoading && styles.deleteButtonDisabled]}
-          onPress={handleDelete}
-          disabled={isLoading}
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
-          {isLoading ? (
-            <Icon name="loading" size={20} color="#FF3B30" />
-          ) : (
-            <Icon name="trash-can-outline" size={20} color="#FF3B30" />
-          )}
-          <Text style={styles.deleteText}>{t('editTrc20Address.deleteButton')}</Text>
-        </TouchableOpacity>
+          {/* Wallet Name */}
+          <Text style={styles.label}>{t('editTrc20Address.walletNameLabel')}</Text>
+          <TextInput
+            style={styles.input}
+            value={name}
+            onChangeText={setName}
+            placeholder={t('editTrc20Address.walletNamePlaceholder')}
+            placeholderTextColor="#999"
+          />
 
-        <View style={styles.infoBox}>
-          <Icon name="information" size={20} color="#666" />
-          <Text style={styles.infoText}>{t('editTrc20Address.infoText')}</Text>
-        </View>
-      </ScrollView>
+          {/* TRC20 Address (Non-editable) */}
+          <Text style={styles.label}>{t('editTrc20Address.polygonAddressLabel')}</Text>
+          <View style={styles.addressContainer}>
+            <Text style={styles.addressText}>{addressData?.address}</Text>
+            <TouchableOpacity 
+              style={styles.copyButton}
+              onPress={handleCopy}
+            >
+              <Icon name="content-copy" size={20} color="#4A90E2" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Default Address Toggle */}
+          <View style={styles.defaultContainer}>
+            <View>
+              <Text style={styles.defaultTitle}>{t('editTrc20Address.setDefaultTitle')}</Text>
+              <Text style={styles.defaultDescription}>
+                {t('editTrc20Address.setDefaultDescription')}
+              </Text>
+            </View>
+            <Switch
+              value={isDefault}
+              onValueChange={setIsDefault}
+              trackColor={{ false: '#E5E5EA', true: '#4A90E2' }}
+              thumbColor="#FFFFFF"
+            />
+          </View>
+
+          {/* Delete Button */}
+          <TouchableOpacity
+            style={[styles.deleteButton, isLoading && styles.deleteButtonDisabled]}
+            onPress={handleDelete}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Icon name="loading" size={20} color="#FF3B30" />
+            ) : (
+              <Icon name="trash-can-outline" size={20} color="#FF3B30" />
+            )}
+            <Text style={styles.deleteText}>{t('editTrc20Address.deleteButton')}</Text>
+          </TouchableOpacity>
+
+          <View style={styles.infoBox}>
+            <Icon name="information" size={20} color="#666" />
+            <Text style={styles.infoText}>{t('editTrc20Address.infoText')}</Text>
+          </View>
+        </ScrollView>
+      </View>
       <VerifyOTPBottomSheet
         visible={showOtp}
         onClose={() => setShowOtp(false)}
@@ -290,6 +304,11 @@ const EditTRC20AddressScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0,
+  },
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -325,6 +344,9 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 16,
+  },
+  scrollContent: {
+    paddingBottom: Platform.OS === 'android' ? 40 : 24,
   },
   label: {
     fontSize: wp('3.5%'),

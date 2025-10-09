@@ -9,6 +9,7 @@ import { getUser } from '../utils/TokenManager';
 export const EkycReviewScreen: React.FC = () => {
   const [verifyId, setVerifyId] = useState('');
   const { getCurrentLanguage } = useTranslation();
+  const { showAlert } = useAlert();
   // Flow: chạy Full eKYC xong Verify Face so khớp với ảnh tham chiếu
   const handleEkycFull = async () => {
     try {

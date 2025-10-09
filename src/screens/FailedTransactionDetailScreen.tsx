@@ -59,7 +59,7 @@ const FailedTransactionDetailScreen = () => {
   const [transaction, setTransaction] = React.useState<FailedTransactionDetail | undefined>(transactionParam);
   const [loading, setLoading] = useState<boolean>(!!idTransaction && !transactionParam);
   const [user, setUser] = useState<any>(null);
-
+  const { showAlert } = useAlert();
   const fetchUser = async () => {
     const user = await getUser();
     setUser(user);

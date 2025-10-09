@@ -14,8 +14,8 @@ import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { theme } from '../theme/colors';
-import { commonStyles } from "../theme/components";import { componentStyles } from '../theme/components';
-import { commonStyles } from "../theme/components";import { StackScreen } from '../navigation/types';
+import { commonStyles } from "../theme/components";
+import { StackScreen } from '../navigation/types';
 
 const SettingsScreen: StackScreen<'Settings'> = () => {
   const navigation = useNavigation();
@@ -24,7 +24,7 @@ const SettingsScreen: StackScreen<'Settings'> = () => {
   const [notifications, setNotifications] = useState(true);
   const [language, setLanguage] = useState('English');
   const [currency, setCurrency] = useState('USD');
-
+  const { showAlert } = useAlert();
   const handleLanguageChange = () => {
     showAlert(
       'Select Language',
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: theme.typography.fontSize.xl,
     color: theme.colors.textDark,
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: theme.typography.fontFamily?.bold,
   },
   backButton: {
     width: 40,
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: theme.typography.fontSize.lg,
     color: theme.colors.textDark,
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: theme.typography.fontFamily?.bold,
     marginBottom: theme.spacing.lg,
   },
 
@@ -281,13 +281,13 @@ const styles = StyleSheet.create({
   menuTitle: {
     fontSize: theme.typography.fontSize.md,
     color: theme.colors.textDark,
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: theme.typography.fontFamily?.medium,
     marginBottom: theme.spacing.xs,
   },
   menuDescription: {
     fontSize: theme.typography.fontSize.sm,
     color: theme.colors.textDarkLight,
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: theme.typography.fontFamily?.regular,
   },
 });
 

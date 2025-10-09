@@ -40,6 +40,7 @@ interface SelectCustomProps {
   searchable?: boolean;
   searchPlaceholder?: string;
   disabled?: boolean;
+  variant?: 'default' | 'filled';
 }
 
 const SelectCustom: React.FC<SelectCustomProps> = ({
@@ -54,6 +55,7 @@ const SelectCustom: React.FC<SelectCustomProps> = ({
   searchable = false,
   searchPlaceholder = 'Tìm kiếm...',
   disabled = false,
+  variant = 'default',
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -196,6 +198,10 @@ const SelectCustom: React.FC<SelectCustomProps> = ({
           error && styles.buttonError,
           disabled && styles.buttonDisabled,
           selectedOption && styles.buttonSelected,
+          variant === 'filled' && styles.buttonFilled,
+          variant === 'filled' && selectedOption && styles.buttonFilledSelected,
+          variant === 'filled' && error && styles.buttonFilledError,
+          variant === 'filled' && disabled && styles.buttonFilledDisabled,
         ]}
         onPress={handleModalOpen}
         disabled={disabled}
@@ -358,6 +364,25 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
+  },
+  buttonFilled: {
+    backgroundColor: '#F5F6FA',
+    borderColor: '#E5E5EA',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  buttonFilledSelected: {
+    backgroundColor: '#E7ECFF',
+    borderColor: theme.colors.primary,
+  },
+  buttonFilledError: {
+    backgroundColor: '#FDECEC',
+    borderColor: theme.colors.error,
+  },
+  buttonFilledDisabled: {
+    backgroundColor: '#F0F0F0',
+    borderColor: '#E0E0E0',
+    opacity: 0.7,
   },
   buttonSelected: {
     borderColor: theme.colors.primary,

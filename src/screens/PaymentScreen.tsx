@@ -11,6 +11,7 @@ import {
   Platform,
   Clipboard,
   Image,
+  StatusBar,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
@@ -86,6 +87,7 @@ const PaymentScreen = () => {
   const [banks, setBanks] = useState<{ [key: number]: { name: string; code: string; logo: string; } }>({});
   const [user, setUser] = useState<any>(null);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const { showAlert } = useAlert();
   const fetchUser = async () => {
     const user = await getUser();
     setUser(user);
@@ -408,7 +410,35 @@ const PaymentScreen = () => {
   // Show loading screen while initializing data
   if (isInitialLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <TouchableOpacity
+              style={styles.backButton}
+              onPress={() => navigation.goBack()}
+            >
+              <Icon name="arrow-left" size={24} color="#000" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>
+              {paymentInfo.type === 'buy' ? t('payment.buyUsdt') : t('payment.sellUsdt')}
+            </Text>
+            <View style={styles.headerRight} />
+          </View>
+          
+          <View style={styles.loadingContainer}>
+            <Icon name="loading" size={48} color="#4A90E2" />
+            <Text style={styles.loadingText}>{t('payment.loadingTransaction')}</Text>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
@@ -419,41 +449,22 @@ const PaymentScreen = () => {
           <Text style={styles.headerTitle}>
             {paymentInfo.type === 'buy' ? t('payment.buyUsdt') : t('payment.sellUsdt')}
           </Text>
-          <View style={styles.headerRight} />
+          <TouchableOpacity style={styles.headerRight} onPress={fetchExchangeRate}>
+            <Icon name="refresh" size={16} color="#4A90E2" />
+            <Text style={styles.headerRightText}>
+              {secondsLeft}s • {currentRate.toLocaleString('vi-VN')}
+            </Text>
+            {isLoadingRate && (
+              <Icon name="loading" size={14} color="#4A90E2" style={{ marginLeft: 4 }} />
+            )}
+          </TouchableOpacity>
         </View>
-        
-        <View style={styles.loadingContainer}>
-          <Icon name="loading" size={48} color="#4A90E2" />
-          <Text style={styles.loadingText}>{t('payment.loadingTransaction')}</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Icon name="arrow-left" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {paymentInfo.type === 'buy' ? t('payment.buyUsdt') : t('payment.sellUsdt')}
-        </Text>
-        <TouchableOpacity style={styles.headerRight} onPress={fetchExchangeRate}>
-          <Icon name="refresh" size={16} color="#4A90E2" />
-          <Text style={styles.headerRightText}>
-            {secondsLeft}s • {currentRate.toLocaleString('vi-VN')}
-          </Text>
-          {isLoadingRate && (
-            <Icon name="loading" size={14} color="#4A90E2" style={{ marginLeft: 4 }} />
-          )}
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView style={styles.content}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Transaction Info */}
         <View style={styles.infoCard}>
           {paymentInfo.type === 'buy' ? (
@@ -538,6 +549,7 @@ const PaymentScreen = () => {
                   searchable
                   searchPlaceholder={t('payment.searchWallet')}
                   containerStyle={{ marginBottom: 12 }}
+                  variant="filled"
                 />
 
                 {selectedReceiveTRC20 ? (
@@ -604,6 +616,7 @@ const PaymentScreen = () => {
                   searchable
                   searchPlaceholder={t('payment.searchBank')}
                   containerStyle={{ marginBottom: 12 }}
+                  variant="filled"
                 />
 
                 {selectedBank ? (
@@ -675,11 +688,17 @@ const PaymentScreen = () => {
           <Text style={styles.confirmButtonText}>{t('payment.confirmTransaction')}</Text>
         </TouchableOpacity>
       </View>
+      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0,
+  },
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -717,7 +736,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  scrollContent: {
     padding: 16,
+    paddingBottom: 16 + (Platform.OS === 'android' ? 32 : 16),
   },
   infoCard: {
     backgroundColor: '#F8F8F8',
@@ -979,8 +1001,10 @@ const styles = StyleSheet.create({
   },
   footer: {
     padding: 16,
+    backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#E5E5EA',
+    paddingBottom: 16 + (Platform.OS === 'android' ? 24 : 0),
   },
   confirmButton: {
     backgroundColor: '#000000',

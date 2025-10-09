@@ -10,6 +10,8 @@ import {
   ActivityIndicator,
   Alert,
   RefreshControl,
+  StatusBar,
+  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -135,114 +137,131 @@ const TRC20AddressesScreen = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Icon name="arrow-left" size={24} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>{t('trc20Addresses.title')}</Text>
-        <TouchableOpacity 
-          style={styles.addButton}
-          disabled={needsVerification}
-          onPress={handleAddAddress}
-        >
-          <Icon name="plus" size={24} color="#4A90E2" />
-        </TouchableOpacity>
-      </View>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="#FFFFFF"
+      />
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Icon name="arrow-left" size={24} color="#000" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>{t('trc20Addresses.title')}</Text>
+          <TouchableOpacity 
+            style={styles.addButton}
+            disabled={needsVerification}
+            onPress={handleAddAddress}
+          >
+            <Icon name="plus" size={24} color="#4A90E2" />
+          </TouchableOpacity>
+        </View>
 
-      {needsVerification ? (
-        renderVerificationRequired()
-      ) : (
-      <ScrollView 
-        style={styles.content}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        <Text style={styles.sectionTitle}>{t('trc20Addresses.addressList')}</Text>
-        
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#4A90E2" />
-            <Text style={styles.loadingText}>{t('trc20Addresses.loadingAddresses')}</Text>
-          </View>
-        ) : addresses.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Icon name="wallet-outline" size={64} color="#CCCCCC" />
-            <Text style={styles.emptyTitle}>{t('trc20Addresses.noWalletAddresses')}</Text>
-            <Text style={styles.emptyDescription}>
-              {t('trc20Addresses.noAddressesDescription')}
-            </Text>
-            <TouchableOpacity 
-              style={styles.addFirstButton}
-              onPress={handleAddAddress}
-            >
-              <Icon name="plus" size={20} color="#FFFFFF" />
-              <Text style={styles.addFirstText}>{t('trc20Addresses.addAddress')}</Text>
-            </TouchableOpacity>
-          </View>
+        {needsVerification ? (
+          renderVerificationRequired()
         ) : (
-          addresses.map((item) => (
-            <View key={item.id} style={styles.addressCard}>
-              <View style={styles.addressHeader}>
-                <Text style={styles.addressName}
-                numberOfLines={1}
-                ellipsizeMode="tail">{item.name}</Text>
-                {item.isDefault && (
-                  <View style={styles.defaultBadge}>
-                    <Text style={styles.defaultText}>{t('trc20Addresses.default')}</Text>
-                  </View>
-                )}
+          <ScrollView 
+            style={styles.content}
+            contentContainerStyle={styles.scrollContent}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <Text style={styles.sectionTitle}>{t('trc20Addresses.addressList')}</Text>
+            
+            {loading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#4A90E2" />
+                <Text style={styles.loadingText}>{t('trc20Addresses.loadingAddresses')}</Text>
               </View>
-
-              <View style={styles.addressInfo}>
-                <View style={styles.addressContainer}>
-                  <Text style={styles.addressLabel}>{t('trc20Addresses.walletAddress')}</Text>
-                  <Text style={styles.address}>{item.address}</Text>
-                </View>
-                <TouchableOpacity 
-                  style={styles.copyButton}
-                  onPress={() => handleCopyAddress(item.address)}
-                >
-                  <Icon name="content-copy" size={20} color="#4A90E2" />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.addressFooter}>
-                <Text style={styles.createdDate}>
-                  {t('trc20Addresses.created')} {new Date(item.createdAt).toLocaleDateString()}
+            ) : addresses.length === 0 ? (
+              <View style={styles.emptyContainer}>
+                <Icon name="wallet-outline" size={64} color="#CCCCCC" />
+                <Text style={styles.emptyTitle}>{t('trc20Addresses.noWalletAddresses')}</Text>
+                <Text style={styles.emptyDescription}>
+                  {t('trc20Addresses.noAddressesDescription')}
                 </Text>
                 <TouchableOpacity 
-                  style={styles.editButton}
-                  onPress={() => handleEditAddress(item)}
+                  style={styles.addFirstButton}
+                  onPress={handleAddAddress}
                 >
-                  <Icon name="pencil" size={16} color="#666" />
-                  <Text style={styles.editText}>{t('trc20Addresses.edit')}</Text>
+                  <Icon name="plus" size={20} color="#FFFFFF" />
+                  <Text style={styles.addFirstText}>{t('trc20Addresses.addAddress')}</Text>
                 </TouchableOpacity>
               </View>
-            </View>
-          ))
-        )}
+            ) : (
+              addresses.map((item) => (
+                <View key={item.id} style={styles.addressCard}>
+                  <View style={styles.addressHeader}>
+                    <Text style={styles.addressName}
+                    numberOfLines={1}
+                    ellipsizeMode="tail">{item.name}</Text>
+                    {item.isDefault && (
+                      <View style={styles.defaultBadge}>
+                        <Text style={styles.defaultText}>{t('trc20Addresses.default')}</Text>
+                      </View>
+                    )}
+                  </View>
 
-        <View style={styles.infoBox}>
-          <Icon name="information" size={20} color="#666" />
-          <Text style={styles.infoText}>
-            {t('trc20Addresses.infoText')}
-          </Text>
-        </View>
-      </ScrollView>
-      )}
+                  <View style={styles.addressInfo}>
+                    <View style={styles.addressContainer}>
+                      <Text style={styles.addressLabel}>{t('trc20Addresses.walletAddress')}</Text>
+                      <Text style={styles.address}>{item.address}</Text>
+                    </View>
+                    <TouchableOpacity 
+                      style={styles.copyButton}
+                      onPress={() => handleCopyAddress(item.address)}
+                    >
+                      <Icon name="content-copy" size={20} color="#4A90E2" />
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.addressFooter}>
+                    <Text style={styles.createdDate}>
+                      {t('trc20Addresses.created')} {new Date(item.createdAt).toLocaleDateString()}
+                    </Text>
+                    <TouchableOpacity 
+                      style={styles.editButton}
+                      onPress={() => handleEditAddress(item)}
+                    >
+                      <Icon name="pencil" size={16} color="#666" />
+                      <Text style={styles.editText}>{t('trc20Addresses.edit')}</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))
+            )}
+
+            <View style={styles.infoBox}>
+              <Icon name="information" size={20} color="#666" />
+              <Text style={styles.infoText}>
+                {t('trc20Addresses.infoText')}
+              </Text>
+            </View>
+          </ScrollView>
+        )}
+      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) : 0,
+  },
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  scrollContent: {
+    paddingBottom: Platform.OS === 'android' ? hp('6%') : hp('4%'),
   },
   // Verification styles
   verificationContainer: {

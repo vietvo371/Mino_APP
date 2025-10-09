@@ -9,13 +9,15 @@ import {
   Image,
   Platform,
   Alert,
+  SafeAreaView,
+  StatusBar,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { theme } from '../theme/colors';
-import { commonStyles } from "../theme/components";import { componentStyles } from '../theme/components';
-import { commonStyles } from "../theme/components";import { StackScreen } from '../navigation/types';
+import { commonStyles } from "../theme/components";
+import { StackScreen } from '../navigation/types';
 import InputCustom from '../component/InputCustom';
 import ButtonCustom from '../component/ButtonCustom';
 
@@ -25,7 +27,7 @@ const TransactionScreen: StackScreen<'Transaction'> = () => {
   const [address, setAddress] = useState('');
   const [note, setNote] = useState('');
   const [selectedWallet, setSelectedWallet] = useState('USDT');
-
+  const { showAlert } = useAlert();
   const handleSend = () => {
     showAlert(
       'Confirm Transaction',
@@ -48,7 +50,12 @@ const TransactionScreen: StackScreen<'Transaction'> = () => {
   };
 
   return (
-    <View style={commonStyles.screenContainer}>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={theme.colors.backgroundDark}
+      />
+    <View style={[commonStyles.screenContainer, styles.container]}>
       <View style={styles.backgroundContainer}>
         <LinearGradient
           colors={[theme.colors.backgroundDark, theme.colors.secondary]}
@@ -218,10 +225,18 @@ const TransactionScreen: StackScreen<'Transaction'> = () => {
         />
       </View>
     </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: theme.colors.backgroundDark,
+  },
+  container: {
+    flex: 1,
+  },
   backgroundContainer: {
     ...StyleSheet.absoluteFillObject,
   },
@@ -230,7 +245,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: theme.spacing.lg,
-    paddingBottom: theme.spacing.xxl,
+    paddingBottom: theme.spacing.xxl + (Platform.OS === 'android' ? theme.spacing.lg : 0),
   },
 
   // Header Styles
@@ -244,7 +259,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: theme.typography.fontSize.xl,
     color: theme.colors.textDark,
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: theme.typography.fontFamily?.bold,
   },
   backButton: {
     width: 40,
@@ -274,7 +289,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: theme.typography.fontSize.lg,
     color: theme.colors.textDark,
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: theme.typography.fontFamily?.bold,
     marginBottom: theme.spacing.lg,
   },
 
@@ -316,13 +331,13 @@ const styles = StyleSheet.create({
   walletName: {
     fontSize: theme.typography.fontSize.md,
     color: theme.colors.textDark,
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: theme.typography.fontFamily?.medium,
     marginBottom: theme.spacing.xs,
   },
   walletBalance: {
     fontSize: theme.typography.fontSize.sm,
     color: theme.colors.textDarkLight,
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: theme.typography.fontFamily?.regular,
   },
 
   // Form Styles
@@ -354,12 +369,12 @@ const styles = StyleSheet.create({
   summaryLabel: {
     fontSize: theme.typography.fontSize.md,
     color: theme.colors.textDarkLight,
-    fontFamily: theme.typography.fontFamily.regular,
+    fontFamily: theme.typography.fontFamily?.regular,
   },
   summaryValue: {
     fontSize: theme.typography.fontSize.md,
     color: theme.colors.textDark,
-    fontFamily: theme.typography.fontFamily.medium,
+    fontFamily: theme.typography.fontFamily?.medium,
   },
   summaryDivider: {
     height: 1,
@@ -369,12 +384,12 @@ const styles = StyleSheet.create({
   summaryTotal: {
     fontSize: theme.typography.fontSize.lg,
     color: theme.colors.textDark,
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: theme.typography.fontFamily?.bold,
   },
   summaryTotalValue: {
     fontSize: theme.typography.fontSize.lg,
     color: theme.colors.primary,
-    fontFamily: theme.typography.fontFamily.bold,
+    fontFamily: theme.typography.fontFamily?.bold,
   },
 
   // Footer Styles
@@ -383,6 +398,7 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.secondary,
     borderTopWidth: 1,
     borderTopColor: theme.colors.borderDark,
+    paddingBottom: theme.spacing.lg + (Platform.OS === 'android' ? theme.spacing.md : 0),
   },
   sendButton: {
     height: 56,
