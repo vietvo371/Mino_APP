@@ -1,4 +1,4 @@
-package com.mino
+package com.minopay.app
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

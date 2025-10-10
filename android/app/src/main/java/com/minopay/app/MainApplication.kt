@@ -1,4 +1,4 @@
-package com.mino
+package com.minopay.app
 
 import android.app.Application
 import com.facebook.react.PackageList
