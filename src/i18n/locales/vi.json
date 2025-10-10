@@ -466,7 +466,18 @@
     "ocrFailed": "OCR",
     "ocrFailedMessage": "Bóc tách thông tin thất bại, vui lòng chụp lại.",
     "faceMatchFailed": "So khớp khuôn mặt",
-    "faceMatchFailedMessage": "Khuôn mặt chưa khớp thông tin eKYC."
+    "faceMatchFailedMessage": "Khuôn mặt chưa khớp thông tin eKYC.",
+    "cameraPermissionTitle": "Quyền truy cập camera",
+    "cameraPermissionMessage": "Ứng dụng cần quyền truy cập camera để thực hiện xác thực eKYC",
+    "askMeLater": "Hỏi lại sau",
+    "ok": "Đồng ý",
+    "permissionDenied": "Quyền bị từ chối",
+    "cameraPermissionDeniedMessage": "Bạn cần cấp quyền camera để sử dụng tính năng eKYC. Vui lòng vào Cài đặt để bật quyền.",
+    "permissionError": "Lỗi quyền truy cập",
+    "cameraPermissionErrorMessage": "Có lỗi khi yêu cầu quyền camera. Vui lòng thử lại.",
+    "ekycSuccessMessage": "Xác thực eKYC đã hoàn tất thành công!",
+    "ekycError": "Lỗi eKYC",
+    "ekycGenericError": "Có lỗi xảy ra trong quá trình eKYC. Vui lòng thử lại."
   },
   "payment": {
     "title": "Thanh toán",

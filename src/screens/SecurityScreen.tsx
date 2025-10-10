@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Alert,
   RefreshControl,
+  PermissionsAndroid,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -94,14 +95,53 @@ const SecurityScreen = () => {
   const verificationCount = [isEkycVerified, isEmailVerified, isPhoneVerified].filter(Boolean).length;
   const verificationProgress = (verificationCount / 3) * 100;
 
+  // Request camera permission for Android
+  const requestCameraPermission = async (): Promise<boolean> => {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.CAMERA,
+          {
+            title: t('security.cameraPermissionTitle'),
+            message: t('security.cameraPermissionMessage'),
+            buttonNeutral: t('security.askMeLater'),
+            buttonNegative: t('security.cancel'),
+            buttonPositive: t('security.ok'),
+          }
+        );
+        
+        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+          console.log('Camera permission granted');
+          return true;
+        } else {
+          console.log('Camera permission denied');
+          showAlert(t('security.error'), t('security.cameraPermissionDenied'));
+          return false;
+        }
+      } catch (err) {
+        console.warn(err);
+        return false;
+      }
+    }
+    return true; // iOS handles permissions automatically
+  };
+
   // Start eKYC full flow via native SDK
   const handleStartEkyc = async () => {
     try {
+      // Request camera permission first
+      const hasPermission = await requestCameraPermission();
+      if (!hasPermission) {
+        return;
+      }
+
       setEkycLoadingMessage(t('security.performingEkyc'));
       
       const lang = currentLanguage === 'vi' ? 'vi' : 'en';
       const fullResult = await EkycService.startEkycFullWithLanguage(lang);
       console.log('eKYC Full Result:', fullResult);
+      console.log('eKYC Full Result type:', typeof fullResult);
+      console.log('eKYC Full Result stringified:', JSON.stringify(fullResult));
       setIsEkycLoading(true);
 
       const logs: any = fullResult;
@@ -194,7 +234,20 @@ const SecurityScreen = () => {
       }
       
     } catch (error: any) {
-      console.log('eKYC Full Error:', error.response);
+      console.log('eKYC Full Error:', error);
+      console.log('eKYC Full Error message:', error?.message);
+      console.log('eKYC Full Error code:', error?.code);
+      setIsEkycLoading(false);
+      
+      // Handle user cancellation or errors
+      if (error?.code === 'E_ACTIVITY_DOES_NOT_EXIST') {
+        showAlert(t('security.error'), t('security.activityNotFound'));
+      } else if (error?.message?.includes('User cancelled') || error?.code === 'CANCELLED') {
+        // User cancelled - do nothing or show subtle message
+        console.log('User cancelled eKYC');
+      } else {
+        showAlert(t('security.error'), error?.message || t('security.ekycFailed'));
+      }
     }
   };
 

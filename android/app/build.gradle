@@ -24,6 +24,9 @@ android {
         
         // Required for react-native-maps
         missingDimensionStrategy 'react-native-google-maps', 'none'
+        
+        // Required for eKYC SDK
+        multiDexEnabled true
     }
 
     signingConfigs {
@@ -62,6 +65,16 @@ android {
         jniLibs {
             useLegacyPackaging = false
         }
+        // Required for eKYC SDK - handle duplicate libc++_shared.so
+        pickFirst 'lib/x86/libc++_shared.so'
+        pickFirst 'lib/x86_64/libc++_shared.so'
+        pickFirst 'lib/armeabi-v7a/libc++_shared.so'
+        pickFirst 'lib/arm64-v8a/libc++_shared.so'
+    }
+
+    // Required for eKYC SDK - do not compress .bic files
+    aaptOptions {
+        noCompress "bic"
     }
 }
 
@@ -78,4 +91,14 @@ dependencies {
     implementation 'com.google.android.gms:play-services-base:18.2.0'
     implementation 'com.google.android.gms:play-services-maps:18.2.0'
     implementation 'com.google.android.gms:play-services-location:21.1.0'
+
+    // #START config library for eKYC SDK
+    implementation project(':ekyc')
+    implementation 'androidx.multidex:multidex:2.0.1'
+    implementation 'androidx.exifinterface:exifinterface:1.3.6'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'com.squareup.okhttp3:okhttp:4.12.0'
+    // NOTE: Lottie đã được bundle sẵn trong eKYC SDK, không cần thêm dependency
+    // #END config library for eKYC SDK
 }

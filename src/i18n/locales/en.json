@@ -466,7 +466,18 @@
     "ocrFailed": "OCR",
     "ocrFailedMessage": "Failed to extract information, please retake photo.",
     "faceMatchFailed": "Face Matching",
-    "faceMatchFailedMessage": "Face does not match eKYC information."
+    "faceMatchFailedMessage": "Face does not match eKYC information.",
+    "cameraPermissionTitle": "Camera Permission",
+    "cameraPermissionMessage": "App needs camera access to perform eKYC verification",
+    "askMeLater": "Ask Me Later",
+    "ok": "OK",
+    "permissionDenied": "Permission Denied",
+    "cameraPermissionDeniedMessage": "You need to grant camera permission to use eKYC feature. Please go to Settings to enable it.",
+    "permissionError": "Permission Error",
+    "cameraPermissionErrorMessage": "Error occurred while requesting camera permission. Please try again.",
+    "ekycSuccessMessage": "eKYC verification completed successfully!",
+    "ekycError": "eKYC Error",
+    "ekycGenericError": "An error occurred during eKYC process. Please try again."
   },
   "payment": {
     "title": "Payment",

@@ -1,8 +1,10 @@
 import React from 'react';
+import { Platform, Dimensions } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { theme } from '../theme/colors';
+import { responsive, SPACING, FONT_SIZE } from '../theme/responsive';
 import { RootStackParamList } from './types';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from '../hooks/useTranslation';
@@ -52,6 +54,15 @@ const MainTabs = () => {
   const { userRole } = useAuth();
   const { t } = useTranslation();
 
+  const { height: screenHeight } = Dimensions.get('window');
+  
+  // Responsive tab bar configuration for Android
+  const getTabBarHeight = () => {
+    if (screenHeight < 600) return responsive.hp('8%');  // Small screens
+    if (screenHeight < 700) return responsive.hp('7.5%'); // Medium screens
+    return responsive.hp('7%'); // Large screens
+  };
+
   const tabScreenOptions = {
     headerShown: false,
     tabBarActiveTintColor: "black",
@@ -59,10 +70,10 @@ const MainTabs = () => {
     tabBarStyle: {
       backgroundColor: theme.colors.white,
       borderTopColor: theme.colors.border,
-      height: 60,
-      paddingBottom: 14,
-      paddingTop: 8,
-      marginBottom: 25,
+      height: getTabBarHeight(),
+      paddingBottom: Platform.OS === 'android' ? SPACING.sm : SPACING.md,
+      paddingTop: SPACING.xs,
+      marginBottom: 0, // Remove margin for better compatibility
       elevation: 8,
       shadowColor: theme.colors.primary,
       shadowOffset: { width: 0, height: -4 },
@@ -71,7 +82,11 @@ const MainTabs = () => {
     },
     tabBarLabelStyle: {
       fontFamily: theme.typography.fontFamily,
-      fontSize: 12,
+      fontSize: FONT_SIZE.xs,
+      marginTop: Platform.OS === 'android' ? 2 : 0,
+    },
+    tabBarIconStyle: {
+      marginTop: Platform.OS === 'android' ? SPACING.xs : 0,
     },
   };
 
